@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tansaction | Banking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-aFq/bzH65dt+w6FI2ooMVUpc+21e0SRygnTpmBvdBgSdnuTN7QbdgL+OapgHtvPp" crossorigin="anonymous">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="shortcut icon" href="../assets/icon.png" type="image/x-icon">
+</head>
+<body >
+    <header>
+    </header>
+    <main id="app">
+        <div class="encabezado">
+            <h1 class="d-flex justify-content-center align-items-center">TRANSACTIONS</h1>
+        </div>
+        <div class=" d-flex justify-content-center align-items-center">
+            <table class="table container">
+                <thead >
+                    <tr>
+                        <td class="text-center">Date</td>
+                        <td class="text-center">Amount</td>
+                        <td class="text-center">Description</td>
+                        <td class="text-center">Type</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template v-for="datos of transactions">
+                        <tr :class="datos.type">
+                            <td class="text-center">{{datos.date.slice(0,10)}} | {{datos.date.slice(11,16)}}</td>
+                            <td class="text-center">$ {{datos.amount.toLocaleString()}}</td>
+                            <td class="text-center">{{datos.description}}</td>
+                            <td class="text-center">{{datos.type}}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <footer>
+
+    </footer>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+        integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
+        crossorigin="anonymous"></script>
+    <script src="../js/account.js"></script>
+</body>
+</html>
