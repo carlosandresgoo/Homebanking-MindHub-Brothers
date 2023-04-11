@@ -9,7 +9,7 @@ import java.util.Set;
 @Entity
 public class Client {
 
-    private String name;
+    private String firtsName;
     private String lastName;
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
@@ -23,8 +23,8 @@ public class Client {
     public Client() {
     }
 
-    public Client(String name, String lastName, String email) {
-        this.name = name;
+    public Client(String firtsName, String lastName, String email) {
+        this.firtsName = firtsName;
         this.lastName = lastName;
         this.email = email;
     }
@@ -32,8 +32,8 @@ public class Client {
         account.setClient(this);
         accounts.add(account);
     }
-    public String getName() {
-        return name;
+    public String getFirtsName() {
+        return firtsName;
     }
 
 
@@ -41,8 +41,8 @@ public class Client {
         return accounts;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setFirtsName(String firtsName) {
+        this.firtsName = firtsName;
     }
 
     public String getLastName() {
@@ -70,7 +70,7 @@ public class Client {
     @Override
     public String toString() {
         return "Client{" +
-                "name='" + name + '\'' +
+                "name='" + firtsName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", id=" + id +
                 ", email='" + email + '\'' +

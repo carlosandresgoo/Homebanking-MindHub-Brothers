@@ -21,8 +21,7 @@ createApp({
 				.then(response => {
 					this.account = response.data;
 					this.transactions = this.account.transactions;
-                    console.log(response.data);
-					console.log(typeof(this.transactions[0].amount));
+
 		})
 				.catch(error => console.log(error));
 		},

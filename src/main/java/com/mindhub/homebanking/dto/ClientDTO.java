@@ -1,14 +1,10 @@
 package com.mindhub.homebanking.dto;
-
-
 import com.mindhub.homebanking.models.Client;
-
-
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ClientDTO {
-    private String name;
+    private String firstName;
     private String lastName;
 
     private long id;
@@ -20,7 +16,7 @@ public class ClientDTO {
 
         this.id = client.getId();
 
-        this.name = client.getName();
+        this.firstName = client.getFirtsName();
 
         this.lastName = client.getLastName();
 
@@ -31,11 +27,11 @@ public class ClientDTO {
     }
 
     public String getName() {
-        return name;
+        return firstName;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.firstName = name;
     }
 
     public String getLastName() {

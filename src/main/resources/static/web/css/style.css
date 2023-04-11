@@ -78,6 +78,9 @@ form {
     min-height: 100vh;
 }
 
+.main-pag{
+    min-height: 100vh;
+}
 
 .box-img {
     padding: 0 !important;
@@ -110,3 +113,6 @@ a{
 .CREDIT {
 	color: green !important;
 }
+
+
+/* footer */
