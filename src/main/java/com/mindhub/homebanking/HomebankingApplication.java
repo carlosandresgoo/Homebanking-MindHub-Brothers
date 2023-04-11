@@ -2,19 +2,15 @@ package com.mindhub.homebanking;
 
 
 
-import com.mindhub.homebanking.models.Account;
-import com.mindhub.homebanking.models.Client;
-import com.mindhub.homebanking.models.Transaction;
-import com.mindhub.homebanking.models.TransactionType;
-import com.mindhub.homebanking.repositories.AccountRepository;
-import com.mindhub.homebanking.repositories.TransactionRepository;
+import com.mindhub.homebanking.models.*;
+import com.mindhub.homebanking.repositories.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import com.mindhub.homebanking.repositories.ClientRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @SpringBootApplication
 public class HomebankingApplication {
@@ -22,17 +18,21 @@ public class HomebankingApplication {
 	public static void main(String[] args) {
 
 		SpringApplication.run(HomebankingApplication.class, args);
+
 	}
 
+	List<Integer> Mortgage = List.of(12, 24, 36 , 48 , 60);
+	List<Integer> Person = List.of(6, 12, 24);
+	List<Integer> Automotive = List.of(6, 12, 24,36);
+
+
 	@Bean
-	public CommandLineRunner initData(ClientRepository repository , AccountRepository repositorys , TransactionRepository transaction) {
+	public CommandLineRunner initData(ClientRepository repository , AccountRepository repositorys , TransactionRepository transaction , LoanRepository loan, ClientLoanRepository clientloan) {
 		return (args) -> {
 			// save a couple of Client
 
 			Client client1 = new Client("Melba" , "Morel", "melba@gmail.com");
 			repository.save(client1);
-//			Client Client2 = new Client("Chloe", "O'Brian" , "Chole@gmail.com");
-//			repository.save(Client2);
 			Account account1 = new Account("vin001" , LocalDateTime.now() , 5000.00 );
 			client1.addAccount(account1);
 			repositorys.save(account1);
@@ -46,11 +46,41 @@ public class HomebankingApplication {
 			Transaction transaction2 = new Transaction(TransactionType.DEBIT,3330.37,"Hola", LocalDateTime.now() );
 			account2.addTransaction(transaction2);
 			transaction.save(transaction2);
-//			Account Account3 = new Account("vin003" , LocalDateTime.now() , 8000 , Client2);
-//			repositorys.save(Account3);
-//			Account Account4 = new Account("vin004" ,  LocalDateTime.now().plusDays(1) , 9500 , Client2 );
-//			repositorys.save(Account4);
 
+
+			Loan loan1 = new Loan("Mortgage", 500000 , Mortgage );
+			loan.save(loan1);
+			Loan loan2 = new Loan("Person", 100000 , Person );
+			loan.save(loan2);
+			Loan loan3 = new Loan("Automotive", 300000 , Automotive);
+			loan.save(loan3);
+
+			ClientLoan clientLoan1 = new ClientLoan("Mortgage", 400000.00,60 );
+			client1.addClientLoan(clientLoan1);
+			loan1.addClientLoan(clientLoan1);
+			clientloan.save(clientLoan1);
+			ClientLoan clientLoan2 = new ClientLoan("Person", 50000.00,12 );
+			client1.addClientLoan(clientLoan2);
+			loan2.addClientLoan(clientLoan2);
+			clientloan.save(clientLoan2);
+
+
+
+
+
+			Client client2 = new Client("Chloe", "O'Brian" , "Chole@gmail.com");
+			repository.save(client2);
+
+
+
+			ClientLoan clientLoan3 = new ClientLoan("Person",100000.00, 24 );
+			client2.addClientLoan(clientLoan3);
+			loan2.addClientLoan(clientLoan3);
+			clientloan.save(clientLoan3);
+			ClientLoan clientLoan4 = new ClientLoan("Automotive",200000.00, 36 );
+			client2.addClientLoan(clientLoan4);
+			loan3.addClientLoan(clientLoan4);
+			clientloan.save(clientLoan4);
 
 		};
 	}
