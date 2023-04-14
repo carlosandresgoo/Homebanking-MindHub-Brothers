@@ -6,7 +6,7 @@ createApp({
     data (){
         return{
             datos:[],
-            name:"",
+            FirstName:"",
             lastName:"",
             email:"",
         }

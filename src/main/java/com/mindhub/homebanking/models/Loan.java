@@ -1,6 +1,6 @@
 package com.mindhub.homebanking.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Entity
 public class Loan {
@@ -35,9 +37,9 @@ public class Loan {
         clientLoan.setLoan(this);
         clientLoans.add(clientLoan);
     }
-    @JsonIgnore
+
     public List<Client> getClients() {
-        return clientLoans.stream().map(clientLoan -> clientLoan.getClient()).collect(Collectors.toList());
+        return clientLoans.stream().map(clientLoan -> clientLoan.getClient()).collect(toList());
     }
 
     public long getId() {
