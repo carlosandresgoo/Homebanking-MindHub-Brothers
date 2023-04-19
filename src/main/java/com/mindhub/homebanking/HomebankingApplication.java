@@ -9,6 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,13 +22,13 @@ public class HomebankingApplication {
 
 	}
 
-	List<Integer> Mortgage = List.of(12, 24, 36 , 48 , 60);
-	List<Integer> Personal = List.of(6, 12, 24);
-	List<Integer> Automotive = List.of(6, 12, 24,36);
+	List<Integer> mortgage = List.of(12, 24, 36 , 48 , 60);
+	List<Integer> personal = List.of(6, 12, 24);
+	List<Integer> automotive = List.of(6, 12, 24,36);
 
 
 	@Bean
-	public CommandLineRunner initData(ClientRepository repository , AccountRepository repositorys , TransactionRepository transaction , LoanRepository loan, ClientLoanRepository clientloan) {
+	public CommandLineRunner initData(ClientRepository repository , AccountRepository repositorys , TransactionRepository transaction , LoanRepository loan, ClientLoanRepository clientloan , CardRepository cardrepository) {
 		return (args) -> {
 			// save a couple of Client
 
@@ -55,14 +56,14 @@ public class HomebankingApplication {
 			transaction.save(transaction4);
 
 
-			Loan loan1 = new Loan("Mortgage", 500000 , Mortgage );
+			Loan loan1 = new Loan("Mortgage", 500000 , mortgage );
 			loan.save(loan1);
-			Loan loan2 = new Loan("Personal", 100000 , Personal );
+			Loan loan2 = new Loan("Personal", 100000 , personal );
 			loan.save(loan2);
-			Loan loan3 = new Loan("Automotive", 300000 , Automotive);
+			Loan loan3 = new Loan("Automotive", 300000 , automotive);
 			loan.save(loan3);
 
-			ClientLoan clientLoan1 = new ClientLoan("Mortgage", 400000.00,60 );
+			ClientLoan clientLoan1 = new ClientLoan("Mortgage", 400000.00,60);
 			client1.addClientLoan(clientLoan1);
 			loan1.addClientLoan(clientLoan1);
 			clientloan.save(clientLoan1);
@@ -71,6 +72,12 @@ public class HomebankingApplication {
 			loan2.addClientLoan(clientLoan2);
 			clientloan.save(clientLoan2);
 
+			Card card1 =new Card (client1.getFirtsName() + " " + client1.getLastName() , CardType.DEBIT, CardColor.GOLD, "6506-9042-4354-1232",345 , LocalDate.now().plusYears(5), LocalDate.now());
+			client1.addCard(card1);
+			cardrepository.save(card1);
+			Card card2 =new Card (client1.getFirtsName() + " " + client1.getLastName() , CardType.CREDIT, CardColor.TITANIUM, "6506-4343-4354-1232",654 , LocalDate.now().plusYears(5), LocalDate.now());
+			client1.addCard(card2);
+			cardrepository.save(card2);
 
 
 
@@ -111,6 +118,11 @@ public class HomebankingApplication {
 			client2.addClientLoan(clientLoan4);
 			loan3.addClientLoan(clientLoan4);
 			clientloan.save(clientLoan4);
+
+
+			Card card3 =new Card (client2.getFirtsName() + " " + client2.getLastName() , CardType.CREDIT, CardColor.SILVER, "5632-9042-4354-4311",986 , LocalDate.now().plusYears(5), LocalDate.now());
+			client2.addCard(card3);
+			cardrepository.save(card3);
 
 		};
 	}

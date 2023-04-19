@@ -8,7 +8,8 @@ createApp({
 			firstname: '',
 			lastName: '',
 			email: '',
-            accounts:[]
+            accounts:[],
+			isAsideInactive: true,
 		};
 	},
 	created() {
@@ -21,12 +22,15 @@ createApp({
 				.then(response => {
 					this.datos = response.data;
 					console.log(this.datos);
-                    this.accounts=this.datos.accounts;
+                    this.accounts = this.datos.accounts;
                     console.log(this.accounts);
 					this.loans = this.datos.loans;
 					console.log(this.loans);
 				})
 				.catch(error => console.log(error));
 		},
+		aparecermenu() {
+            this.isAsideInactive = !this.isAsideInactive;
+        },
 	},
 }).mount('#app');

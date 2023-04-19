@@ -13,73 +13,131 @@
 </head>
 
 <body>
-    <header>
-    </header>
-    <main class="main-pag" id="app">
-        <h1 class="d-flex justify-content-center align-items-center">Hello <span
-                class="ps-3 ">{{datos.firstName}}!</span></h1>
-        <h2 class="text-center">Accounts</h2>
-        <div class="container d-flex justify-content-center align-items-center col-md-8">
-            <template v-for="account of accounts">
-                <div class="card d-flex justify-content-center">
-                    <div class="card-header">
-                        <h3>Bank Account</h3>
+    <div id="app">
+        <header>
+            <div class="d-flex justify-content-end">
+                <h3 class="text-center d-flex justify-content-center align-items-center">Menu</h3>
+                <img class="menu" src="../assets/hamburguesa-PhotoRoom.png-PhotoRoom.png" alt="menú-Mind Brother's"
+                    title="menú-Mind Brother's" @click="aparecermenu">
+            </div>
+        </header>
+        <main class="main-pag">
+            <aside :class="{ inactive: isAsideInactive }" id="aside">
+                <nav class="d-flex flex-column justify-content-center align-items-center">
+                    <a href="../../index.html"><img class="img-home" src="../assets/retirement-home.png" alt="home"
+                            title="Home"></a>
+                    <a href="./cards.html"><img class="img-account" src="../assets/tarjeta-de-credito.png"
+                            alt="My_Account" title="My_Cards"></a>
+                    <a href="./services.html"><img class="img-services" src="../assets/public-service.png"
+                            alt="Services" title="Services"></a>
+                    <a href="./contact.html"><img class="img-contact" src="../assets/servicio-al-cliente.png"
+                            alt="contact" title="Contact"></a>
+                    <a href="../../index.html"><img class="img-sign_off" src="../assets/cerrar-sesion.png"
+                            alt="sign_off" title="sign_off"></a>
+
+                </nav>
+            </aside>
+            <h1 class="d-flex justify-content-center align-items-center">Hello ! <span
+                    class="ps-3 ">{{datos.firstName}}!</span></h1>
+            <h2 class="text-center">Accounts</h2>
+            <div class="container d-flex justify-content-center align-items-center col-md-8">
+                <template v-for="account of accounts">
+                    <div class="card d-flex justify-content-center">
+                        <div class="card-header">
+                            <h3>Bank Account</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li><strong>Balance:</strong> $
+                                    {{account.balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,
+                                    ",")}}</li>
+                                <li><strong>Account creation date:</strong> {{account.creationDate.slice(0,10)}} at
+                                    {{account.creationDate.slice(11,16)}}</li>
+                                <li><strong>Account number:</strong> {{account.number}}</li>
+                            </ul>
+                            <a :href="'./account.html?id='+account.id" class="view-transactions">View transactions</a>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <ul>
-                            <li><strong>Balance:</strong> $
-                                {{account.balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,
-                                ",")}}</li>
-                            <li><strong>Account creation date:</strong> {{account.creationDate.slice(0,10)}} at
-                                {{account.creationDate.slice(11,16)}}</li>
-                            <li><strong>Account number:</strong> {{account.number}}</li>
-                        </ul>
-                        <a :href="'./account.html?id='+account.id" class="view-transactions">View transactions</a>
+                </template>
+            </div>
+
+            <div class="container d-flex justify-content-center align-items-center ">
+                <div class="card-loan d-flex justify-content-center align-items-center col-md-6" v-if="loans.length">
+                    <h2>Loan Details</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Loan Type</th>
+                                <th>Amount</th>
+                                <th>Payments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="dato of loans">
+                                <td>{{dato.name}}</td>
+                                <td> $ {{dato.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,
+                                    ",")}}</td>
+                                <td>{{dato.payments}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pt-5 pb-5" v-else>
+                    <p class="mb-0 text-light fs-3 text-center">THIS CLIENT DOES NOT HAVE LOANS.</p>
+                </div>
+            </div>
+
+
+        </main>
+        <footer>
+            <footer class="bg-dark text-white py-3">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5>Contact Us</h5>
+                            <p><i class="fas fa-map-marker-alt"></i> Main St. #123, City</p>
+                            <p><i class="fas fa-phone-alt"></i> (+123) 456-7890</p>
+                            <p><i class="fab fa-whatsapp"></i> <a href="https://wa.me/1234567890">(+123) 456-7890</a>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Useful Links</h5>
+                            <ul class="list-unstyled">
+                                <li><a href="#">FAQs</a></li>
+                                <li><a href="#">Privacy Policy</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Follow Us</h5>
+                            <ul class="list-unstyled d-flex mx-2">
+                                <li> <a href="#"><img class="img-face" src="../assets/facebook.png" alt="facebook"
+                                            title="Facebook"></a></li>
+                                <li> <a href=""><img class="img-ins" src="../assets/instagram.png" alt="instagram"
+                                            title="Instagram"></a></li>
+                                <li> <a href=""><img class="img-git" src="../assets/github.png" alt="Git_Hub"
+                                            title="Git-Hub"></a></li>
+                            </ul>
+                            <h2 class="me-name">Carlos Andrés Ruiz Hinestroza Cohort 44</h2>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12 text-center">
+                            <p>All Rights Reserved &copy; 2023 Mind Brothers Bank</p>
+                        </div>
                     </div>
                 </div>
-            </template>
-        </div>
+            </footer>
+        </footer>
 
-        <div class="container d-flex justify-content-center align-items-center ">
-            <div class="card-loan d-flex justify-content-center align-items-center col-md-6" v-if="loans.length">
-                <h2>Loan Details</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Loan Type</th>
-                            <th>Amount</th>
-                            <th>Payments</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="dato of loans">
-                            <td>{{dato.name}}</td>
-                            <td> $ {{dato.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,
-                                ",")}}</td>
-                            <td>{{dato.payments}}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="pt-5 pb-5" v-else>
-                <p class="mb-0 text-light fs-3 text-center">THIS CLIENT DOES NOT HAVE LOANS.</p>
-            </div>
-        </div>
-
-
-    </main>
-    <footer>
-
-    </footer>
-
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-        integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
-        crossorigin="anonymous"></script>
-    <script src="../js/accounts.js"></script>
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+            integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
+            crossorigin="anonymous"></script>
+        <script src="../js/accounts.js"></script>
+        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    </div>
 </body>
 
 </html>
