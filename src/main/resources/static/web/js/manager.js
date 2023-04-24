@@ -20,7 +20,7 @@ createApp({
     methods:{
 
         loadDate(){
-            axios.get('http://localhost:8080/api/clients')
+            axios.get('http://localhost:8080/api/clients/')
             .then(response => {
             this.datos = response.data;
             console.log(this.datos);

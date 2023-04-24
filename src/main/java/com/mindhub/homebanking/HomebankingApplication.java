@@ -4,10 +4,12 @@ package com.mindhub.homebanking;
 
 import com.mindhub.homebanking.models.*;
 import com.mindhub.homebanking.repositories.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +27,8 @@ public class HomebankingApplication {
 	List<Integer> mortgage = List.of(12, 24, 36 , 48 , 60);
 	List<Integer> personal = List.of(6, 12, 24);
 	List<Integer> automotive = List.of(6, 12, 24,36);
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 
 	@Bean
@@ -32,7 +36,7 @@ public class HomebankingApplication {
 		return (args) -> {
 			// save a couple of Client
 
-			Client client1 = new Client("Melba" , "Morel", "melba@gmail.com");
+				Client client1 = new Client("Melba" , "Morel", "melba@gmail.com",passwordEncoder.encode("123"));
 			repository.save(client1);
 
 			Account account1 = new Account("vin001" , LocalDateTime.now() , 5000.00 );
@@ -63,11 +67,11 @@ public class HomebankingApplication {
 			Loan loan3 = new Loan("Automotive", 300000 , automotive);
 			loan.save(loan3);
 
-			ClientLoan clientLoan1 = new ClientLoan("Mortgage", 400000.00,60);
+			ClientLoan clientLoan1 = new ClientLoan( 400000.00,60);
 			client1.addClientLoan(clientLoan1);
 			loan1.addClientLoan(clientLoan1);
 			clientloan.save(clientLoan1);
-			ClientLoan clientLoan2 = new ClientLoan("Personal", 50000.00,12 );
+			ClientLoan clientLoan2 = new ClientLoan( 50000.00,12 );
 			client1.addClientLoan(clientLoan2);
 			loan2.addClientLoan(clientLoan2);
 			clientloan.save(clientLoan2);
@@ -83,9 +87,11 @@ public class HomebankingApplication {
 
 
 
+
+
 			// Client 2
 
-			Client client2 = new Client("Chloe", "O'Brian" , "Chole@gmail.com");
+			Client client2 = new Client("Chloe", "O'Brian" , "Chole@gmail.com",passwordEncoder.encode("234"));
 			repository.save(client2);
 
 			Account account3 = new Account("vin003" , LocalDateTime.now() , 432000.00 );
@@ -110,11 +116,11 @@ public class HomebankingApplication {
 
 
 
-			ClientLoan clientLoan3 = new ClientLoan("Personal",100000.00, 24 );
+			ClientLoan clientLoan3 = new ClientLoan(100000.00, 24 );
 			client2.addClientLoan(clientLoan3);
 			loan2.addClientLoan(clientLoan3);
 			clientloan.save(clientLoan3);
-			ClientLoan clientLoan4 = new ClientLoan("Automotive",200000.00, 36 );
+			ClientLoan clientLoan4 = new ClientLoan(200000.00, 36 );
 			client2.addClientLoan(clientLoan4);
 			loan3.addClientLoan(clientLoan4);
 			clientloan.save(clientLoan4);

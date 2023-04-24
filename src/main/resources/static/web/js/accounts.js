@@ -18,7 +18,7 @@ createApp({
 	methods: {
 		loadData() {
 			axios
-				.get('http://localhost:8080/api/clients/1')
+				.get('http://localhost:8080/api/clients/current')
 				.then(response => {
 					this.datos = response.data;
 					console.log(this.datos);
@@ -29,8 +29,13 @@ createApp({
 				})
 				.catch(error => console.log(error));
 		},
+		logout(){
+			axios.post("/api/logout")
+			.then(response => window.location.href = "/web/pages/signon.html" )
+		},
 		aparecermenu() {
             this.isAsideInactive = !this.isAsideInactive;
         },
+		
 	},
 }).mount('#app');

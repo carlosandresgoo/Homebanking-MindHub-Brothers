@@ -25,5 +25,10 @@ createApp({
 		})
 				.catch(error => console.log(error));
 		},
+		logout(){
+			axios.post("/api/logout")
+			.then(response => window.location.href = "/web/pages/signon.html" )
+
+		},
 	},
 }).mount('#app');
