@@ -48,10 +48,10 @@
                     </div>
                 </nav>
             </aside>
-            <h1 class="d-flex justify-content-center align-items-center text-center">Welcome <span
+            <h1 class="d-flex justify-content-center align-items-center text-center title-main">Welcome <span
                     class="ps-3">{{datos.firstName}} !</span></h1>
             <h2 class="text-center title-accounts"> My accounts</h2>
-            <div class="container d-flex justify-content-center align-items-center col-md-8">
+            <div class="container d-flex justify-content-center align-items-center col-md-10 flex-wrap">
                 <template v-for="account of accounts">
                     <div class="card d-flex justify-content-center">
                         <div class="card-header">
@@ -73,7 +73,13 @@
                     </div>
                 </template>
             </div>
-
+            <template v-if="accounts.length !==3">
+                <div class="d-flex justify-content-center align-items-center flex-column my-3">
+                    <h2 style="font-size: 1.2rem;">Get a new account here !</h2>
+                    <img class="click" @click="createAccount" type="button" src="../assets/click.png" alt="click"
+                        title="click">
+                </div>
+            </template>
             <div class="container d-flex justify-content-center align-items-center my-4">
                 <div class="card-loan d-flex justify-content-center align-items-center col-md-6" v-if="loans.length">
                     <h2 class="mx-auto">My Loans</h2>
@@ -99,8 +105,6 @@
                     <p class="mb-0 text-light fs-3 text-center">THIS CLIENT DOES NOT HAVE LOANS.</p>
                 </div>
             </div>
-            <button type="button" class="btn btn-outline-success" @click="createAccount">Success</button>
-
             <!-- boton -->
             <button id="btn-scroll-top" title="Volver al inicio"><span>↑</span><i class="fa fa-angle-up"></i></button>
             <!-- boton -->
@@ -254,10 +258,6 @@
                 aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalLabel">Sign off</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
                         <div class="modal-body">
                             Are you sure you want to sign out?
                         </div>

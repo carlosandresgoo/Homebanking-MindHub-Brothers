@@ -54,8 +54,27 @@ public class ClientController {
     public ResponseEntity<Object> register(
             @RequestParam String firstName, @RequestParam String lastName,
             @RequestParam String email, @RequestParam String password) {
-        if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            return new ResponseEntity<>("Missing data", HttpStatus.FORBIDDEN);
+
+        if (firstName.isBlank()) {
+            return new ResponseEntity<>("Please complete your firstName on the form.", HttpStatus.FORBIDDEN);
+        } else if (!firstName.matches("^[a-zA-Z]*$")) {
+            return new ResponseEntity<>("Please enter a valid firstName. Only letters are allowed.", HttpStatus.FORBIDDEN);
+        }
+
+        if (lastName.isBlank()) {
+            return new ResponseEntity<>("Please complete your lastName on the form.", HttpStatus.FORBIDDEN);
+        } else if (!lastName.matches("^[a-zA-Z]*$")) {
+            return new ResponseEntity<>("Please enter a valid lastName. Only letters are allowed.", HttpStatus.FORBIDDEN);
+        }
+
+        if (email.isBlank()) {
+            return new ResponseEntity<>("Please complete your email on the form.", HttpStatus.FORBIDDEN);
+        } else if (!email.matches("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")) {
+            return new ResponseEntity<>("Please enter a valid email address.", HttpStatus.FORBIDDEN);
+        }
+
+        if (password.isBlank()) {
+            return new ResponseEntity<> ("Please complete your password on the form.", HttpStatus.FORBIDDEN);
         }
 
         if (repository.findByEmail(email) !=  null) {

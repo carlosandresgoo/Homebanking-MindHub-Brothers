@@ -1,11 +1,9 @@
 package com.mindhub.homebanking.Controllers;
 
-import com.mindhub.homebanking.dto.AccountDTO;
 import com.mindhub.homebanking.dto.CardDTO;
 import com.mindhub.homebanking.dto.ClientDTO;
 import com.mindhub.homebanking.models.*;
 import com.mindhub.homebanking.repositories.AccountRepository;
-
 import com.mindhub.homebanking.repositories.CardRepository;
 import com.mindhub.homebanking.repositories.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.lang.reflect.Type;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -60,15 +55,24 @@ public class CardController {
 
     @RequestMapping(path = "/api/clients/current/cards", method = RequestMethod.POST)
     public ResponseEntity<Object> createCards(Authentication authentication, @RequestParam String type, @RequestParam String color) {
-        if (type.isEmpty() || color.isEmpty()) {
-            return new ResponseEntity<>("Complete the form", HttpStatus.FORBIDDEN);
+
+        if (type.isBlank()) {
+            return new ResponseEntity<>("Please complete the type field on the form.", HttpStatus.FORBIDDEN);
+        } else if (!type.matches("^[a-zA-Z]*$")) {
+            return new ResponseEntity<>("Please enter a valid type. Only letters are allowed.", HttpStatus.FORBIDDEN);
+        }
+
+        if (color.isBlank()) {
+            return new ResponseEntity<>("Please complete the color field on the form.", HttpStatus.FORBIDDEN);
+        } else if (!color.matches("^[a-zA-Z]*$")) {
+            return new ResponseEntity<>("Please enter a valid color. Only letters are allowed.", HttpStatus.FORBIDDEN);
         }
 
         Client client = repository.findByEmail(authentication.getName());
 
         for (Card card : client.getCards()) {
             if (card.getType().equals(CardType.valueOf(type)) && card.getColor().equals(CardColor.valueOf(color))) {
-                return new ResponseEntity<>("Client already has a card with this type and color", HttpStatus.FORBIDDEN);
+                return new ResponseEntity<>("you already have this type of card", HttpStatus.FORBIDDEN);
             }
         }
 
