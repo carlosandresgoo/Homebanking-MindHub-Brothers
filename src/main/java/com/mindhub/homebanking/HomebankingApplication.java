@@ -126,7 +126,7 @@ public class HomebankingApplication {
 			clientloan.save(clientLoan4);
 
 
-			Card card3 =new Card (client2.getFirtsName() + " " + client2.getLastName() , CardType.CREDIT, CardColor.SILVER, "5632-9042-4354-4311",986 , LocalDate.now().plusYears(5), LocalDate.now());
+			Card card3 =new Card (client2.getFirtsName() + " " + client2.getLastName( ), CardType.CREDIT, CardColor.SILVER, "5632-9042-4354-4311",986 , LocalDate.now().plusYears(5), LocalDate.now());
 			client2.addCard(card3);
 			cardrepository.save(card3);
 

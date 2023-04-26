@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -22,7 +22,7 @@
                 <div class="d-flex justify-content-end">
                     <h3 class="text-center d-flex justify-content-center align-items-center">Menu</h3>
                     <img class="menu" src="../assets/hamburguesa-PhotoRoom.png-PhotoRoom.png" alt="menú-Mind Brother's"
-                        title="menú-Mind Brother's" @click="aparecermenu">
+                        title="menú-Mind Brother's" @click="appearmenu">
                 </div>
         </header>
         <main class="main-pag">
@@ -50,7 +50,7 @@
             </aside>
             <h1 class="d-flex justify-content-center align-items-center text-center">Welcome <span
                     class="ps-3">{{datos.firstName}} !</span></h1>
-            <h2 class="text-center my-4 title-accounts"> My accounts</h2>
+            <h2 class="text-center title-accounts"> My accounts</h2>
             <div class="container d-flex justify-content-center align-items-center col-md-8">
                 <template v-for="account of accounts">
                     <div class="card d-flex justify-content-center">
@@ -99,6 +99,7 @@
                     <p class="mb-0 text-light fs-3 text-center">THIS CLIENT DOES NOT HAVE LOANS.</p>
                 </div>
             </div>
+            <button type="button" class="btn btn-outline-success" @click="createAccount">Success</button>
 
             <!-- boton -->
             <button id="btn-scroll-top" title="Volver al inicio"><span>↑</span><i class="fa fa-angle-up"></i></button>
@@ -323,8 +324,7 @@
             integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
             crossorigin="anonymous"></script>
         <script src="../js/accounts.js"></script>
-        <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-        <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </div>
 </body>
 

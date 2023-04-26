@@ -12,39 +12,36 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import static java.util.stream.Collectors.toList;
 
 
 @RestController
-    public class ClientController {
+public class ClientController {
 
-        @Autowired
-        private ClientRepository  repository;
-        @Autowired
-        private AccountRepository accountRepository;
-        @Autowired
-        private PasswordEncoder passwordEncoder;
+    @Autowired
+    private ClientRepository  repository;
+    @Autowired
+    private AccountRepository accountRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-        @RequestMapping("/api/clients")
-        public List<ClientDTO> getClient() {
-            return repository.findAll().stream().map(client -> new ClientDTO(client)).collect(toList());
-        }
+
     public String randomNumber(){
         String randomNumber;
         do {
-            int number = (int) (Math.random() * 999999 + 100000);
+            int number = (int) (Math.random() * 899999 + 100000);
             randomNumber = "VIN-" + number;
         } while (accountRepository.findByNumber(randomNumber) != null);
         return randomNumber;
     }
 
-//    @RequestMapping("/api/clients/{id}")
-//    public ClientDTO getClient (@PathVariable Long id){
-//        return repository.findById(id).map(client -> new ClientDTO(client)).orElse(null);
-//    }
+    @RequestMapping("/api/clients")
+    public List<ClientDTO> getClient() {
+        return repository.findAll().stream().map(client -> new ClientDTO(client)).collect(toList());
+    }
+
 
     @RequestMapping("/api/clients/current")
     public ClientDTO getClient(Authentication authentication) {

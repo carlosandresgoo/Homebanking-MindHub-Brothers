@@ -1,55 +1,335 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tansaction | MindHub Brothers</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-aFq/bzH65dt+w6FI2ooMVUpc+21e0SRygnTpmBvdBgSdnuTN7QbdgL+OapgHtvPp" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
     <link rel="stylesheet" href="../css/account.css">
     <link rel="shortcut icon" href="../assets/icon.png" type="image/x-icon">
 </head>
-<body >
-    <header>
-    </header>
-    <main class="main-pag" id="app">
-        
-        <div class="encabezado">
-            <h1 class="d-flex justify-content-center align-items-center">TRANSACTIONS</h1>
-        </div>
-        <div class=" d-flex justify-content-center align-items-center">
-            <table class="table container">
-                <thead >
-                    <tr>
-                        <td class="text-center">Date</td>
-                        <td class="text-center">Amount</td>
-                        <td class="text-center">Description</td>
-                        <td class="text-center">Type</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template v-for="datos of transactions">
-                        <tr :class="datos.type">
-                            <td class="text-center">{{datos.date.slice(0,10)}} at {{datos.date.slice(11,16)}}</td>
-                            <td class="text-center">$ {{datos.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}}</td>
-                            <td class="text-center">{{datos.description}}</td>
-                            <td class="text-center">{{datos.type}}</td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
-    </main>
-    <footer class="footer-main">
 
-    </footer>
+<body>
+    <div id="app">
+        <header>
+            <div class="box-nav d-flex justify-content-end">
+                <div class="box-logo2">
+                    <img class="logo-2" src="../assets/logo2.png" alt="">
+                </div>
+                <div class="d-flex justify-content-end">
+                    <h3 class="text-center d-flex justify-content-center align-items-center">Menu</h3>
+                    <img class="menu" src="../assets/hamburguesa-PhotoRoom.png-PhotoRoom.png" alt="menú-Mind Brother's"
+                        title="menú-Mind Brother's" @click="appearmenu">
+                </div>
+        </header>
+        <main class="main-pag">
+            <aside :class="{ inactive: isAsideInactive }" id="aside">
+                <nav class="d-flex flex-column justify-content-center align-items-center">
+                    <a href="./indexClient.html"><img class="img-home d-flex flex-column align-items-center mx-auto"
+                            src="../assets/retirement-home.png" alt="home" title="Home">Home</a>
+                    <a  href="./accounts.html"><img
+                            class="img-account d-flex flex-column align-items-center mx-auto"
+                            src="../assets/bank account.png" alt="My_Account" title="account">Accounts</a>
+                    <a href="./cards.html"><img class="img-card d-flex flex-column align-items-center mx-auto"
+                            src="../assets/tarjeta-de-credito.png" alt="My_Cards" title="Cards"> Cards</a>
+                    <a href="./services.html"><img class="img-services d-flex flex-column align-items-center mx-auto"
+                            src="../assets/public-service.png" alt="Services" title="Services">Services</a>
+                    <a href="./contact.html"><img class="img-contact d-flex flex-column align-items-center mx-auto"
+                            src="../assets/servicio-al-cliente.png" alt="contact" title="Contact">Contact</a>
+                    <div class="d-flex flex-column align-items-center justify-content-center" type="button"
+                        data-bs-toggle="modal" data-bs-target="#exampleModal3">
+                        <img class="img-sign_off d-flex flex-column align-items-center mx-auto"
+                            src="../assets/cerrar-sesion.png" alt="sign_off" data-bs-toggle="modal"
+                            data-bs-target="#exampleModal3" title="sing out">
+                        <p style="color:#0d6efd;">Sign out</p>
+                    </div>
+                </nav>
+            </aside>
+                <div class="encabezado">
+                    <h1 class="d-flex justify-content-center align-items-center">TRANSACTIONS</h1>
+                </div>
+                <div class=" d-flex justify-content-center align-items-center">
+                    <table class="table container my-5">
+                        <thead>
+                            <tr>
+                                <td class="text-center">Date</td>
+                                <td class="text-center">Amount</td>
+                                <td class="text-center">Description</td>
+                                <td class="text-center">Type</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template v-for="datos of transactions">
+                                <tr :class="datos.type">
+                                    <td class="text-center">{{datos.date.slice(0,10)}} at {{datos.date.slice(11,16)}}
+                                    </td>
+                                    <td class="text-center">$ {{datos.amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,
+                                        ",")}}
+                                    </td>
+                                    <td class="text-center">{{datos.description}}</td>
+                                    <td class="text-center">{{datos.type}}</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- boton -->
+                <button id="btn-scroll-top" title="Volver al inicio"><span>↑</span><i
+                        class="fa fa-angle-up"></i></button>
+                <!-- boton -->
+                <!-- Modal -->
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="exampleModalLabel"> Privacy Policy</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="content-body">
+                                    Of course! Here's a sample Privacy Policy that you can use as a starting point for
+                                    your
+                                    bank's website:
+
+                                    Privacy Policy
+
+                                    Effective Date: [Insert Date]
+
+                                    Our Commitment to Privacy
+
+                                    [Insert Name of Bank] ("the Bank") is committed to protecting your privacy and the
+                                    confidentiality of your personal information. We respect your privacy and are
+                                    committed
+                                    to
+                                    ensuring that your personal information is kept confidential and secure. This
+                                    Privacy
+                                    Policy
+                                    explains how we collect, use, disclose, and protect your personal information when
+                                    you
+                                    use
+                                    our website and online services.
+
+                                    By accessing or using our website, you agree to the terms of this Privacy Policy. If
+                                    you
+                                    do
+                                    not agree to the terms of this Privacy Policy, please do not access or use our
+                                    website.
+
+                                    Information We Collect
+
+                                    We collect personal information about you when you interact with us online,
+                                    including
+                                    when
+                                    you use our website, open an account with us, apply for a loan or credit, or conduct
+                                    other
+                                    transactions with us. The types of personal information we collect may include:
+
+                                    Name, address, email address, and phone number
+                                    Social Security number or taxpayer identification number
+                                    Date of birth and other identification information
+                                    Account numbers and balances
+                                    Credit history and credit scores
+                                    Employment and income information
+                                    We may also collect non-personal information about your use of our website, such as
+                                    your
+                                    IP
+                                    address, browser type, operating system, and the pages you visit on our website.
+
+                                    How We Use Your Information
+
+                                    We use your personal information to provide you with the products and services you
+                                    request,
+                                    to process your transactions, to comply with legal and regulatory requirements, and
+                                    for
+                                    other business purposes. For example, we may use your personal information to:
+
+                                    Open and maintain your account
+                                    Process and service your transactions
+                                    Respond to your inquiries and requests
+                                    Send you information about our products and services
+                                    Conduct research and analysis
+                                    Comply with legal and regulatory requirements
+                                    Prevent fraud and other prohibited or illegal activities
+                                    We may also use your non-personal information for research and analysis to improve
+                                    our
+                                    website and services.
+
+                                    How We Share Your Information
+
+                                    We may share your personal information with third parties for business purposes,
+                                    such as
+                                    processing transactions, servicing accounts, and responding to your inquiries and
+                                    requests.
+                                    We may also share your personal information with our affiliates, subsidiaries, and
+                                    other
+                                    companies under common ownership or control.
+
+                                    We may also share your personal information with third-party service providers who
+                                    perform
+                                    services on our behalf, such as data processing, marketing, or research. These
+                                    service
+                                    providers are contractually obligated to maintain the confidentiality and security
+                                    of
+                                    your
+                                    personal information and are prohibited from using your personal information for any
+                                    other
+                                    purpose.
+
+                                    We may also share your personal information when required by law or regulation, or
+                                    in
+                                    response to a valid subpoena or court order.
+
+                                    How We Protect Your Information
+
+                                    We take the security and confidentiality of your personal information seriously and
+                                    use
+                                    reasonable and appropriate measures to protect your personal information from
+                                    unauthorized
+                                    access, use, and disclosure. We maintain physical, electronic, and procedural
+                                    safeguards
+                                    to
+                                    protect your personal information, and regularly review and update our security
+                                    measures
+                                    to
+                                    ensure the ongoing protection of your personal information.
+
+                                    Your Choices
+
+                                    You have certain choices regarding the collection, use, and sharing of your personal
+                                    information. For example, you may choose not to provide us with certain personal
+                                    information, or you may choose to opt out of receiving marketing communications from
+                                    us.
+
+                                    To exercise your choices, please contact us using the contact information provided
+                                    below.
+
+                                    Updates to Our Privacy Policy
+
+                                    We may update this Privacy Policy from time to time by posting a revised version on
+                                    our
+                                    website. The revised version will be effective as of the date it is posted.
+
+                                    Contact Us
+
+                                    If you have any questions or concerns about this Privacy Policy, please contact us
+                                    at
+                                    [Insert Contact Information].
+
+                                    Please note that this is just a sample Privacy Policy.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal 2 -->
+                <div class="modal fade" id="exampleModal2" tabindex="-1" aria-labelledby="exampleModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="exampleModalLabel">Frequent questions</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                ...
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal 3 -->
+                <div class="modal fade" id="exampleModal3" tabindex="-1" aria-labelledby="exampleModalLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="exampleModalLabel">Sign off</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to sign out?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button @click="logout" class="btn btn-primary">Sure</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="bg-dark text-white py-3">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5>Contact Us</h5>
+                            <p><i class="fas fa-map-marker-alt"></i> <a href="https://goo.gl/maps/H2gP4L7WaS2Zn6AC6">
+                                    Gral
+                                    Félix Olazábal 993 - Ituzaingó</a></p>
+                            <p><i class="fas fa-phone-alt"></i>Tel : <a href="tel:1528764525">(+123) 456-7890</a> </p>
+                            <p><i class="fab fa-whatsapp"></i>Phone : <a href="https://wa.me/1234567890">(+123)
+                                    3235532312
+                                </a></p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Useful Links</h5>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <p type="button" data-bs-toggle="modal" data-bs-target="#exampleModal2">FAQs</p>
+                                </li>
+                                <li>
+                                    <p type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">Privacy
+                                        Policy
+                                    </p>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Follow Us</h5>
+                            <ul class="list-unstyled d-flex mx-2">
+                                <li> <a href="#"><img class="img-face" src="../assets/facebook.png" alt="facebook"
+                                            title="Facebook"></a></li>
+                                <li> <a href=""><img class="img-ins" src="../assets/instagram.png" alt="instagram"
+                                            title="Instagram"></a></li>
+                                <li> <a href="https://github.com/carlosandresgoo"><img class="img-git"
+                                            src="../assets/github.png" alt="Git_Hub" title="Git-Hub"></a></li>
+                                <li> <a
+                                        href="https://www.linkedin.com/in/carlos-andr%C3%A9s-ruiz-hinestroza-05765a203/"><img
+                                            class="img-In" src="../assets/linkedin.png" alt="Git_In"
+                                            title="Git-Hub"></a>
+                                </li>
+                            </ul>
+                            <h2 class="me-name"> By Carlos Andrés Ruiz Hinestroza</h2>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12 text-center">
+                            <p>All Rights Reserved &copy; 2023 Mind Brothers Bank</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+    </div>
+
 
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-        integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
         crossorigin="anonymous"></script>
     <script src="../js/account.js"></script>
 </body>
+
 </html>

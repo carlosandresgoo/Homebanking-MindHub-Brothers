@@ -30,7 +30,7 @@ createApp({
 				})
 				.catch(error => console.log(error));
 		},
-		aparecermenu() {
+		appearmenu() {
 			this.isAsideInactive = !this.isAsideInactive;
 		},
 	},

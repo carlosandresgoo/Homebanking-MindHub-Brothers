@@ -19,20 +19,11 @@ public class WebAuthorization extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
 
         http.authorizeRequests()
-                .antMatchers("/index.html").permitAll()
-                .antMatchers( "/web/pages/signon.html").permitAll()
-                .antMatchers("/web/pages/register.html").permitAll()
-                .antMatchers("/web/js/register.js").permitAll()
-                .antMatchers("/web/js/signon.js").permitAll()
-                .antMatchers("/web/pages/contact.html").permitAll()
-                .antMatchers("/web/pages/services.html").permitAll()
-                .antMatchers(HttpMethod.POST,"/api/login").permitAll()
-                .antMatchers(HttpMethod.POST,"/api/logout").permitAll()
-                .antMatchers("/web/pages/aboutUs.html").permitAll()
-                .antMatchers("/admin/manager.html").hasAuthority("ADMIN")
-                .antMatchers("/h2-console/**").hasAuthority("ADMIN")
+                .antMatchers("/web/pages/services.html","/web/pages/contact.html","/web/pages/aboutUs.html","/web/css/**","/index.html","/web/pages/signon.html", "/web/pages/register.html","/web/js/register.js", "/web/js/signon.js").permitAll()
+                .antMatchers(HttpMethod.POST,"/api/login", "/api/logout").permitAll()
+                .antMatchers("/admin/manager.html","/h2-console/**", "/api/clients").hasAuthority("ADMIN")
                 .antMatchers("/web/pages").hasAuthority("CLIENT")
-                .antMatchers("/web/css/**").permitAll()
+                .antMatchers(HttpMethod.POST,"/api/clients/current/accounts", "/api/accounts/current/{id}").hasAnyAuthority("CLIENT", "ADMIN")
                 .antMatchers("/web/js/**").hasAnyAuthority("CLIENT", "ADMIN")
                 .antMatchers("/web/pages/**").hasAnyAuthority("CLIENT", "ADMIN");
 
