@@ -1,4 +1,4 @@
-const {createApp} = Vue;
+const { createApp } = Vue;
 
 createApp({
 	data() {
@@ -8,7 +8,7 @@ createApp({
 			firstname: '',
 			lastName: '',
 			email: '',
-            accounts:[],
+			accounts: [],
 			isAsideInactive: true,
 		};
 	},
@@ -17,44 +17,44 @@ createApp({
 	},
 	methods: {
 		loadData() {
-			axios.get('http://localhost:8080/api/clients/current/')
+			axios.get('http://localhost:8080/api/clients/current')
 				.then(response => {
 					this.datos = response.data;
-                    this.accounts = this.datos.accounts;
+					this.accounts = this.datos.accounts;
 					this.loans = this.datos.loans;
 				})
 				.catch(error => console.log(error));
 		},
-		logout(){
+		logout() {
 			axios.post("/api/logout")
-			.then(response => window.location.href = "/web/pages/signon.html" )
+				.then(response => window.location.href = "/web/pages/signon.html")
 		},
-		createAccount(){
+		createAccount() {
 			Swal.fire({
-                title: 'Are you sure you want to create a new account?',
-                inputAttributes: {
-                    autocapitalize: 'off'
-                },
-                showCancelButton: true,
-                confirmButtonText: 'Sure',
-                showLoaderOnConfirm: true,
-                preConfirm: () => {
-                    return axios.post('/api/clients/current/accounts')
-                        .then(response => window.location.href = "/web/pages/accounts.html")
-                        .catch(error => {
-                            Swal.fire({
-                                icon: 'error',
-                                text: error.response.data,
-                            })
-                            console.log(error)
-                        })
-                },
+				title: 'Are you sure you want to create a new account?',
+				inputAttributes: {
+					autocapitalize: 'off'
+				},
+				showCancelButton: true,
+				confirmButtonText: 'Sure',
+				showLoaderOnConfirm: true,
+				preConfirm: () => {
+					return axios.post('/api/clients/current/accounts')
+						.then(response => window.location.href = "/web/pages/accounts.html")
+						.catch(error => {
+							Swal.fire({
+								icon: 'error',
+								text: error.response.data,
+							})
+							console.log(error)
+						})
+				},
 			})
 		},
 		appearmenu() {
-            this.isAsideInactive = !this.isAsideInactive;
-        },
-		
+			this.isAsideInactive = !this.isAsideInactive;
+		},
+
 	},
 }).mount('#app');
 
@@ -74,3 +74,18 @@ window.addEventListener('scroll', function () {
 		btnScrollTop.style.display = 'none';
 	}
 });
+
+// loading//
+const loadingContainer = document.getElementById("loading-container");
+function showLoading() {
+	loadingContainer.style.display = "flex";
+}
+function hideLoading() {
+	loadingContainer.style.display = "none";
+}
+showLoading();
+window.addEventListener("load", () => {
+	hideLoading();
+});
+
+

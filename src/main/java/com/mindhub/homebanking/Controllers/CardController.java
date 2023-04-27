@@ -58,14 +58,18 @@ public class CardController {
 
         if (type.isBlank()) {
             return new ResponseEntity<>("Please complete the type field on the form.", HttpStatus.FORBIDDEN);
-        } else if (!type.matches("^[a-zA-Z]*$")) {
-            return new ResponseEntity<>("Please enter a valid type. Only letters are allowed.", HttpStatus.FORBIDDEN);
+        } else if (!type.matches("^[A-Z]*$")) {
+            return new ResponseEntity<>("Please enter a valid type. Only uppercase letters are allowed.", HttpStatus.FORBIDDEN);
+        } else if (!type.equals("DEBIT") && !type.equals("CREDIT")) {
+            return new ResponseEntity<>("Please enter a valid type. Only 'DEBIT' and 'CREDIT' are allowed.", HttpStatus.FORBIDDEN);
         }
 
         if (color.isBlank()) {
             return new ResponseEntity<>("Please complete the color field on the form.", HttpStatus.FORBIDDEN);
-        } else if (!color.matches("^[a-zA-Z]*$")) {
-            return new ResponseEntity<>("Please enter a valid color. Only letters are allowed.", HttpStatus.FORBIDDEN);
+        } else if (!color.matches("^(GOLD|SILVER|TITANIUM)$")) {
+            return new ResponseEntity<>("Please enter a valid color. Only 'GOLD', 'SILVER' and 'TITANIUM' are allowed in uppercase letters.", HttpStatus.FORBIDDEN);
+        } else if (!color.matches("^[A-Z]*$")) {
+            return new ResponseEntity<>("Please enter a valid color. Only uppercase letters are allowed.", HttpStatus.FORBIDDEN);
         }
 
         Client client = repository.findByEmail(authentication.getName());

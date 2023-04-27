@@ -52,3 +52,15 @@ window.addEventListener('scroll', function () {
 		btnScrollTop.style.display = 'none';
 	}
 });
+// loading//
+const loadingContainer = document.getElementById("loading-container");
+function showLoading() {
+	loadingContainer.style.display = "flex";
+}
+function hideLoading() {
+	loadingContainer.style.display = "none";
+}
+showLoading();
+window.addEventListener("load", () => {
+	hideLoading();
+});

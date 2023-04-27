@@ -1,10 +1,13 @@
 package com.mindhub.homebanking.configurations;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
@@ -14,18 +17,19 @@ import javax.servlet.http.HttpSession;
 
 @EnableWebSecurity
 @Configuration
-public class WebAuthorization extends WebSecurityConfigurerAdapter {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+public class WebAuthorization {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http.authorizeRequests()
-                .antMatchers("/web/pages/services.html","/web/pages/contact.html","/web/pages/aboutUs.html","/web/css/**","/index.html","/web/pages/signon.html", "/web/pages/register.html","/web/js/register.js", "/web/js/signon.js").permitAll()
+                .antMatchers("/","/web/pages/services.html","/web/pages/contact.html","/web/pages/aboutUs.html","/web/assets/**","/web/css/**","/index.html","/web/pages/signon.html", "/web/pages/register.html","/web/js/register.js", "/web/js/signon.js").permitAll()
                 .antMatchers(HttpMethod.POST,"/api/login", "/api/logout","/api/clients").permitAll()
                 .antMatchers("/admin/manager.html","/h2-console/**","api/clients").hasAuthority("ADMIN")
-                .antMatchers("/web/pages").hasAuthority("CLIENT")
-                .antMatchers(HttpMethod.POST,"/api/clients/current/accounts", "/api/accounts/current/{id}").hasAnyAuthority("CLIENT", "ADMIN")
+                .antMatchers("/api/clients/current/accounts/{id}","/api/clients/current/accounts", "/api/clients/current").hasAuthority("CLIENT")
+                .antMatchers(HttpMethod.POST,"/api/clients/current/accounts","/api/clients/current/cards").hasAnyAuthority("CLIENT", "ADMIN")
                 .antMatchers("/web/js/**").hasAnyAuthority("CLIENT", "ADMIN")
-                .antMatchers("/web/pages/**").hasAnyAuthority("CLIENT", "ADMIN");
+                .antMatchers("/web/pages/**").hasAnyAuthority("CLIENT", "ADMIN")
+                .anyRequest().denyAll();
 
 
         http.formLogin()
@@ -55,18 +59,21 @@ public class WebAuthorization extends WebSecurityConfigurerAdapter {
 
         http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler());
 
+        http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
+                .and()
+                .sessionManagement()
+                .invalidSessionUrl("/web/pages/signon.html")
+                .sessionFixation().none()
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1);
+
+                 return http.build();
     }
-
     private void clearAuthenticationAttributes(HttpServletRequest request) {
-
         HttpSession session = request.getSession(false);
-
         if (session != null) {
-
             session.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
-
         }
-
     }
 
 }
