@@ -30,9 +30,7 @@ public class CardController {
 
     public int randomNumbercvv(){
         int cardnumber;
-        do {
            cardnumber = (int) (Math.random() * 899 + 100);
-        } while (cardRepository.findByCvv(cardnumber) != null);
         return cardnumber;
     }
 
@@ -56,23 +54,20 @@ public class CardController {
     @RequestMapping(path = "/api/clients/current/cards", method = RequestMethod.POST)
     public ResponseEntity<Object> createCards(Authentication authentication, @RequestParam String type, @RequestParam String color) {
 
-        if (type.isBlank()) {
-            return new ResponseEntity<>("Please complete the type field on the form.", HttpStatus.FORBIDDEN);
-        } else if (!type.matches("^[A-Z]*$")) {
-            return new ResponseEntity<>("Please enter a valid type. Only uppercase letters are allowed.", HttpStatus.FORBIDDEN);
-        } else if (!type.equals("DEBIT") && !type.equals("CREDIT")) {
+
+        if (!type.equalsIgnoreCase("DEBIT") && !type.equalsIgnoreCase("CREDIT")) {
             return new ResponseEntity<>("Please enter a valid type. Only 'DEBIT' and 'CREDIT' are allowed.", HttpStatus.FORBIDDEN);
         }
 
-        if (color.isBlank()) {
-            return new ResponseEntity<>("Please complete the color field on the form.", HttpStatus.FORBIDDEN);
-        } else if (!color.matches("^(GOLD|SILVER|TITANIUM)$")) {
+        if (!color.matches("^(GOLD|SILVER|TITANIUM)$")) {
             return new ResponseEntity<>("Please enter a valid color. Only 'GOLD', 'SILVER' and 'TITANIUM' are allowed in uppercase letters.", HttpStatus.FORBIDDEN);
-        } else if (!color.matches("^[A-Z]*$")) {
-            return new ResponseEntity<>("Please enter a valid color. Only uppercase letters are allowed.", HttpStatus.FORBIDDEN);
         }
 
         Client client = repository.findByEmail(authentication.getName());
+
+        if(client == null) {
+            return new ResponseEntity<>("you can't create a card because you're not a client.", HttpStatus.NOT_FOUND);
+        }
 
         for (Card card : client.getCards()) {
             if (card.getType().equals(CardType.valueOf(type)) && card.getColor().equals(CardColor.valueOf(color))) {
@@ -88,9 +83,6 @@ public class CardController {
 
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
-
-
-
 
 
 

@@ -51,7 +51,11 @@ public class AccountController {
                 Client client = repository.findByEmail(authentication.getName());
                 if (client.getAccounts().size() >= 3) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .body("Customer already has the maximum number of accounts allowed.");
+                                .body("Client already has the maximum number of accounts allowed.");
+                }
+
+                if(client == null) {
+                        return new ResponseEntity<>("you can't create a accounts because you're not a client.", HttpStatus.NOT_FOUND);
                 }
 
                 String accountNumber = randomNumber();

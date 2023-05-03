@@ -15,15 +15,12 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @EnableWebSecurity
-
 @Configuration
 
 public class WebAuthentication extends GlobalAuthenticationConfigurerAdapter {
     @Autowired
 
     ClientRepository clientRepository;
-
-
 
     @Override
 

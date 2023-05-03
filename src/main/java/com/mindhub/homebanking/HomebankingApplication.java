@@ -39,10 +39,10 @@ public class HomebankingApplication {
 				Client client1 = new Client("Melba" , "Morel", "melba@gmail.com",passwordEncoder.encode("123"));
 			repository.save(client1);
 
-			Account account1 = new Account("vin001" , LocalDateTime.now() , 5000.00 );
+			Account account1 = new Account("VIN-001" , LocalDateTime.now() , 5000.00 );
 			client1.addAccount(account1);
 			repositorys.save(account1);
-			Account account2 = new Account("vin002" ,  LocalDateTime.now().plusDays(1) , 7500.00 );
+			Account account2 = new Account("VIN-002" ,  LocalDateTime.now().plusDays(1) , 7500.00 );
 			client1.addAccount(account2);
 			repositorys.save(account2);
 
@@ -94,10 +94,10 @@ public class HomebankingApplication {
 			Client client2 = new Client("Chloe", "O'Brian" , "Chole@gmail.com",passwordEncoder.encode("234"));
 			repository.save(client2);
 
-			Account account3 = new Account("vin003" , LocalDateTime.now() , 432000.00 );
+			Account account3 = new Account("VIN-003" , LocalDateTime.now() , 432000.00 );
 			client2.addAccount(account3);
 			repositorys.save(account3);
-			Account account4 = new Account("vin004" ,  LocalDateTime.now().plusDays(1) , 323230.00 );
+			Account account4 = new Account("VIN-004" ,  LocalDateTime.now().plusDays(1) , 323230.00 );
 			client2.addAccount(account4);
 			repositorys.save(account4);
 

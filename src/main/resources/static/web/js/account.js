@@ -21,6 +21,9 @@ createApp({
 				.then(response => {
 					this.account = response.data;
 					this.transactions = this.account.transactions;
+					this.transactions.sort((a, b) => {
+						return new Date(b.date) - new Date(a.date);
+					});
 
 		})
 				.catch(error => console.log(error));
@@ -52,6 +55,7 @@ window.addEventListener('scroll', function () {
 		btnScrollTop.style.display = 'none';
 	}
 });
+
 // loading//
 const loadingContainer = document.getElementById("loading-container");
 function showLoading() {

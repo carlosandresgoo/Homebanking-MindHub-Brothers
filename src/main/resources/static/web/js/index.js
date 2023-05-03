@@ -30,6 +30,10 @@ createApp({
 				})
 				.catch(error => console.log(error));
 		},
+		logout() {
+			axios.post("/api/logout")
+				.then(response => window.location.href = "/web/pages/signon.html")
+		},
 		appearmenu() {
 			this.isAsideInactive = !this.isAsideInactive;
 		},
@@ -52,6 +56,22 @@ window.addEventListener('scroll', function () {
 		btnScrollTop.style.display = 'none';
 	}
 });
+
+// loading//
+const loadingContainer = document.getElementById("loading-container");
+function showLoading() {
+	loadingContainer.style.display = "flex";
+}
+function hideLoading() {
+	loadingContainer.style.display = "none";
+}
+showLoading();
+window.addEventListener("load", () => {
+	hideLoading();
+});
+
+
+
 
 
 
