@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
@@ -23,8 +24,8 @@ public class WebAuthorization {
                 .antMatchers("/web/pages/services.html","/web/pages/contact.html","/web/pages/aboutUs.html","/index.html","/web/pages/signon.html", "/web/pages/register.html","/web/assets/**","/web/css/**","/web/js/register.js", "/web/js/signon.js","/web/js/index.js","/web/js/aboutUs.js").permitAll()
                 .antMatchers(HttpMethod.POST,"/api/login", "/api/logout","/api/clients").permitAll()
                 .antMatchers("/admin/manager.html","/h2-console/**","api/clients").hasAuthority("ADMIN")
-                .antMatchers("/api/clients/current/accounts/{id}","/api/clients/current/accounts", "/api/clients/current").hasAuthority("CLIENT")
-                .antMatchers(HttpMethod.POST,"/api/clients/current/accounts","/api/clients/current/cards","/api/clients/current/transactions" ).hasAnyAuthority("CLIENT", "ADMIN")
+                .antMatchers("/api/clients/current/accounts/{id}","/api/clients/current/accounts", "/api/clients/current","/api/loans").hasAuthority("CLIENT")
+                .antMatchers(HttpMethod.POST,"/api/clients/current/accounts","/api/clients/current/cards","/api/clients/current/transactions", "/api/loans" ).hasAnyAuthority("CLIENT", "ADMIN")
                 .antMatchers("/web/js/**").hasAnyAuthority("CLIENT", "ADMIN")
                 .antMatchers("/web/pages/**").hasAnyAuthority("CLIENT", "ADMIN")
                 .anyRequest().denyAll();
@@ -59,13 +60,13 @@ public class WebAuthorization {
 
         http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler());
 
-//        http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
-//                .and()
-//                .sessionManagement()
-//                .invalidSessionUrl("/web/pages/signon.html")
-//                .sessionFixation().none()
-//                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-//                .maximumSessions(1);
+        http.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler())
+                .and()
+                .sessionManagement()
+                .invalidSessionUrl("/web/pages/signon.html")
+                .sessionFixation().none()
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1);
 
                  return http.build();
     }
