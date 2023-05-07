@@ -24,16 +24,23 @@ public class ClientLoan {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "loan")
     private Loan loan;
-    @OneToMany(mappedBy="clientLoans", fetch= FetchType.EAGER)
-    private Set<LoanPayment> loanPayments = new HashSet<>();
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "loanPayment")
+    private LoanPayment loanPayment;
+
+    private boolean setPaidOff;
 
 
     public ClientLoan() {
     }
 
-    public ClientLoan( double amount, int payments) {
+    public ClientLoan(double amount, int payments, boolean setPaidOff) {
         this.amount = amount;
         this.payments = payments;
+        this.setPaidOff = setPaidOff;
+    }
+
+    public ClientLoan(double v, int payments) {
     }
 
     public long getId() {
@@ -65,12 +72,12 @@ public class ClientLoan {
         this.client = client;
     }
 
-    public Set<LoanPayment> getLoanPayments() {
-        return loanPayments;
+    public LoanPayment getLoanPayment() {
+        return loanPayment;
     }
 
-    public void setLoanPayments(Set<LoanPayment> loanPayments) {
-        this.loanPayments = loanPayments;
+    public void setLoanPayment(LoanPayment loanPayment) {
+        this.loanPayment = loanPayment;
     }
 
     public Loan getLoan() {
@@ -80,6 +87,15 @@ public class ClientLoan {
     public void setLoan(Loan loan) {
         this.loan = loan;
     }
+    public void setPaidOff(boolean paidOff) {
+        this.setPaidOff = paidOff;
+    }
 
+    public boolean isSetPaidOff() {
+        return setPaidOff;
+    }
 
+    public void setSetPaidOff(boolean setPaidOff) {
+        this.setPaidOff = setPaidOff;
+    }
 }

@@ -6,6 +6,9 @@ import com.mindhub.homebanking.models.*;
 import com.mindhub.homebanking.repositories.AccountRepository;
 import com.mindhub.homebanking.repositories.CardRepository;
 import com.mindhub.homebanking.repositories.ClientRepository;
+import com.mindhub.homebanking.services.AccountService;
+import com.mindhub.homebanking.services.CardService;
+import com.mindhub.homebanking.services.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +25,17 @@ import static java.util.stream.Collectors.toList;
 @RestController
 public class CardController {
     @Autowired
-    private CardRepository cardRepository;
+    private CardService cardService;
     @Autowired
-    private AccountRepository accountRepository;
+    private ClientService clientService;
     @Autowired
-    private ClientRepository repository;
+    private AccountService accountService;
+//    @Autowired
+//    private CardRepository cardRepository;
+//    @Autowired
+//    private AccountRepository accountRepository;
+//    @Autowired
+//    private ClientRepository repository;
 
     public int randomNumbercvv(){
         int cardnumber;
@@ -42,13 +51,13 @@ public class CardController {
             int thirdGroup = (int) (Math.random() * 8999 + 1000);
             int fourthGroup = (int) (Math.random() * 8999 + 1000);
             cardNumber = firstGroup + "-" + secondGroup + "-" + thirdGroup + "-" + fourthGroup;
-        } while (cardRepository.findByNumber(cardNumber) != null);
+        } while (accountService.findByNumber(cardNumber) != null);
         return cardNumber;
     }
 
     @RequestMapping("/api/clients/current/cards")
     public List<CardDTO> getAccount(Authentication authentication) {
-        return new ClientDTO(repository.findByEmail(authentication.getName())).getCards().stream().collect(toList());
+        return cardService.getCardDTO(authentication);
     }
 
     @RequestMapping(path = "/api/clients/current/cards", method = RequestMethod.POST)
@@ -63,7 +72,7 @@ public class CardController {
             return new ResponseEntity<>("Please enter a valid color. Only 'GOLD', 'SILVER' and 'TITANIUM' are allowed in uppercase letters.", HttpStatus.FORBIDDEN);
         }
 
-        Client client = repository.findByEmail(authentication.getName());
+        Client client = clientService.findByEmail(authentication.getName());
 
         if(client == null) {
             return new ResponseEntity<>("you can't create a card because you're not a client.", HttpStatus.NOT_FOUND);
@@ -79,7 +88,7 @@ public class CardController {
         String cardNumber = generateCardNumber();
         Card newCard = new Card(client.getFirtsName() + " " + client.getLastName(), CardType.valueOf(type), CardColor.valueOf(color), cardNumber, cvvnumber, LocalDate.now().plusYears(5), LocalDate.now());
         client.addCard(newCard);
-        cardRepository.save(newCard);
+        cardService.saveCard(newCard);
 
         return new ResponseEntity<>(HttpStatus.CREATED);
     }

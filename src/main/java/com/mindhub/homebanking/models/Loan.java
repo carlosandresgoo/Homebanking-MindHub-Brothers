@@ -22,6 +22,7 @@ public class Loan {
     private double maxAmount;
     @ElementCollection
     private List<Integer> payments = new ArrayList<>();
+
     @OneToMany(mappedBy="loan", fetch= FetchType.EAGER)
     private Set<ClientLoan> clientLoans = new HashSet<>();
 
@@ -81,13 +82,5 @@ public class Loan {
     }
 
 
-    @Override
-    public String toString() {
-        return "Loan{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", maxAmount=" + maxAmount +
-                ", payments=" + payments +
-                '}';
-    }
+
 }

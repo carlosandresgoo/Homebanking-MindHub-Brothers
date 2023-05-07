@@ -114,15 +114,5 @@ public class Client {
         this.password = password;
     }
 
-    @Override
-    public String toString() {
-        return "Client{" +
-                "firtsName='" + firtsName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", id=" + id +
-                ", email='" + email + '\'' +
-                ", accounts=" + accounts +
-                ", clientLoans=" + clientLoans +
-                '}';
-    }
+
 }

@@ -10,6 +10,7 @@ public class LoanPaymentDTO {
     private LocalDateTime paymentDate;
     private double amount;
 
+
     public LoanPaymentDTO(LoanPayment loanPayment){
         this.id = loanPayment.getId();
         this.paymentDate = loanPayment.getPaymentDate();
@@ -27,4 +28,6 @@ public class LoanPaymentDTO {
     public double getAmount() {
         return amount;
     }
+
+
 }

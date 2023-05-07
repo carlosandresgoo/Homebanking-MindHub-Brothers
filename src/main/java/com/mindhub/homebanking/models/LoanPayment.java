@@ -2,6 +2,8 @@ package com.mindhub.homebanking.models;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class LoanPayment {
@@ -13,18 +15,18 @@ public class LoanPayment {
     private double paymentAmount;
     private boolean paid;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "clientLoan")
-    private ClientLoan clientLoan;
+    @OneToMany(mappedBy="loanPayment", fetch= FetchType.EAGER)
+    private Set<ClientLoan> clientLoans = new HashSet<>();
 
     public LoanPayment() {
     }
 
     public LoanPayment(double paymentAmount, ClientLoan clientLoan) {
         this.paymentAmount = paymentAmount;
-        this.clientLoan = clientLoan;
-        this.paid = false;
         this.paymentDate = LocalDateTime.now();
+    }
+
+    public LoanPayment(ClientLoan clientLoan, double amount, LocalDateTime now) {
     }
 
     public Long getId() {
@@ -56,13 +58,11 @@ public class LoanPayment {
         this.paid = paid;
     }
 
-    public ClientLoan getClientLoan() {
-        return clientLoan;
+    public Set<ClientLoan> getClientLoans() {
+        return clientLoans;
     }
 
-    public void setClientLoan(ClientLoan clientLoan) {
-        this.clientLoan = clientLoan;
+    public void setClientLoans(Set<ClientLoan> clientLoans) {
+        this.clientLoans = clientLoans;
     }
-
-
 }

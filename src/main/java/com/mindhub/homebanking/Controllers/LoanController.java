@@ -3,10 +3,8 @@ package com.mindhub.homebanking.Controllers;
 import com.mindhub.homebanking.dto.LoanApplicationDTO;
 import com.mindhub.homebanking.dto.LoanDTO;
 import com.mindhub.homebanking.models.*;
-import com.mindhub.homebanking.repositories.AccountRepository;
-import com.mindhub.homebanking.repositories.ClientLoanRepository;
-import com.mindhub.homebanking.repositories.ClientRepository;
-import com.mindhub.homebanking.repositories.LoanRepository;
+
+import com.mindhub.homebanking.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,28 +20,30 @@ import static java.util.stream.Collectors.toList;
 @RestController
 public class LoanController {
     @Autowired
-    private LoanRepository loanRepository;
+    ClientService clientService;
     @Autowired
-    private ClientRepository repository;
+    AccountService accountService;
     @Autowired
-    private AccountRepository accountRepository;
+    TransactionService transactionService;
     @Autowired
-    private ClientLoanRepository clientLoanRepository;
+    LoanService loanService;
+    @Autowired
+    ClientLoanService clientLoanService;
 
     @RequestMapping("/api/loans")
     public List<LoanDTO> getLoans() {
-        return loanRepository.findAll().stream().map(loan -> new LoanDTO(loan)).collect(toList());
+        return loanService.getLoanDTO();
     }
 
     @Transactional
     @PostMapping("/api/loans")
     public ResponseEntity<Object> createLoan (@RequestBody LoanApplicationDTO loanApplicationDTO, Authentication authentication){
 
-        Client clientAuthenticated = repository.findByEmail(authentication.getName());
+        Client clientAuthenticated = clientService.findByEmail(authentication.getName());
 
-        Loan loan = loanRepository.findById(loanApplicationDTO.getId()).orElse(null);
+        Loan loan = loanService.loanById(loanApplicationDTO);
 
-        Account accountReceiver = accountRepository.findByNumber(loanApplicationDTO.getAccountNumber().toUpperCase());
+        Account accountReceiver = accountService.findByNumber(loanApplicationDTO.getAccountNumber().toUpperCase());
 
         if (loan == null){
             return new ResponseEntity<>("Loan doesn't exist", HttpStatus.FORBIDDEN);
@@ -91,10 +91,10 @@ public class LoanController {
 
 
         ClientLoan clientLoan = new ClientLoan(loanApplicationDTO.getAmount() + (loanApplicationDTO.getAmount() * 0.2), loanApplicationDTO.getPayments());
-        clientLoanRepository.save(clientLoan);
+        clientLoanService.saveClientLoan(clientLoan);
         loan.addClientLoan(clientLoan);
         clientAuthenticated.addClientLoan(clientLoan);
-        repository.save(clientAuthenticated);
+        clientService.saveClient(clientAuthenticated);
 
         Transaction transaction = new Transaction(TransactionType.CREDIT, loanApplicationDTO.getAmount(), loan.getName() + " loan approved", LocalDateTime.now());
         //ADD BALANCE TO ACCOUNT RECEIVER

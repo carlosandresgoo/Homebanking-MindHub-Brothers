@@ -104,17 +104,5 @@ public class Card {
         this.client = client;
     }
 
-    @Override
-    public String toString() {
-        return "Card{" +
-                "id=" + id +
-                ", cardholder='" + cardholder + '\'' +
-                ", type=" + type +
-                ", color=" + color +
-                ", number=" + number +
-                ", cvv=" + cvv +
-                ", thruDate=" + thruDate +
-                ", fromDate=" + fromDate +
-                '}';
-    }
+
 }

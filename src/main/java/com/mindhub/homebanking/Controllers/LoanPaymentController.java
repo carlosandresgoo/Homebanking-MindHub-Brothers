@@ -1,5 +1,6 @@
 package com.mindhub.homebanking.Controllers;
 
+import com.mindhub.homebanking.dto.LoanApplicationDTO;
 import com.mindhub.homebanking.dto.LoanDTO;
 import com.mindhub.homebanking.dto.LoanPaymentDTO;
 import com.mindhub.homebanking.models.*;
@@ -31,15 +32,14 @@ public class LoanPaymentController {
     private ClientLoanRepository clientLoanRepository;
     @Autowired
     private AccountRepository accountRepository;
+    @Autowired
+    private LoanApplicationDTO loanApplicationDTO;
 
     @RequestMapping("/api/loanPayments")
     public List<LoanPaymentDTO> getLoanPayment() {
         return loanPaymentRepository.findAll().stream().map(loanPayment -> new LoanPaymentDTO(loanPayment)).collect(toList());
     }
-
-
-
-    @PostMapping("/api/loan-payments")
+    @PostMapping("/api/loanPayments")
     public ResponseEntity<Object> LoanPayment(@RequestBody LoanPaymentDTO loanPaymentDTO, Authentication authentication) {
 
         Client clientAuthenticated = repository.findByEmail(authentication.getName());
@@ -58,7 +58,7 @@ public class LoanPaymentController {
             return new ResponseEntity<>("Amount can't be greater than the remaining balance", HttpStatus.FORBIDDEN);
         }
 
-        Account account = accountRepository.findByNumber(loanPaymentDTO.get());
+        Account account = accountRepository.findByNumber(loanApplicationDTO.getAccountNumber());
 
         if (account == null) {
             return new ResponseEntity<>("Account doesn't exist", HttpStatus.FORBIDDEN);
@@ -83,4 +83,8 @@ public class LoanPaymentController {
 
         return new ResponseEntity<>("Loan payment made successfully", HttpStatus.OK);
     }
+
+
+
+
 }

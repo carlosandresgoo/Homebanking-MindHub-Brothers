@@ -76,16 +76,6 @@ public class Transaction {
         this.account = account;
     }
 
-    @Override
-    public String toString() {
-        return "Transaction{" +
-                "id=" + id +
-                ", type=" + type +
-                ", amount=" + amount +
-                ", description='" + description + '\'' +
-                ", date=" + date +
-                ", account=" + account +
-                '}';
-    }
+
 }
 
