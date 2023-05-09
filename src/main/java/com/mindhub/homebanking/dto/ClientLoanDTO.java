@@ -11,7 +11,7 @@ public class ClientLoanDTO {
     private double amount;
     private int payments;
 
-
+    private double finalAmount;
 
 
 
@@ -26,6 +26,8 @@ public class ClientLoanDTO {
         this.amount = clientLoan.getAmount();
 
         this.payments = clientLoan.getPayments();
+
+        this.finalAmount = clientLoan.getFinalAmount();
 
     }
 
@@ -47,5 +49,9 @@ public class ClientLoanDTO {
 
     public int getPayments() {
         return payments;
+    }
+
+    public double getFinalAmount() {
+        return finalAmount;
     }
 }

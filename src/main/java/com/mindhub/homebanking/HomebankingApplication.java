@@ -67,11 +67,11 @@ public class HomebankingApplication {
 			Loan loan3 = new Loan("Automotive", 300000 , automotive);
 			loan.save(loan3);
 
-			ClientLoan clientLoan1 = new ClientLoan( 400000.00,60);
+			ClientLoan clientLoan1 = new ClientLoan( 400000.00,60, 400000.00+(400000.00*0.2));
 			client1.addClientLoan(clientLoan1);
 			loan1.addClientLoan(clientLoan1);
 			clientloan.save(clientLoan1);
-			ClientLoan clientLoan2 = new ClientLoan( 50000.00,12 );
+			ClientLoan clientLoan2 = new ClientLoan( 50000.00,12 , 50000.00+(50000.00*0.2));
 			client1.addClientLoan(clientLoan2);
 			loan2.addClientLoan(clientLoan2);
 			clientloan.save(clientLoan2);
@@ -82,11 +82,6 @@ public class HomebankingApplication {
 			Card card2 =new Card (client1.getFirtsName() + " " + client1.getLastName() , CardType.CREDIT, CardColor.TITANIUM, "6506-4343-4354-1232",654 , LocalDate.now().plusYears(5), LocalDate.now());
 			client1.addCard(card2);
 			cardrepository.save(card2);
-
-
-
-
-
 
 
 			// Client 2
@@ -116,11 +111,11 @@ public class HomebankingApplication {
 
 
 
-			ClientLoan clientLoan3 = new ClientLoan(100000.00, 24 );
+			ClientLoan clientLoan3 = new ClientLoan(100000.00, 24,100000.00+(100000.00*0.2) );
 			client2.addClientLoan(clientLoan3);
 			loan2.addClientLoan(clientLoan3);
 			clientloan.save(clientLoan3);
-			ClientLoan clientLoan4 = new ClientLoan(200000.00, 36 );
+			ClientLoan clientLoan4 = new ClientLoan(200000.00, 36, 200000.00+(200000.00*0.2)  );
 			client2.addClientLoan(clientLoan4);
 			loan3.addClientLoan(clientLoan4);
 			clientloan.save(clientLoan4);
@@ -130,8 +125,12 @@ public class HomebankingApplication {
 			client2.addCard(card3);
 			cardrepository.save(card3);
 
+
+			repository.save(client1);
+
 		};
 	}
+
 
 
 }

@@ -81,16 +81,12 @@ public class LoanController {
                 } else {
                     if (existingLoan.getPayments() == existingLoan.getPayments()) {
                         return new ResponseEntity<>("You already have an active loan of this type", HttpStatus.FORBIDDEN);
-                    } else {
-                        return new ResponseEntity<>("You still have an active loan of this type, please pay it off before applying for another one", HttpStatus.FORBIDDEN);
                     }
                 }
             }
         }
 
-
-
-        ClientLoan clientLoan = new ClientLoan(loanApplicationDTO.getAmount() + (loanApplicationDTO.getAmount() * 0.2), loanApplicationDTO.getPayments());
+        ClientLoan clientLoan = new ClientLoan(loanApplicationDTO.getAmount() + (loanApplicationDTO.getAmount() * 0.2), loanApplicationDTO.getPayments(), loanApplicationDTO.getAmount());
         clientLoanService.saveClientLoan(clientLoan);
         loan.addClientLoan(clientLoan);
         clientAuthenticated.addClientLoan(clientLoan);
@@ -103,9 +99,42 @@ public class LoanController {
 
         return new ResponseEntity<>("Loan approved successfully", HttpStatus.CREATED);
     }
+    @Transactional
+    @PostMapping("/api/current/loans")
+    public ResponseEntity<Object> payLoan(Authentication authentication , @RequestParam Long id , @RequestParam String account, @RequestParam Double amount) {
 
+        Client client = clientService.getClientAuthenticated(authentication);
+        ClientLoan clientLoan = clientLoanService.getClientLoan(id);
+        Account accountAuthenticated = accountService.findByNumber(account);
+        String description = "Pay " + clientLoan.getLoan().getName() + " loan";
+//      id parameter
+        if( clientLoan == null ){
+            return new ResponseEntity<>("This loan doesn't exist", HttpStatus.FORBIDDEN);
+        } else if( client == null){
+            return new ResponseEntity<>("You are not registered as a client", HttpStatus.FORBIDDEN);}
+//        account parameter
+        if ( account.isBlank() ){
+            return new ResponseEntity<>("PLease enter an account", HttpStatus.FORBIDDEN);
+        } else if ( client.getAccounts().stream().filter(accounts -> accounts.getNumber().equalsIgnoreCase(account)).collect(toList()).size() == 0 ){
+            return new ResponseEntity<>("This account is not yours.", HttpStatus.FORBIDDEN);}
+//      amount parameter
+        if ( amount < 1 ){
+            return new ResponseEntity<>("PLease enter an amount bigger than 0", HttpStatus.FORBIDDEN);
+        }  else if ( accountAuthenticated.getBalance() < amount ){
+            return new ResponseEntity<>("Insufficient balance in your account " + accountAuthenticated.getNumber(), HttpStatus.FORBIDDEN);}
 
+        Transaction newTransaction = new Transaction(TransactionType.DEBIT, amount, description , LocalDateTime.now());
+        accountAuthenticated.addTransaction(newTransaction);
+        transactionService.saveTransaction(newTransaction);
 
+        accountAuthenticated.setBalance( accountAuthenticated.getBalance() - amount );
+        clientLoan.setFinalAmount( clientLoan.getFinalAmount() - amount);
 
-
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
 }
+
+
+
+
+

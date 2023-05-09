@@ -17,6 +17,7 @@ public class ClientLoan {
     private long id;
     private double amount;
     private int payments;
+    private double finalAmount;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client")
     private Client client;
@@ -24,24 +25,19 @@ public class ClientLoan {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "loan")
     private Loan loan;
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "loanPayment")
-    private LoanPayment loanPayment;
-
-    private boolean setPaidOff;
 
 
     public ClientLoan() {
     }
 
-    public ClientLoan(double amount, int payments, boolean setPaidOff) {
+
+    public ClientLoan(double amount, int payments, double finalAmount) {
         this.amount = amount;
         this.payments = payments;
-        this.setPaidOff = setPaidOff;
+        this.finalAmount = finalAmount;
     }
 
-    public ClientLoan(double v, int payments) {
-    }
+
 
     public long getId() {
         return id;
@@ -72,13 +68,6 @@ public class ClientLoan {
         this.client = client;
     }
 
-    public LoanPayment getLoanPayment() {
-        return loanPayment;
-    }
-
-    public void setLoanPayment(LoanPayment loanPayment) {
-        this.loanPayment = loanPayment;
-    }
 
     public Loan getLoan() {
         return loan;
@@ -87,15 +76,12 @@ public class ClientLoan {
     public void setLoan(Loan loan) {
         this.loan = loan;
     }
-    public void setPaidOff(boolean paidOff) {
-        this.setPaidOff = paidOff;
+
+    public double getFinalAmount() {
+        return finalAmount;
     }
 
-    public boolean isSetPaidOff() {
-        return setPaidOff;
-    }
-
-    public void setSetPaidOff(boolean setPaidOff) {
-        this.setPaidOff = setPaidOff;
+    public void setFinalAmount(double finalAmount) {
+        this.finalAmount = finalAmount;
     }
 }

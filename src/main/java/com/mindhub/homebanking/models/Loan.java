@@ -81,6 +81,4 @@ public class Loan {
         this.clientLoans = clientLoans;
     }
 
-
-
 }

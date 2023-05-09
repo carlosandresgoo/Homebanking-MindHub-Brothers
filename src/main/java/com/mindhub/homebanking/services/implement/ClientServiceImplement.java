@@ -37,4 +37,9 @@ public class ClientServiceImplement implements ClientService {
         repository.save(client);
     }
 
+    @Override
+    public Client getClientAuthenticated(Authentication authentication) {
+        return null;
+    }
+
 }
