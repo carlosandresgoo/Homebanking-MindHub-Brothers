@@ -17,6 +17,7 @@ public class Account {
     private String number;
     private LocalDateTime creationDate;
     private double balance;
+    private boolean accountActive;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client")
@@ -28,10 +29,11 @@ public class Account {
     public Account() {
     }
 
-    public Account(String number, LocalDateTime creationDate, double balance) {
+    public Account(String number, LocalDateTime creationDate, double balance,boolean accountActive) {
         this.number = number;
         this.creationDate = creationDate;
         this.balance = balance;
+        this.accountActive =accountActive;
     }
 
     public void addTransaction(Transaction transaction) {
@@ -79,15 +81,17 @@ public class Account {
         return transactions;
     }
 
-    @Override
-    public String toString() {
-        return "Account{" +
-                "id=" + id +
-                ", number='" + number + '\'' +
-                ", creationDate=" + creationDate +
-                ", balance=" + balance +
-                ", client=" + client +
-                ", transactions=" + transactions +
-                '}';
+    public boolean isAccountActive() {
+        return accountActive;
     }
+
+    public void setAccountActive(boolean accountActive) {
+        this.accountActive = accountActive;
+    }
+
+    public void setTransactions(Set<Transaction> transactions) {
+        this.transactions = transactions;
+    }
+
+
 }

@@ -61,7 +61,7 @@
                     class="ps-3">{{datos.firstName}} !</span></h1>
             <h2 class="text-center title-accounts"> My accounts</h2>
             <div class="container d-flex justify-content-center align-items-center col-md-10 flex-wrap">
-                <template v-for="account of accounts">
+                <template v-for="account of activeAccounts">
                     <div class="card d-flex justify-content-center">
                         <div class="card-header">
                             <h3 class="text-center">Bank Account</h3>
@@ -80,9 +80,10 @@
                                     alt="transactions" title="transactions">View transactions</a>
                         </div>
                     </div>
+                    <button class="btn-primary" @click="deleteAccount(account.id)">Eliminar</button>
                 </template>
             </div>
-            <template v-if="accounts.length !==3">
+            <template v-if="activeAccounts.length !==3">
                 <div class="d-flex justify-content-center align-items-center flex-column my-3">
                     <h2 style="font-size: 1.2rem;">Get a new account here !</h2>
                     <img class="click" @click="createAccount" type="button" src="../assets/click.png" alt="click"
@@ -116,12 +117,6 @@
                             </tr>
                         </tbody>
                     </table>
-                    <!-- <span class="fs-6 mb-4">Quotas: {{loan.payments}}</span>
-                    <div class="mb-4 d-flex flex-column align-items-center">
-                        <p class="mb-1">Pay Quota</p>
-                        <img src="../assets/comment.png" :alt="loan.name" class="interactionCLient"
-                            data-bs-toggle="modal" data-bs-target="#exampleModal4" @click="filterLoan">
-                    </div> -->
                 </div>
                 <div class="pt-5 pb-5" v-else>
                     <p class="mb-0 text-light fs-3 text-center">THIS CLIENT DOES NOT HAVE LOANS.</p>
@@ -294,49 +289,6 @@
                 </div>
             </div>
 
-            <!-- modal 4
-            <div class="modal fade" id="exampleModal4" tabindex="-1" aria-labelledby="exampleModalLabel2"
-                aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalLabel2">Pay Quota</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form class="d-flex flex-column justify-content-center align-items-center"
-                                @submit.prevent="payLoan">
-                                <div class="form-check">
-                                    <div>
-                                        <label for="quota" class="pe-5 form-check-label">Pay Quota:
-                                            ${{quotas.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}}</label>
-                                        <input type="radio" name="Quotas" id="quota" class="form-check-input"
-                                            :value="quotas.toFixed(2)" v-model="amount">
-                                    </div>
-                                    <div>
-                                        <label for="total" class="pe-5 form-check-label">Pay total:
-                                            ${{totalPay.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}}</label>
-                                        <input type="radio" name="Quotas" id="total" class="form-check-input"
-                                            :value="totalPay.toFixed(2)" v-model="amount">
-                                    </div>
-                                </div>
-                                <div class="mb-3 mt-3 d-flex align-items-center">
-                                    <label for="accountTransfer" class="form-label">Your Account*</label>
-                                    <select class="form-select" aria-label="Default select example" v-model="account"
-                                        required>
-                                        <option selected class="fs-6" value="">Open this select menu</option>
-                                        <template v-for="account of data.numbers">
-                                            <option :value="account" class="fs-6">{{account}}</option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-outline-success mb-3 mt-3 fs-4">Pay</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
-
         </main>
         <footer class="text-white py-3">
             <div class="container">
@@ -384,6 +336,7 @@
                 </div>
             </div>
         </footer>
+    </div>
 
         <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -392,7 +345,6 @@
             crossorigin="anonymous"></script>
         <script src="../js/accounts.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    </div>
 </body>
 
 </html>

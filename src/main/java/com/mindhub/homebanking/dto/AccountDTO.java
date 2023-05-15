@@ -10,6 +10,7 @@ public class AccountDTO {
     private String number;
     private LocalDateTime creationDate;
     private double balance;
+    private boolean accountActive;
 
     private Set<TransactionDTO> transactions;
 
@@ -24,6 +25,8 @@ public class AccountDTO {
         this.balance = account.getBalance();
 
         this.transactions = account.getTransactions().stream().map(transaction -> new TransactionDTO(transaction)).collect(Collectors.toSet());
+
+        this.accountActive = account.isAccountActive();
 
     }
 
@@ -58,6 +61,10 @@ public class AccountDTO {
 
     public Set<TransactionDTO> getTransactions() {
         return transactions;
+    }
+
+    public boolean isAccountActive() {
+        return accountActive;
     }
 }
 

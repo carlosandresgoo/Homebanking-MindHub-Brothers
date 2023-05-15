@@ -39,7 +39,7 @@ public class ClientServiceImplement implements ClientService {
 
     @Override
     public Client getClientAuthenticated(Authentication authentication) {
-        return null;
+        return repository.findByEmail(authentication.getName());
     }
 
 }

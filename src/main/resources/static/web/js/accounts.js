@@ -9,6 +9,7 @@ createApp({
 			lastName: '',
 			email: '',
 			accounts: [],
+			activeAccounts: [],
 			isAsideInactive: true,
 		};
 	},
@@ -22,6 +23,7 @@ createApp({
 					this.datos = response.data;
 					this.accounts = this.datos.accounts;
 					this.loans = this.datos.loans;
+					this.activeAccounts = this.accounts.filter(account => account.accountActive);
 				})
 				.catch(error => console.log(error));
 		},
@@ -49,6 +51,33 @@ createApp({
 							console.log(error)
 						})
 				},
+				
+			})
+		},
+		deleteAccount(id) {
+			Swal.fire({
+				title: 'Are you sure you want to delete card?',
+				inputAttributes: { autocapitalize: 'off' },
+				showCancelButton: true,
+				confirmButtonText: 'Sure',
+				preConfirm: () => {
+					axios.put(`/api/accounts/${id}`)
+						.then(response =>
+							Swal.fire({
+								icon: 'success',
+								text: 'card deletion successful',
+								showConfirmButton: false,
+								timer: 2000,
+							})
+								.then(() => window.location.href = "/web/pages/accounts.html")
+								.catch(error => console.log(error)))
+						.catch(error => {
+							Swal.fire({
+								icon: 'error',
+								text: error.response.data,
+							})
+						})
+				}
 			})
 		},
 		appearmenu() {

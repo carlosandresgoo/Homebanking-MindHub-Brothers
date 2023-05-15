@@ -4,6 +4,7 @@ import com.mindhub.homebanking.dto.LoanApplicationDTO;
 import com.mindhub.homebanking.dto.LoanDTO;
 import com.mindhub.homebanking.models.*;
 
+import com.mindhub.homebanking.repositories.AccountRepository;
 import com.mindhub.homebanking.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,8 @@ public class LoanController {
     LoanService loanService;
     @Autowired
     ClientLoanService clientLoanService;
+    @Autowired
+    private AccountRepository accountRepository;
 
     @RequestMapping("/api/loans")
     public List<LoanDTO> getLoans() {
@@ -92,19 +95,20 @@ public class LoanController {
         clientAuthenticated.addClientLoan(clientLoan);
         clientService.saveClient(clientAuthenticated);
 
-        Transaction transaction = new Transaction(TransactionType.CREDIT, loanApplicationDTO.getAmount(), loan.getName() + " loan approved", LocalDateTime.now());
+        Transaction transaction = new Transaction(TransactionType.CREDIT, loanApplicationDTO.getAmount(), loan.getName() + " loan approved", LocalDateTime.now(),true, accountReceiver.getBalance());
         //ADD BALANCE TO ACCOUNT RECEIVER
         accountReceiver.setBalance(accountReceiver.getBalance() + loanApplicationDTO.getAmount());
         accountReceiver.addTransaction(transaction);
+
 
         return new ResponseEntity<>("Loan approved successfully", HttpStatus.CREATED);
     }
     @Transactional
     @PostMapping("/api/current/loans")
-    public ResponseEntity<Object> payLoan(Authentication authentication , @RequestParam Long id , @RequestParam String account, @RequestParam Double amount) {
+    public ResponseEntity<Object> payLoan(Authentication authentication , @RequestParam Long idLoan , @RequestParam String account, @RequestParam Double amount) {
 
         Client client = clientService.getClientAuthenticated(authentication);
-        ClientLoan clientLoan = clientLoanService.getClientLoan(id);
+        ClientLoan clientLoan = clientLoanService.getClientLoan(idLoan);
         Account accountAuthenticated = accountService.findByNumber(account);
         String description = "Pay " + clientLoan.getLoan().getName() + " loan";
 //      id parameter
@@ -123,7 +127,7 @@ public class LoanController {
         }  else if ( accountAuthenticated.getBalance() < amount ){
             return new ResponseEntity<>("Insufficient balance in your account " + accountAuthenticated.getNumber(), HttpStatus.FORBIDDEN);}
 
-        Transaction newTransaction = new Transaction(TransactionType.DEBIT, amount, description , LocalDateTime.now());
+        Transaction newTransaction = new Transaction(TransactionType.DEBIT, amount, description , LocalDateTime.now(),true, accountAuthenticated.getBalance());
         accountAuthenticated.addTransaction(newTransaction);
         transactionService.saveTransaction(newTransaction);
 

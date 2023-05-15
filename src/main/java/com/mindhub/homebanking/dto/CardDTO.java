@@ -17,6 +17,8 @@ public class CardDTO {
     private LocalDate thruDate;
     private LocalDate fromDate;
 
+
+
     public CardDTO(Card card) {
 
         this.id = card.getId();
@@ -70,4 +72,5 @@ public class CardDTO {
     public LocalDate getFromDate() {
         return fromDate;
     }
+
 }
