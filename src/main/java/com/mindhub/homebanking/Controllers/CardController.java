@@ -100,6 +100,10 @@ public class CardController {
     }
     @PutMapping("/api/cards/{id}")
     public ResponseEntity<Object> deleteCard(Authentication authentication, @PathVariable long id) {
+        Client client = clientService.findByEmail(authentication.getName());
+        if (client == null) {
+            return new ResponseEntity<>("You can't delete an account because you're not a client.", HttpStatus.FORBIDDEN);
+        }
         Card card = cardRepository.findById(id);
         if (card == null) {
             return new ResponseEntity<>("Card not found", HttpStatus.NOT_FOUND);

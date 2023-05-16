@@ -82,9 +82,16 @@ public class AccountController {
 
         @PutMapping ("/api/accounts/{id}")
         public ResponseEntity<String> deleteAccount(Authentication authentication,@PathVariable long id) {
+                Client client = clientService.findByEmail(authentication.getName());
+                if (client == null) {
+                        return new ResponseEntity<>("You can't delete an account because you're not a client.", HttpStatus.FORBIDDEN);
+                }
                 Account account = accountRepository.findById(id);
                 if (account == null) {
                         return new ResponseEntity<>("Account not found", HttpStatus.NOT_FOUND);
+                }
+                if (account.getBalance() != 0.0) {
+                        return new ResponseEntity<>("The account can't be deleted because it has a balance different from 0.", HttpStatus.FORBIDDEN);
                 }
 
                 account.setAccountActive(false);

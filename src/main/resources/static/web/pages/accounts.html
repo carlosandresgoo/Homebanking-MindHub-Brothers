@@ -120,6 +120,11 @@
                 </div>
                 <div class="pt-5 pb-5" v-else>
                     <p class="mb-0 text-light fs-3 text-center">THIS CLIENT DOES NOT HAVE LOANS.</p>
+                    <template v-if="loans.length !==3">
+                        <h5 class="text-center my-3"><a href="./loan-application.html">Request a new loan here !
+                            </a></h5>
+                        <img class="loan-icon" src="../assets/loan-icon.png" alt="loans">
+                    </template>
                 </div>
             </div>
             <!-- boton -->

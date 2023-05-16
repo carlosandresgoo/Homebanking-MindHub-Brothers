@@ -95,10 +95,14 @@ public class LoanController {
         clientAuthenticated.addClientLoan(clientLoan);
         clientService.saveClient(clientAuthenticated);
 
-        Transaction transaction = new Transaction(TransactionType.CREDIT, loanApplicationDTO.getAmount(), loan.getName() + " loan approved", LocalDateTime.now(),true, accountReceiver.getBalance());
+        Transaction transaction = new Transaction(TransactionType.CREDIT, loanApplicationDTO.getAmount(), loan.getName() + " loan approved", LocalDateTime.now(),true, accountReceiver.getBalance()+ loanApplicationDTO.getAmount());
         //ADD BALANCE TO ACCOUNT RECEIVER
         accountReceiver.setBalance(accountReceiver.getBalance() + loanApplicationDTO.getAmount());
+        transactionService.saveTransaction(transaction);
         accountReceiver.addTransaction(transaction);
+
+
+
 
 
         return new ResponseEntity<>("Loan approved successfully", HttpStatus.CREATED);
