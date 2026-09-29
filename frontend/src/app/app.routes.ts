@@ -37,6 +37,12 @@ export const routes: Routes = [
           import('./features/account-detail/account-detail').then((m) => m.AccountDetailPage),
       },
       {
+        path: 'cards',
+        title: 'Mis tarjetas | MindHub Brothers',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () => import('./features/cards/cards').then((m) => m.Cards),
+      },
+      {
         path: 'manager',
         title: 'Clientes | MindHub Brothers',
         canActivate: [roleGuard('ADMIN')],

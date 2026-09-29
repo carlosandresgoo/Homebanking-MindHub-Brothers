@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
     <a
       class="brand"
       [class.inverse]="inverse()"
+      [class.compact]="compactOnMobile()"
       routerLink="/"
       aria-label="MindHub Brothers, inicio"
     >
@@ -46,9 +47,16 @@ import { RouterLink } from '@angular/router';
     .inverse .name strong {
       color: #fff;
     }
+    @media (max-width: 600px) {
+      .compact .name {
+        display: none;
+      }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Brand {
   readonly inverse = input(false);
+  /** Hides the wordmark on small screens (only the logo mark remains). */
+  readonly compactOnMobile = input(false);
 }

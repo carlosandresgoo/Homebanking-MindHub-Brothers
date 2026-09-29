@@ -1,0 +1,88 @@
+@let s = state();
+
+@if (s.status === 'loading') {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando tus tarjetas" />
+}
+
+<div class="hb-page">
+  <header class="hb-page-header">
+    <div>
+      <h1>Mis tarjetas</h1>
+      <p>Pedí nuevas tarjetas y gestioná las que ya tenés.</p>
+    </div>
+    <button
+      mat-flat-button
+      class="request-button"
+      (click)="requestCard()"
+      [disabled]="s.status !== 'loaded' || !canRequest()"
+    >
+      <mat-icon>add_card</mat-icon>
+      Pedir tarjeta
+    </button>
+  </header>
+
+  @if (s.status === 'loading') {
+    <div class="grid">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  } @else if (s.status === 'error') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon error">cloud_off</mat-icon>
+      <h2>No pudimos cargar tus tarjetas</h2>
+      <p>Revisá tu conexión e intentá de nuevo.</p>
+      <button mat-flat-button (click)="retry()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else if (cards().length === 0) {
+    <div class="state-card">
+      <mat-icon class="state-icon">credit_card</mat-icon>
+      <h2>Todavía no tenés tarjetas</h2>
+      <p>Pedí tu primera tarjeta de débito o crédito en segundos.</p>
+      <button mat-flat-button (click)="requestCard()">
+        <mat-icon>add_card</mat-icon>
+        Pedir tarjeta
+      </button>
+    </div>
+  } @else {
+    @for (type of types; track type) {
+      @let group = cardsOf(type);
+      @if (group.length > 0) {
+        <section class="group" [attr.aria-label]="'Tarjetas de ' + typeLabel[type]">
+          <h2>{{ typeLabel[type] }}</h2>
+          <ul class="grid" role="list">
+            @for (card of group; track card.id) {
+              <li class="card-tile">
+                <app-bank-card
+                  [type]="card.type"
+                  [color]="card.color"
+                  [cardholder]="card.cardholder"
+                  [thruDate]="card.thruDate"
+                  [last4]="card.last4"
+                  [expired]="card.expired"
+                />
+                <div class="tile-footer">
+                  <span class="since">
+                    <mat-icon>event</mat-icon>
+                    Desde {{ card.fromDate | date: 'MMMM y' }}
+                  </span>
+                  <button
+                    mat-button
+                    class="deactivate"
+                    (click)="deactivate(card)"
+                    [attr.aria-label]="'Desactivar la tarjeta terminada en ' + card.last4"
+                  >
+                    <mat-icon>credit_card_off</mat-icon>
+                    Desactivar
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  }
+</div>

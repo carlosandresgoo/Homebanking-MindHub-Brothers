@@ -45,10 +45,10 @@ describe('Shell', () => {
     expect(el.querySelector('.user-name')?.textContent).toContain('Melba');
   });
 
-  it('shows "Mis cuentas" to clients only', async () => {
+  it('shows "Mis cuentas" and "Tarjetas" to clients', async () => {
     const { el } = await renderAs('CLIENT');
-    const links = Array.from(el.querySelectorAll('.nav a')).map((a) => a.textContent?.trim());
-    expect(links).toEqual([expect.stringContaining('Mis cuentas')]);
+    const links = Array.from(el.querySelectorAll('.nav a')).map((a) => a.getAttribute('href'));
+    expect(links).toEqual(['/accounts', '/cards']);
   });
 
   it('shows "Clientes" to admins only', async () => {

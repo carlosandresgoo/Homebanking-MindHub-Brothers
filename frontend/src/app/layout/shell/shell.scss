@@ -95,7 +95,16 @@
 @media (max-width: 600px) {
   .nav-label,
   .user-name,
-  .chevron {
+  .user-button .chevron {
     display: none;
+  }
+
+  .user-button {
+    min-width: 0;
+    padding: 4px;
+  }
+
+  .avatar {
+    margin-right: 0;
   }
 }

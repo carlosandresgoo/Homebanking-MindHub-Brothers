@@ -1,6 +1,6 @@
 <mat-toolbar class="toolbar">
   <div class="toolbar-inner">
-    <app-brand />
+    <app-brand [compactOnMobile]="true" />
 
     <nav class="nav" aria-label="Principal">
       @for (item of nav(); track item.path) {

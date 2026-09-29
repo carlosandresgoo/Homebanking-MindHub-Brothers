@@ -55,6 +55,9 @@ html {
   // dark mode too, where --mat-sys-primary turns into a light pastel.
   // Money in (credits) — Material 3 has no "success" role, so it is defined here for both schemes.
   --hb-positive: light-dark(#146c2e, #6dd58c);
+  // Caution notices (e.g. "shown only once").
+  --hb-warning-container: light-dark(#fff1c2, #4a3800);
+  --hb-on-warning-container: light-dark(#3b2c00, #ffe08a);
   --hb-brand-start: #005cbb;
   --hb-brand-end: #006a6a;
   --hb-hero-gradient: linear-gradient(

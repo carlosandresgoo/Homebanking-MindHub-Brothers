@@ -1,0 +1,104 @@
+@if (issued(); as result) {
+  <h2 mat-dialog-title class="title">
+    <mat-icon class="success">check_circle</mat-icon>
+    ¡Tu tarjeta está lista!
+  </h2>
+  <mat-dialog-content>
+    <app-bank-card
+      class="preview"
+      [type]="result.card.type"
+      [color]="result.card.color"
+      [cardholder]="result.card.cardholder"
+      [thruDate]="result.card.thruDate"
+      [fullNumber]="result.number"
+      [cvv]="result.cvv"
+    />
+    <div class="warning" role="note">
+      <mat-icon>visibility_off</mat-icon>
+      <p>
+        <strong>Es la única vez que vas a ver el número completo y el código de seguridad.</strong>
+        Por tu seguridad no los guardamos: anotalos en un lugar seguro.
+      </p>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-flat-button type="button" (click)="finish()" cdkFocusInitial>
+      Listo, ya los guardé
+    </button>
+  </mat-dialog-actions>
+} @else {
+  <h2 mat-dialog-title class="title">
+    <mat-icon>add_card</mat-icon>
+    Pedir una tarjeta
+  </h2>
+  <mat-dialog-content>
+    <app-bank-card
+      class="preview"
+      [type]="type()"
+      [color]="color()"
+      [cardholder]="data.cardholder"
+      [thruDate]="previewThru"
+      last4="••••"
+    />
+
+    @if (error(); as message) {
+      <div class="error-banner" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <fieldset>
+      <legend>Tipo</legend>
+      <mat-button-toggle-group
+        [value]="type()"
+        (change)="type.set($event.value)"
+        aria-label="Tipo de tarjeta"
+        class="full"
+      >
+        @for (t of types; track t) {
+          <mat-button-toggle [value]="t">{{ typeLabel[t] }}</mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+    </fieldset>
+
+    <fieldset>
+      <legend>Color</legend>
+      <div class="swatches" role="radiogroup" aria-label="Color de la tarjeta">
+        @for (c of colors; track c) {
+          <button
+            type="button"
+            class="swatch"
+            [class]="c.toLowerCase()"
+            [class.selected]="color() === c"
+            role="radio"
+            [attr.aria-checked]="color() === c"
+            (click)="color.set(c)"
+          >
+            <span class="dot"></span>
+            <span class="swatch-label">{{ colorLabel[c] }}</span>
+            @if (isTaken(type(), c)) {
+              <span class="taken">Ya la tenés</span>
+            }
+          </button>
+        }
+      </div>
+    </fieldset>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="submitting()">Cancelar</button>
+    <button
+      mat-flat-button
+      type="button"
+      class="submit"
+      (click)="submit()"
+      [disabled]="alreadyHas() || submitting()"
+    >
+      @if (submitting()) {
+        <mat-spinner diameter="18" aria-label="Emitiendo tarjeta" />
+      } @else {
+        Pedir tarjeta
+      }
+    </button>
+  </mat-dialog-actions>
+}
