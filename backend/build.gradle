@@ -41,8 +41,11 @@ tasks.named('test') {
 
 dependencyCheck {
 	// Free key from https://nvd.nist.gov/developers/request-an-api-key; without it the NVD download is slow.
-	nvd {
-		apiKey = System.getenv('NVD_API_KEY')
+	def nvdApiKey = System.getenv('NVD_API_KEY')
+	if (nvdApiKey) {
+		nvd {
+			apiKey = nvdApiKey
+		}
 	}
 	failBuildOnCVSS = 7.0f
 	suppressionFile = 'dependency-check-suppressions.xml'
