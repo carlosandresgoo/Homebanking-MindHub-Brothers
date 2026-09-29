@@ -72,6 +72,7 @@ Autenticación: access token JWT (15 min) en `Authorization: Bearer`, y refresh 
 |---|---|---|---|
 | `SPRING_PROFILES_ACTIVE` | — | no (defecto `dev`) | `dev` o `prod` |
 | `JWT_SECRET` | prod | **sí** | Clave HMAC en Base64, ≥ 256 bits. En `dev` se genera una aleatoria si falta |
+| `TOTP_ENCRYPTION_KEY` | prod | **sí** | Clave AES en Base64 (256 bits) que cifra los secretos 2FA. Distinta de `JWT_SECRET` |
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | prod | **sí** | Conexión a PostgreSQL |
 | `CORS_ALLOWED_ORIGINS` | ambos | no | Orígenes permitidos, separados por comas (vacío = mismo origen) |
 | `DEV_SEED_PASSWORD` | dev | no | Contraseña de los usuarios de prueba |

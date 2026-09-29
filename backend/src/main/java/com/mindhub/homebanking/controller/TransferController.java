@@ -1,5 +1,6 @@
 package com.mindhub.homebanking.controller;
 
+import com.mindhub.homebanking.dto.TransferLimitsDTO;
 import com.mindhub.homebanking.dto.TransferReceiptDTO;
 import com.mindhub.homebanking.dto.TransferRequest;
 import com.mindhub.homebanking.service.IdempotencyService;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -28,7 +30,9 @@ public class TransferController {
 
     /**
      * 201 with a receipt; 404 when the source is not the caller's (or does not exist) or the destination
-     * does not exist; 422 for same account or insufficient funds; 400 for invalid input. With an
+     * does not exist; 422 for same account, insufficient funds or the daily limit ({@code code}
+     * DAILY_LIMIT_EXCEEDED); 403 with {@code secondFactor} when an authenticator code is needed or
+     * wrong; 400 for invalid input. With an
      * {@code Idempotency-Key}, a retry returns the original receipt instead of transferring again.
      */
     @PostMapping("/api/transfers")
@@ -42,5 +46,12 @@ public class TransferController {
         return Idempotency.respond(HttpStatus.CREATED, idempotency.execute(email, idempotencyKey, "TRANSFER",
                 request, HttpStatus.CREATED.value(), TransferReceiptDTO.class,
                 () -> transferService.transfer(email, request)));
+    }
+
+    /** Today's allowance for transfers to other clients and when a second factor is needed. */
+    @GetMapping("/api/transfers/limits")
+    @PreAuthorize("hasRole('CLIENT')")
+    public TransferLimitsDTO limits(Authentication authentication) {
+        return transferService.limits(authentication.getName());
     }
 }

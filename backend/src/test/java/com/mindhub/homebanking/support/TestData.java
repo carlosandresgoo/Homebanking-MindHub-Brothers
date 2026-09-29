@@ -3,6 +3,7 @@ package com.mindhub.homebanking.support;
 import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
+import com.mindhub.homebanking.domain.TransactionCategory;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.AuditEventRepository;
 import com.mindhub.homebanking.repository.CardRepository;
@@ -92,9 +93,15 @@ public class TestData {
         owner.addAccount(account);
         accounts.save(account);
         if (initial.signum() > 0) {
-            transactions.save(account.credit(initial, "Depósito inicial", LocalDateTime.now()));
+            transactions.save(account.credit(initial, TransactionCategory.DEPOSIT, "Depósito inicial", LocalDateTime.now()));
         }
         return account;
+    }
+
+    /** Opens another account for the client with that e-mail. */
+    @Transactional
+    public Account account(String ownerEmail, String number, BigDecimal initial) {
+        return account(clients.findByEmailIgnoreCase(ownerEmail).orElseThrow(), number, initial);
     }
 
     public record Ids(Long clientId, Long otherClientId, Long accountId, Long otherAccountId) {

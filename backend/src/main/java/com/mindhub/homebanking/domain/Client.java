@@ -46,7 +46,50 @@ public class Client {
     /** Temporary lock after too many failed logins; null or in the past = not locked. */
     private Instant lockedUntil;
 
+    /** Encrypted TOTP secret: pending while {@code totpEnabled} is false, active once confirmed. */
+    private String totpSecret;
+
+    @Column(nullable = false)
+    private boolean totpEnabled;
+
+    /** Time step of the last accepted code: a code can be used only once. */
+    private Long totpLastStep;
+
     protected Client() {
+    }
+
+    /** Stores a new (not yet confirmed) encrypted secret. */
+    public void startTwoFactorEnrollment(String encryptedSecret) {
+        this.totpSecret = encryptedSecret;
+        this.totpEnabled = false;
+        this.totpLastStep = null;
+    }
+
+    public void enableTwoFactor(long acceptedStep) {
+        this.totpEnabled = true;
+        this.totpLastStep = acceptedStep;
+    }
+
+    public void disableTwoFactor() {
+        this.totpSecret = null;
+        this.totpEnabled = false;
+        this.totpLastStep = null;
+    }
+
+    public void registerSecondFactorStep(long acceptedStep) {
+        this.totpLastStep = acceptedStep;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public boolean isTwoFactorEnabled() {
+        return totpEnabled;
+    }
+
+    public Long getTotpLastStep() {
+        return totpLastStep;
     }
 
     public boolean isLocked(Instant now) {

@@ -34,17 +34,40 @@ public class Transaction {
     @JoinColumn(name = "account_id")
     private Account account;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private TransactionCategory category;
+
+    /** For transfers: the number of the other account. */
+    @Column(length = 20)
+    private String counterparty;
+
     protected Transaction() {
     }
 
-    Transaction(TransactionType type, BigDecimal amount, String description, LocalDateTime date,
-                BigDecimal balanceAfter, Account account) {
+    Transaction(TransactionType type, TransactionCategory category, BigDecimal amount, String description,
+                LocalDateTime date, BigDecimal balanceAfter, Account account) {
         this.type = type;
+        this.category = category;
         this.amount = amount;
         this.description = description;
         this.date = date;
         this.balanceAfter = balanceAfter;
         this.account = account;
+    }
+
+    /** Records the other account of a transfer; returns this for chaining. */
+    public Transaction withCounterparty(String accountNumber) {
+        this.counterparty = accountNumber;
+        return this;
+    }
+
+    public TransactionCategory getCategory() {
+        return category;
+    }
+
+    public String getCounterparty() {
+        return counterparty;
     }
 
     public Long getId() {

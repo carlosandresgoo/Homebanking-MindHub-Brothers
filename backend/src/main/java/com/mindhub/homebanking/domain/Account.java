@@ -45,20 +45,22 @@ public class Account {
     }
 
     /** Adds money and records the movement. The caller persists the returned transaction. */
-    public Transaction credit(BigDecimal amount, String description, LocalDateTime date) {
+    public Transaction credit(BigDecimal amount, TransactionCategory category, String description,
+                              LocalDateTime date) {
         requirePositive(amount);
         balance = balance.add(amount);
-        return record(TransactionType.CREDIT, amount, description, date);
+        return record(TransactionType.CREDIT, category, amount, description, date);
     }
 
     /** Removes money and records the movement. Callers must check funds first (see {@link #hasFunds}). */
-    public Transaction debit(BigDecimal amount, String description, LocalDateTime date) {
+    public Transaction debit(BigDecimal amount, TransactionCategory category, String description,
+                             LocalDateTime date) {
         requirePositive(amount);
         if (!hasFunds(amount)) {
             throw new IllegalStateException("Insufficient funds");
         }
         balance = balance.subtract(amount);
-        return record(TransactionType.DEBIT, amount, description, date);
+        return record(TransactionType.DEBIT, category, amount, description, date);
     }
 
     public boolean hasFunds(BigDecimal amount) {
@@ -73,8 +75,9 @@ public class Account {
         this.active = false;
     }
 
-    private Transaction record(TransactionType type, BigDecimal amount, String description, LocalDateTime date) {
-        Transaction transaction = new Transaction(type, amount, description, date, balance, this);
+    private Transaction record(TransactionType type, TransactionCategory category, BigDecimal amount,
+                               String description, LocalDateTime date) {
+        Transaction transaction = new Transaction(type, category, amount, description, date, balance, this);
         transactions.add(0, transaction);
         return transaction;
     }

@@ -96,7 +96,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BusinessRuleException.class)
     ProblemDetail handleBusinessRule(BusinessRuleException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        ex.getProperties().forEach(problem::setProperty);
+        return problem;
+    }
+
+    @ExceptionHandler(SecondFactorException.class)
+    ProblemDetail handleSecondFactor(SecondFactorException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setProperty("secondFactor", ex.getReason().name());
+        return problem;
     }
 
     @ExceptionHandler(ConflictException.class)

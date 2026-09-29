@@ -17,7 +17,15 @@ public record SecurityProperties(
         @Valid @NotNull RefreshToken refreshToken,
         @Valid @NotNull Cors cors,
         @Valid @NotNull LoginRateLimit loginRateLimit,
-        @Valid @NotNull AccountLockout accountLockout) {
+        @Valid @NotNull AccountLockout accountLockout,
+        @Valid @NotNull TwoFactor twoFactor) {
+
+    /**
+     * TOTP second factor. {@code encryptionKey} (Base64, 256 bits) encrypts the stored secrets; it may be
+     * blank only in dev/test, where {@code devKeyFile} keeps a generated key.
+     */
+    public record TwoFactor(String encryptionKey, String devKeyFile, @NotBlank String issuer) {
+    }
 
     /** Per-account brute-force protection (complements the per-IP rate limit). */
     public record AccountLockout(@Min(1) int maxAttempts, @NotNull Duration duration) {

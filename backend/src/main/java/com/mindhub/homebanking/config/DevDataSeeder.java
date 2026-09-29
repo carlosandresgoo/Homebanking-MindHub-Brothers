@@ -32,6 +32,11 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 
+import static com.mindhub.homebanking.domain.TransactionCategory.DEPOSIT;
+import static com.mindhub.homebanking.domain.TransactionCategory.LOAN_DISBURSEMENT;
+import static com.mindhub.homebanking.domain.TransactionCategory.LOAN_PAYMENT;
+import static com.mindhub.homebanking.domain.TransactionCategory.OTHER;
+
 /**
  * Sample data for local development only. Both users share one password taken from
  * {@code DEV_SEED_PASSWORD}; if unset, a random one is generated and printed once.
@@ -97,15 +102,16 @@ class DevDataSeeder implements ApplicationRunner {
         // Balances come from movements (in chronological order) so the history adds up:
         // VIN001 = 5,000 and VIN002 = 7,000 + 30,000 - 3,000 + 500 - 3,000 = 31,500.
         transactionRepository.saveAll(List.of(
-                vin001.credit(new BigDecimal("4000.00"), "Depósito inicial", now.minusDays(30)),
-                vin001.credit(new BigDecimal("2500.00"), "Sueldo septiembre", now.minusDays(10)),
-                vin001.debit(new BigDecimal("1200.00"), "Alquiler", now.minusDays(8)),
-                vin001.debit(new BigDecimal("300.00"), "Supermercado", now.minusDays(2)),
-                vin002.credit(new BigDecimal("7000.00"), "Depósito inicial", now.minusDays(29)),
-                vin002.credit(new BigDecimal("30000.00"), "Préstamo Personal acreditado", now.minusDays(20)),
-                vin002.debit(loan.payInstallment(), "Cuota 1/12 préstamo Personal", now.minusDays(12)),
-                vin002.credit(new BigDecimal("500.00"), "Intereses plazo fijo", now.minusDays(5)),
-                vin002.debit(loan.payInstallment(), "Cuota 2/12 préstamo Personal", now.minusDays(2))));
+                vin001.credit(new BigDecimal("4000.00"), DEPOSIT, "Depósito inicial", now.minusDays(30)),
+                vin001.credit(new BigDecimal("2500.00"), DEPOSIT, "Sueldo septiembre", now.minusDays(10)),
+                vin001.debit(new BigDecimal("1200.00"), OTHER, "Alquiler", now.minusDays(8)),
+                vin001.debit(new BigDecimal("300.00"), OTHER, "Supermercado", now.minusDays(2)),
+                vin002.credit(new BigDecimal("7000.00"), DEPOSIT, "Depósito inicial", now.minusDays(29)),
+                vin002.credit(new BigDecimal("30000.00"), LOAN_DISBURSEMENT, "Préstamo Personal acreditado",
+                        now.minusDays(20)),
+                vin002.debit(loan.payInstallment(), LOAN_PAYMENT, "Cuota 1/12 préstamo Personal", now.minusDays(12)),
+                vin002.credit(new BigDecimal("500.00"), OTHER, "Intereses plazo fijo", now.minusDays(5)),
+                vin002.debit(loan.payInstallment(), LOAN_PAYMENT, "Cuota 2/12 préstamo Personal", now.minusDays(2))));
 
         LocalDate today = now.toLocalDate();
         cardRepository.saveAll(List.of(

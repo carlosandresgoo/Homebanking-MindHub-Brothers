@@ -53,7 +53,8 @@ public class AuthController {
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
         // Remote address honours X-Forwarded-For only via server.forward-headers-strategy (trusted proxy).
         loginRateLimiter.consume(http.getRemoteAddr());
-        AuthService.Session session = authService.login(request.email(), request.password());
+        AuthService.Session session = authService.login(request.email(), request.password(),
+                request.secondFactorCode());
         return withRefreshCookie(session);
     }
 

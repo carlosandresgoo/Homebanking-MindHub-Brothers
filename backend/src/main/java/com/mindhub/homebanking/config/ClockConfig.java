@@ -10,9 +10,12 @@ import java.time.Clock;
 @EnableScheduling
 public class ClockConfig {
 
-    /** Injected instead of calling {@code Instant.now()} so token expiry can be tested. */
+    /**
+     * Injected instead of calling {@code Instant.now()} so time-based rules can be tested. Its zone is
+     * the bank's, so movement dates ({@code LocalDateTime.now(clock)}) and "today" are local time.
+     */
     @Bean
-    Clock clock() {
-        return Clock.systemUTC();
+    Clock clock(BankingProperties properties) {
+        return Clock.system(properties.zone());
     }
 }

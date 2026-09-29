@@ -30,6 +30,7 @@ public class ClientMapper {
                 client.getRole(),
                 client.isEnabled(),
                 client.isLocked(clock.instant()),
+                client.isTwoFactorEnabled(),
                 client.getAccounts().stream().filter(Account::isActive).map(this::toDto).toList());
     }
 
@@ -50,6 +51,7 @@ public class ClientMapper {
         return new TransactionDTO(
                 transaction.getId(),
                 transaction.getType(),
+                transaction.getCategory(),
                 transaction.getAmount(),
                 transaction.getDescription(),
                 transaction.getDate(),

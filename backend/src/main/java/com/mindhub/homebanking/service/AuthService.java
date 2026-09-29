@@ -4,6 +4,7 @@ import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.AuditEvent;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.exception.AccountLockedException;
+import com.mindhub.homebanking.exception.SecondFactorException;
 import org.springframework.security.core.AuthenticationException;
 import com.mindhub.homebanking.dto.CreateClientRequest;
 import com.mindhub.homebanking.dto.TokenResponse;
@@ -29,11 +30,13 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final LoginAttemptService loginAttempts;
     private final AuditService audit;
+    private final TwoFactorService twoFactor;
 
     public AuthService(AuthenticationManager authenticationManager, ClientRepository clientRepository,
                        ClientService clientService, AccessTokenService accessTokenService,
                        RefreshTokenService refreshTokenService, LoginAttemptService loginAttempts,
-                       AuditService audit) {
+                       AuditService audit, TwoFactorService twoFactor) {
+        this.twoFactor = twoFactor;
         this.loginAttempts = loginAttempts;
         this.audit = audit;
         this.authenticationManager = authenticationManager;
@@ -48,6 +51,15 @@ public class AuthService {
      * @throws com.mindhub.homebanking.exception.AccountLockedException when blocked or temporarily locked
      */
     public Session login(String email, String password) {
+        return login(email, password, null);
+    }
+
+    /**
+     * @param secondFactorCode required when the client has 2FA enabled
+     * @throws SecondFactorException after a correct password when the code is missing or wrong (a wrong
+     *                               code counts as a failed login for the lockout)
+     */
+    public Session login(String email, String password, String secondFactorCode) {
         try {
             loginAttempts.checkAllowed(email);
         } catch (AccountLockedException e) {
@@ -59,6 +71,15 @@ public class AuthService {
         } catch (AuthenticationException e) {
             loginAttempts.recordFailure(email);
             audit.record(email, null, AuditAction.LOGIN, null, AuditEvent.Outcome.FAILURE, "bad credentials");
+            throw e;
+        }
+        try {
+            twoFactor.verifyLogin(email, secondFactorCode);
+        } catch (SecondFactorException e) {
+            if (e.getReason() == SecondFactorException.Reason.INVALID) {
+                loginAttempts.recordFailure(email);
+                audit.record(email, null, AuditAction.LOGIN, null, AuditEvent.Outcome.FAILURE, "bad second factor");
+            }
             throw e;
         }
         loginAttempts.recordSuccess(email);

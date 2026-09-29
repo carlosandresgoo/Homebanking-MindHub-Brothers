@@ -53,6 +53,18 @@ app:
     account-lockout:
       max-attempts: 5
       duration: 15m
+    two-factor:
+      # Base64 AES key (256 bits) that encrypts the stored TOTP secrets. Required outside dev/test.
+      encryption-key: ${TOTP_ENCRYPTION_KEY:}
+      # Name shown in the authenticator app.
+      issuer: MindHub Brothers
+  banking:
+    zone: America/Argentina/Buenos_Aires
+    transfers:
+      # Amounts in ARS, to other clients' accounts, per client and calendar day.
+      daily-limit: 200000
+      daily-limit-with-second-factor: 1000000
+      second-factor-threshold: 50000
 
 ---
 spring:
@@ -76,6 +88,8 @@ app:
     jwt:
       # Without JWT_SECRET, dev keeps its random signing key here so sessions survive restarts.
       dev-key-file: ./data/dev-jwt.key
+    two-factor:
+      dev-key-file: ./data/dev-totp.key
     refresh-token:
       # Plain http on localhost during development.
       cookie-secure: false

@@ -10,3 +10,9 @@ app:
       cookie-secure: false
     cors:
       allowed-origins: http://localhost:4200
+  banking:
+    transfers:
+      # Small enough to test with the seeded balances (Melba has 5,000).
+      daily-limit: 6000
+      daily-limit-with-second-factor: 8000
+      second-factor-threshold: 2000

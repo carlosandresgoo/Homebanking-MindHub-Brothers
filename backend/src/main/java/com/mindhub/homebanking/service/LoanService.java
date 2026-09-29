@@ -5,6 +5,7 @@ import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.ClientLoan;
 import com.mindhub.homebanking.domain.Loan;
+import com.mindhub.homebanking.domain.TransactionCategory;
 import com.mindhub.homebanking.dto.ClientLoanDTO;
 import com.mindhub.homebanking.dto.LoanApplicationRequest;
 import com.mindhub.homebanking.dto.LoanDTO;
@@ -86,7 +87,7 @@ public class LoanService {
         LocalDateTime now = LocalDateTime.now(clock);
         ClientLoan clientLoan = clientLoanRepository.save(
                 new ClientLoan(client, loan, request.amount(), request.payments(), now));
-        transactionRepository.save(account.credit(request.amount(),
+        transactionRepository.save(account.credit(request.amount(), TransactionCategory.LOAN_DISBURSEMENT,
                 "Préstamo " + loan.getName() + " acreditado", now));
         audit.success(AuditAction.LOAN_APPROVED, loan.getName() + " -> " + account.getNumber(),
                 "amount=" + request.amount().toPlainString() + " payments=" + request.payments());
@@ -110,7 +111,7 @@ public class LoanService {
 
         int number = clientLoan.getPaymentsMade() + 1;
         clientLoan.payInstallment();
-        transactionRepository.save(account.debit(installment,
+        transactionRepository.save(account.debit(installment, TransactionCategory.LOAN_PAYMENT,
                 "Cuota " + number + "/" + clientLoan.getPayments() + " préstamo " + clientLoan.getLoan().getName(),
                 LocalDateTime.now(clock)));
         audit.success(AuditAction.LOAN_INSTALLMENT_PAID, clientLoan.getLoan().getName() + " #" + clientLoan.getId(),
