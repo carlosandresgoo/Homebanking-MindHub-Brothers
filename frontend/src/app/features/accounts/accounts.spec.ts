@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { Client } from '../../core/models/client.model';
 import { provideTestDefaults } from '../../testing/providers';
 import { Accounts } from './accounts';
@@ -24,6 +25,7 @@ describe('Accounts', () => {
     await TestBed.configureTestingModule({
       imports: [Accounts],
       providers: provideTestDefaults(),
+      deferBlockBehavior: DeferBlockBehavior.Manual,
     }).compileComponents();
     httpTesting = TestBed.inject(HttpTestingController);
   });
@@ -129,5 +131,31 @@ describe('Accounts', () => {
 
     expect(el.querySelector<HTMLButtonElement>('.open-button')!.disabled).toBe(true);
     expect(el.querySelector('.limit-hint')?.textContent).toContain('máximo de 3 cuentas');
+  });
+  it('shows the charts to clients, loaded lazily', async () => {
+    TestBed.inject(AuthService).login({ email: 'melba@gmail.com', password: 'x' }).subscribe();
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush({ accessToken: 'jwt', tokenType: 'Bearer', expiresIn: 900, role: 'CLIENT' });
+    const { fixture, el } = render();
+    httpTesting.expectOne('/api/clients/current').flush(MELBA);
+    await fixture.whenStable();
+    expect(el.querySelector('.insights-placeholder')).not.toBeNull();
+
+    const [charts] = await fixture.getDeferBlocks();
+    await charts.render(DeferBlockState.Complete);
+    expect(el.querySelector('app-insights')).not.toBeNull();
+    httpTesting.expectOne((r) => r.url === '/api/clients/current/summary');
+  });
+
+  it('does not show charts to admins', async () => {
+    TestBed.inject(AuthService).login({ email: 'admin@mindhub.com', password: 'x' }).subscribe();
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush({ accessToken: 'jwt', tokenType: 'Bearer', expiresIn: 900, role: 'ADMIN' });
+    const { fixture, el } = render();
+    httpTesting.expectOne('/api/clients/current').flush(MELBA);
+    await fixture.whenStable();
+    expect(el.querySelector('.insights-placeholder')).toBeNull();
   });
 });

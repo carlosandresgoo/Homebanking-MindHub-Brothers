@@ -1,0 +1,76 @@
+@let s = state();
+
+<section class="insights" aria-labelledby="insights-title">
+  <header class="insights-header">
+    <h2 id="insights-title" class="section-title">Tus finanzas</h2>
+    <mat-button-toggle-group
+      [value]="months()"
+      (change)="setMonths($event.value)"
+      aria-label="Período"
+      hideSingleSelectionIndicator
+    >
+      @for (period of periods; track period) {
+        <mat-button-toggle [value]="period">{{ period }} meses</mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+  </header>
+
+  @switch (s.status) {
+    @case ('loading') {
+      <div class="grid">
+        <div class="card wide skeleton"></div>
+        <div class="card skeleton"></div>
+        <div class="card skeleton"></div>
+      </div>
+    }
+    @case ('error') {
+      <p class="error" role="alert">
+        <mat-icon>cloud_off</mat-icon>
+        No pudimos cargar tus gráficos. Probá de nuevo en un rato.
+      </p>
+    }
+    @case ('loaded') {
+      <div class="grid">
+        <article class="card wide" aria-labelledby="flow-title">
+          <div class="card-header">
+            <h3 id="flow-title">Ingresos y egresos</h3>
+            <div class="totals">
+              <span class="income">
+                <mat-icon>south_west</mat-icon>
+                <span class="hb-tabular">{{ totals().income | currency }}</span>
+              </span>
+              <span class="expense">
+                <mat-icon>north_east</mat-icon>
+                <span class="hb-tabular">{{ totals().expense | currency }}</span>
+              </span>
+            </div>
+          </div>
+          <app-bar-chart
+            [series]="series"
+            [groups]="monthGroups()"
+            [label]="'Ingresos y egresos por mes de los últimos ' + months() + ' meses'"
+          />
+          <p class="note">No cuenta el dinero que movés entre tus propias cuentas.</p>
+        </article>
+
+        <article class="card" aria-labelledby="categories-title">
+          <h3 id="categories-title">¿En qué gastaste?</h3>
+          @if (slices().length > 0) {
+            <app-donut-chart
+              [slices]="slices()"
+              centerLabel="Gastos"
+              [label]="'Gastos por categoría de los últimos ' + months() + ' meses'"
+            />
+          } @else {
+            <p class="empty">Sin gastos en este período.</p>
+          }
+        </article>
+
+        <article class="card" aria-labelledby="balance-title">
+          <h3 id="balance-title">Evolución del saldo</h3>
+          <app-line-chart [points]="balancePoints()" label="Saldo total al final de cada día" />
+        </article>
+      </div>
+    }
+  }
+</section>

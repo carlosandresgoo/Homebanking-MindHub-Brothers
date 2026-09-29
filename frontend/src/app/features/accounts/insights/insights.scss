@@ -1,0 +1,109 @@
+:host {
+  display: block;
+  margin-top: 40px;
+}
+
+.insights-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 24px;
+  border-radius: var(--hb-radius);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+
+  h3 {
+    margin: 0;
+    font: var(--mat-sys-title-medium);
+  }
+
+  &.wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font: var(--mat-sys-title-small);
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+
+  .income {
+    color: var(--hb-positive);
+  }
+
+  .expense {
+    color: var(--mat-sys-error);
+  }
+}
+
+.note,
+.empty {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.empty {
+  padding: 48px 0;
+  font: var(--mat-sys-body-medium);
+  text-align: center;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.skeleton {
+  height: 280px;
+  background: var(--mat-sys-surface-container);
+  border: none;
+}

@@ -92,6 +92,15 @@
           </li>
         }
       </ul>
+
+      @if (isClient()) {
+        <!-- Charts in their own lazy chunk, loaded once the page is idle. -->
+        @defer (on idle) {
+          <app-insights />
+        } @placeholder {
+          <div class="insights-placeholder" aria-hidden="true"></div>
+        }
+      }
     }
   }
 </div>

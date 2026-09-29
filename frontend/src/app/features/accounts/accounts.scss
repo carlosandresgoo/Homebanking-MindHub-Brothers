@@ -245,3 +245,9 @@ a.account-card {
     animation: none;
   }
 }
+
+// Reserves the charts' space while their chunk loads (no layout jump).
+.insights-placeholder {
+  height: 420px;
+  margin-top: 40px;
+}

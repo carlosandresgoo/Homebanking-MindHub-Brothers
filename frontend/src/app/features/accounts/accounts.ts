@@ -12,6 +12,8 @@ import { BehaviorSubject, switchMap } from 'rxjs';
 import { AccountService } from '../../core/api/account.service';
 import { ClientService } from '../../core/api/client.service';
 import { IdempotentOperation } from '../../core/api/idempotency';
+import { AuthService } from '../../core/auth/auth.service';
+import { Insights } from './insights/insights';
 import { MAX_ACTIVE_ACCOUNTS } from '../../core/models/account.model';
 import { toLoadState } from '../../core/utils/load-state';
 
@@ -21,6 +23,7 @@ import { toLoadState } from '../../core/utils/load-state';
     CurrencyPipe,
     DatePipe,
     UpperCasePipe,
+    Insights,
     MatButtonModule,
     MatIconModule,
     MatProgressBarModule,
@@ -32,6 +35,9 @@ import { toLoadState } from '../../core/utils/load-state';
 })
 export class Accounts {
   private readonly clientService = inject(ClientService);
+  /** The financial summary only exists for clients (admins may open this page too). */
+  private readonly auth = inject(AuthService);
+  protected readonly isClient = computed(() => this.auth.role() === 'CLIENT');
   private readonly accountService = inject(AccountService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly reload$ = new BehaviorSubject<void>(undefined);
