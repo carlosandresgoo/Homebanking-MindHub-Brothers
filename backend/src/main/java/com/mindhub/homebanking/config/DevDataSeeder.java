@@ -5,10 +5,14 @@ import com.mindhub.homebanking.domain.Card;
 import com.mindhub.homebanking.domain.CardColor;
 import com.mindhub.homebanking.domain.CardType;
 import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.domain.ClientLoan;
+import com.mindhub.homebanking.domain.Loan;
 import com.mindhub.homebanking.domain.Role;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.CardRepository;
+import com.mindhub.homebanking.repository.ClientLoanRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.repository.LoanRepository;
 import com.mindhub.homebanking.service.CardNumberGenerator;
 import com.mindhub.homebanking.repository.TransactionRepository;
 import org.slf4j.Logger;
@@ -46,13 +50,18 @@ class DevDataSeeder implements ApplicationRunner {
     private final TransactionRepository transactionRepository;
     private final CardRepository cardRepository;
     private final CardNumberGenerator cardNumbers;
+    private final LoanRepository loanRepository;
+    private final ClientLoanRepository clientLoanRepository;
     private final PasswordEncoder passwordEncoder;
     private final String configuredPassword;
 
     DevDataSeeder(ClientRepository clientRepository, AccountRepository accountRepository,
                   TransactionRepository transactionRepository, CardRepository cardRepository,
-                  CardNumberGenerator cardNumbers, PasswordEncoder passwordEncoder,
+                  CardNumberGenerator cardNumbers, LoanRepository loanRepository,
+                  ClientLoanRepository clientLoanRepository, PasswordEncoder passwordEncoder,
                   @Value("${DEV_SEED_PASSWORD:}") String configuredPassword) {
+        this.loanRepository = loanRepository;
+        this.clientLoanRepository = clientLoanRepository;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
@@ -80,14 +89,23 @@ class DevDataSeeder implements ApplicationRunner {
         accountRepository.save(vin001);
         accountRepository.save(vin002);
 
-        // Balances come from movements so the history adds up: VIN001 = 5000, VIN002 = 7500.
+        // A Personal loan of 30,000 in 12 installments (36,000 with 20% interest), 2 already paid.
+        Loan personal = loanRepository.findByCode("PERSONAL").orElseThrow();
+        ClientLoan loan = clientLoanRepository.save(
+                new ClientLoan(melba, personal, new BigDecimal("30000.00"), 12, now.minusDays(20)));
+
+        // Balances come from movements (in chronological order) so the history adds up:
+        // VIN001 = 5,000 and VIN002 = 7,000 + 30,000 - 3,000 + 500 - 3,000 = 31,500.
         transactionRepository.saveAll(List.of(
                 vin001.credit(new BigDecimal("4000.00"), "Depósito inicial", now.minusDays(30)),
                 vin001.credit(new BigDecimal("2500.00"), "Sueldo septiembre", now.minusDays(10)),
                 vin001.debit(new BigDecimal("1200.00"), "Alquiler", now.minusDays(8)),
                 vin001.debit(new BigDecimal("300.00"), "Supermercado", now.minusDays(2)),
                 vin002.credit(new BigDecimal("7000.00"), "Depósito inicial", now.minusDays(29)),
-                vin002.credit(new BigDecimal("500.00"), "Intereses plazo fijo", now.minusDays(5))));
+                vin002.credit(new BigDecimal("30000.00"), "Préstamo Personal acreditado", now.minusDays(20)),
+                vin002.debit(loan.payInstallment(), "Cuota 1/12 préstamo Personal", now.minusDays(12)),
+                vin002.credit(new BigDecimal("500.00"), "Intereses plazo fijo", now.minusDays(5)),
+                vin002.debit(loan.payInstallment(), "Cuota 2/12 préstamo Personal", now.minusDays(2))));
 
         LocalDate today = now.toLocalDate();
         cardRepository.saveAll(List.of(
