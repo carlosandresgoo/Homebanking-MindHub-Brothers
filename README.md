@@ -1,25 +1,45 @@
 # Homebanking MindHub Brothers
 
-Aplicación de homebanking: API Spring Boot (`/backend`) y frontend web.
-Migración en curso a Angular 21 + Spring Boot 3.5 — ver [MIGRATION_PLAN.md](MIGRATION_PLAN.md).
+Aplicación de homebanking: API Spring Boot (`/backend`) y frontend Angular 21 (`/frontend`).
+Migración en curso — ver [MIGRATION_PLAN.md](MIGRATION_PLAN.md).
 
 ## Requisitos
 - JDK 21 (`JAVA_HOME` apuntando a él)
-- Stack: Spring Boot 3.5.16, Gradle 8.14.5 (wrapper)
+- Node 24 LTS (Angular 21 soporta ^20.19, ^22.12 y ^24)
+- Opcional: Docker con Compose
 
-## Ejecución
+## Ejecución en desarrollo
 ```powershell
-.\gradlew.bat clean build          # compila y ejecuta tests
-.\gradlew.bat :backend:bootRun     # http://localhost:8080
+# Backend: http://localhost:8080
+.\gradlew.bat :backend:bootRun
+
+# Frontend: http://localhost:4200 (proxy /api -> :8080)
+cd frontend
+npm ci
+npm start
 ```
 
-- API: `GET /api/clients`, `GET /api/clients/{id}`
-- Front actual: http://localhost:8080/web/pages/index.html
+Rutas del front: `/` (home), `/accounts`, `/manager`.
+API: `GET /api/clients`, `GET /api/clients/{id}`.
+
+## Build y tests
+```powershell
+.\gradlew.bat clean build                 # backend
+cd frontend; npm run build; npm test      # frontend
+```
+
+## Docker
+```powershell
+docker compose up --build   # http://localhost:8081
+```
+nginx sirve el front y reenvía `/api` al contenedor del backend (que no se publica al host).
 
 ## Estructura
 ```
-backend/                 Spring Boot (controller, dto, domain, repository)
-docs/                    documentación adicional
+backend/                   Spring Boot (controller, dto, domain, repository) + Dockerfile
+frontend/                  Angular 21 (core/, features/) + Dockerfile + nginx.conf
+docs/                      documentación adicional
 gradle/libs.versions.toml  versiones centralizadas
-settings.gradle          include 'backend'
+settings.gradle            include 'backend'
+docker-compose.yml         backend + frontend
 ```
