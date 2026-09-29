@@ -1,10 +1,15 @@
 package com.mindhub.homebanking.config;
 
 import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.domain.Card;
+import com.mindhub.homebanking.domain.CardColor;
+import com.mindhub.homebanking.domain.CardType;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
 import com.mindhub.homebanking.repository.AccountRepository;
+import com.mindhub.homebanking.repository.CardRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.service.CardNumberGenerator;
 import com.mindhub.homebanking.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -38,15 +44,20 @@ class DevDataSeeder implements ApplicationRunner {
     private final ClientRepository clientRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final CardRepository cardRepository;
+    private final CardNumberGenerator cardNumbers;
     private final PasswordEncoder passwordEncoder;
     private final String configuredPassword;
 
     DevDataSeeder(ClientRepository clientRepository, AccountRepository accountRepository,
-                  TransactionRepository transactionRepository, PasswordEncoder passwordEncoder,
+                  TransactionRepository transactionRepository, CardRepository cardRepository,
+                  CardNumberGenerator cardNumbers, PasswordEncoder passwordEncoder,
                   @Value("${DEV_SEED_PASSWORD:}") String configuredPassword) {
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.cardRepository = cardRepository;
+        this.cardNumbers = cardNumbers;
         this.passwordEncoder = passwordEncoder;
         this.configuredPassword = configuredPassword;
     }
@@ -78,6 +89,11 @@ class DevDataSeeder implements ApplicationRunner {
                 vin002.credit(new BigDecimal("7000.00"), "Depósito inicial", now.minusDays(29)),
                 vin002.credit(new BigDecimal("500.00"), "Intereses plazo fijo", now.minusDays(5))));
 
+        LocalDate today = now.toLocalDate();
+        cardRepository.saveAll(List.of(
+                seedCard(melba, CardType.DEBIT, CardColor.GOLD, today.minusMonths(6)),
+                seedCard(melba, CardType.CREDIT, CardColor.TITANIUM, today.minusMonths(2))));
+
         clientRepository.save(new Client("Admin", "Mindhub", ADMIN_EMAIL, hash, Role.ADMIN));
 
         if (configuredPassword.isBlank()) {
@@ -87,6 +103,11 @@ class DevDataSeeder implements ApplicationRunner {
             log.info("DEV seed users {} (CLIENT) and {} (ADMIN) created with DEV_SEED_PASSWORD",
                     CLIENT_EMAIL, ADMIN_EMAIL);
         }
+    }
+
+    private Card seedCard(Client owner, CardType type, CardColor color, LocalDate from) {
+        String number = cardNumbers.number();
+        return new Card(owner, type, color, number.substring(12), CardNumberGenerator.hash(number), from, from.plusYears(5));
     }
 
     private static String randomPassword() {

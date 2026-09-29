@@ -4,6 +4,7 @@ import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
 import com.mindhub.homebanking.repository.AccountRepository;
+import com.mindhub.homebanking.repository.CardRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
@@ -29,16 +30,18 @@ public class TestData {
     private final ClientRepository clients;
     private final AccountRepository accounts;
     private final TransactionRepository transactions;
+    private final CardRepository cards;
     private final RefreshTokenRepository refreshTokens;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter loginRateLimiter;
 
     public TestData(ClientRepository clients, AccountRepository accounts, TransactionRepository transactions,
-                    RefreshTokenRepository refreshTokens, PasswordEncoder passwordEncoder,
+                    CardRepository cards, RefreshTokenRepository refreshTokens, PasswordEncoder passwordEncoder,
                     LoginRateLimiter loginRateLimiter) {
         this.clients = clients;
         this.accounts = accounts;
         this.transactions = transactions;
+        this.cards = cards;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
         this.loginRateLimiter = loginRateLimiter;
@@ -48,6 +51,7 @@ public class TestData {
     public Ids reset() {
         loginRateLimiter.reset();
         refreshTokens.deleteAllInBatch();
+        cards.deleteAllInBatch();
         transactions.deleteAllInBatch();
         accounts.deleteAllInBatch();
         clients.deleteAllInBatch();
