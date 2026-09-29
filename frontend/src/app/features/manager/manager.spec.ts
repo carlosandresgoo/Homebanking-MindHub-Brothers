@@ -116,6 +116,12 @@ describe('Manager', () => {
     expect(el.querySelectorAll('tr.client-row')).toHaveLength(3);
   });
 
+  it('labels the paginator in Spanish', async () => {
+    const { el } = await renderLoaded();
+    expect(el.querySelector('mat-paginator')?.textContent).toContain('Filas por página');
+    expect(el.querySelector('mat-paginator')?.textContent).toContain('1 – 2 de 2');
+  });
+
   it('does not reload when the dialog is cancelled', async () => {
     const { el } = await renderLoaded();
     dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });

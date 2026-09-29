@@ -14,13 +14,11 @@ import {
   MatFormFieldDefaultOptions,
 } from '@angular/material/form-field';
 import { MatIconRegistry } from '@angular/material/icon';
-import { MatPaginatorIntl } from '@angular/material/paginator';
 import { MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarConfig } from '@angular/material/snack-bar';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
-import { SpanishPaginatorIntl } from './core/i18n/paginator-intl';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 
@@ -44,7 +42,6 @@ export const appConfig: ApplicationConfig = {
     }),
     { provide: LOCALE_ID, useValue: 'es-AR' },
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'ARS' },
-    { provide: MatPaginatorIntl, useClass: SpanishPaginatorIntl },
     {
       provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
       useValue: {

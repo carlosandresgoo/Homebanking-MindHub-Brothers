@@ -14,7 +14,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -22,6 +22,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { BehaviorSubject, switchMap } from 'rxjs';
 
 import { ClientService } from '../../core/api/client.service';
+import { SpanishPaginatorIntl } from '../../core/i18n/paginator-intl';
 import { Client } from '../../core/models/client.model';
 import { toLoadState } from '../../core/utils/load-state';
 import { initials } from '../../shared/initials';
@@ -50,6 +51,8 @@ export interface ClientRow extends Client {
     MatSortModule,
     MatTableModule,
   ],
+  // Provided here (not app-wide) so the paginator stays in this lazy chunk.
+  providers: [{ provide: MatPaginatorIntl, useClass: SpanishPaginatorIntl }],
   templateUrl: './manager.html',
   styleUrl: './manager.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
