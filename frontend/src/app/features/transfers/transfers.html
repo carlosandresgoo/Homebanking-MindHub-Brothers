@@ -191,6 +191,12 @@
               </dd>
             </div>
           </dl>
+          @if (confirmError(); as message) {
+            <div class="error-banner" role="alert">
+              <mat-icon>error</mat-icon>
+              <span>{{ message }}</span>
+            </div>
+          }
           <div class="actions">
             <button mat-button type="button" (click)="back()" [disabled]="submitting()">
               <mat-icon>arrow_back</mat-icon>
@@ -205,6 +211,8 @@
             >
               @if (submitting()) {
                 <mat-spinner diameter="20" aria-label="Transfiriendo" />
+              } @else if (confirmError()) {
+                Reintentar
               } @else {
                 Confirmar transferencia
               }

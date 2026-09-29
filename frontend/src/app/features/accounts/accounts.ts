@@ -11,6 +11,7 @@ import { BehaviorSubject, switchMap } from 'rxjs';
 
 import { AccountService } from '../../core/api/account.service';
 import { ClientService } from '../../core/api/client.service';
+import { IdempotentOperation } from '../../core/api/idempotency';
 import { MAX_ACTIVE_ACCOUNTS } from '../../core/models/account.model';
 import { toLoadState } from '../../core/utils/load-state';
 
@@ -37,6 +38,8 @@ export class Accounts {
 
   protected readonly maxAccounts = MAX_ACTIVE_ACCOUNTS;
   protected readonly opening = signal(false);
+  /** Clicking again after a network error doesn't open a second account. */
+  private readonly openOperation = new IdempotentOperation();
 
   /** The logged-in client's own data (the API never lists other clients to a CLIENT). */
   protected readonly state = toSignal(
@@ -57,13 +60,15 @@ export class Accounts {
 
   protected openAccount(): void {
     this.opening.set(true);
-    this.accountService.openAccount().subscribe({
+    this.accountService.openAccount(this.openOperation.keyFor('open-account')).subscribe({
       next: (account) => {
+        this.openOperation.settle();
         this.opening.set(false);
         this.snackBar.open(`Abriste la cuenta ${account.number}.`, 'OK');
         this.reload$.next();
       },
       error: (err: unknown) => {
+        this.openOperation.settleUnlessUnknown(err);
         this.opening.set(false);
         const limit = err instanceof HttpErrorResponse && err.status === 409;
         this.snackBar.open(

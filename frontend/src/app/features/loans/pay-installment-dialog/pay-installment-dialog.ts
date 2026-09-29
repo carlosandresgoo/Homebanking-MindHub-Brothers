@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 
+import { IdempotentOperation } from '../../../core/api/idempotency';
 import { LoanService } from '../../../core/api/loan.service';
 import { Account } from '../../../core/models/account.model';
 import { ClientLoan } from '../../../core/models/loan.model';
@@ -142,6 +143,8 @@ export class PayInstallmentDialog {
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** "Pagar" again after a network error reuses the key, so the installment is never paid twice. */
+  private readonly operation = new IdempotentOperation();
   protected readonly account = new FormControl(
     this.data.accounts.find((a) => a.balance >= this.data.loan.nextInstallment)?.number ?? '',
     { nonNullable: true, validators: Validators.required },
@@ -155,17 +158,21 @@ export class PayInstallmentDialog {
     this.submitting.set(true);
     this.error.set(null);
     this.dialogRef.disableClose = true;
-    this.loanService.payInstallment(this.data.loan.id, this.account.value).subscribe({
-      next: (updated) => this.dialogRef.close(updated),
-      error: (err: unknown) => {
-        this.submitting.set(false);
-        this.dialogRef.disableClose = false;
-        this.error.set(
-          err instanceof HttpErrorResponse && err.status === 422
-            ? 'No tenés saldo suficiente en esa cuenta.'
-            : 'No pudimos registrar el pago. Intentá de nuevo.',
-        );
-      },
-    });
+    const request = { loanId: this.data.loan.id, account: this.account.value };
+    this.loanService
+      .payInstallment(request.loanId, request.account, this.operation.keyFor(request))
+      .subscribe({
+        next: (updated) => this.dialogRef.close(updated),
+        error: (err: unknown) => {
+          this.operation.settleUnlessUnknown(err);
+          this.submitting.set(false);
+          this.dialogRef.disableClose = false;
+          this.error.set(
+            err instanceof HttpErrorResponse && err.status === 422
+              ? 'No tenés saldo suficiente en esa cuenta.'
+              : 'No pudimos registrar el pago. Intentá de nuevo.',
+          );
+        },
+      });
   }
 }

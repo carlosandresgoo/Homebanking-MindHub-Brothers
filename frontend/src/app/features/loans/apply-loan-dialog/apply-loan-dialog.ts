@@ -19,9 +19,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { startWith } from 'rxjs';
 
+import { IdempotentOperation } from '../../../core/api/idempotency';
 import { LoanService } from '../../../core/api/loan.service';
 import { Account } from '../../../core/models/account.model';
-import { ClientLoan, LOAN_ICON, Loan, totalWithInterest } from '../../../core/models/loan.model';
+import {
+  ClientLoan,
+  LOAN_ICON,
+  Loan,
+  LoanApplication,
+  totalWithInterest,
+} from '../../../core/models/loan.model';
 
 export interface ApplyLoanDialogData {
   catalog: readonly Loan[];
@@ -58,6 +65,8 @@ export class ApplyLoanDialog {
   protected readonly icon = LOAN_ICON;
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** Resubmitting the same application after a network error never creates two loans. */
+  private readonly operation = new IdempotentOperation();
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     loanId: [this.firstAvailableId(), Validators.required],
@@ -119,21 +128,21 @@ export class ApplyLoanDialog {
     this.submitting.set(true);
     this.error.set(null);
     this.dialogRef.disableClose = true;
-    this.loanService
-      .apply({
-        loanId: v.loanId,
-        amount: v.amount ?? 0,
-        payments: v.payments ?? 0,
-        accountNumber: v.accountNumber,
-      })
-      .subscribe({
-        next: (created) => this.dialogRef.close(created),
-        error: (err: unknown) => {
-          this.submitting.set(false);
-          this.dialogRef.disableClose = false;
-          this.error.set(messageFor(err));
-        },
-      });
+    const application: LoanApplication = {
+      loanId: v.loanId,
+      amount: v.amount ?? 0,
+      payments: v.payments ?? 0,
+      accountNumber: v.accountNumber,
+    };
+    this.loanService.apply(application, this.operation.keyFor(application)).subscribe({
+      next: (created) => this.dialogRef.close(created),
+      error: (err: unknown) => {
+        this.operation.settleUnlessUnknown(err);
+        this.submitting.set(false);
+        this.dialogRef.disableClose = false;
+        this.error.set(messageFor(err));
+      },
+    });
   }
 
   private firstAvailableId(): number {

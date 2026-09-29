@@ -30,6 +30,7 @@ import { RouterLink } from '@angular/router';
 import { BehaviorSubject, startWith, switchMap } from 'rxjs';
 
 import { AccountService } from '../../core/api/account.service';
+import { IdempotentOperation, isOutcomeUnknown } from '../../core/api/idempotency';
 import { TransferService } from '../../core/api/transfer.service';
 import { Account } from '../../core/models/account.model';
 import { TransferReceipt, TransferRequest } from '../../core/models/transfer.model';
@@ -77,6 +78,10 @@ export class Transfers {
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly receipt = signal<TransferReceipt | null>(null);
+  /** Error shown on the confirmation step when the outcome is unknown (retry is safe). */
+  protected readonly confirmError = signal<string | null>(null);
+  /** Retrying the same transfer (even after going back and re-reviewing it) reuses its key. */
+  private readonly operation = new IdempotentOperation();
 
   private readonly reload$ = new BehaviorSubject<void>(undefined);
 
@@ -173,6 +178,7 @@ export class Transfers {
   }
 
   protected back(): void {
+    this.confirmError.set(null);
     this.step.set('form');
   }
 
@@ -185,14 +191,25 @@ export class Transfers {
       description: v.description.trim() || undefined,
     };
     this.submitting.set(true);
-    this.transferService.transfer(request).subscribe({
+    this.confirmError.set(null);
+    this.transferService.transfer(request, this.operation.keyFor(request)).subscribe({
       next: (receipt) => {
+        this.operation.settle();
         this.submitting.set(false);
         this.receipt.set(receipt);
         this.step.set('done');
       },
       error: (err: unknown) => {
         this.submitting.set(false);
+        this.operation.settleUnlessUnknown(err);
+        if (isOutcomeUnknown(err)) {
+          // Network error or server failure: the transfer may or may not have happened. Stay here so
+          // "Reintentar" resends the same Idempotency-Key and can never transfer twice.
+          this.confirmError.set(
+            'No pudimos confirmar si la transferencia se realizó. Reintentá: no se va a duplicar.',
+          );
+          return;
+        }
         this.error.set(messageFor(err));
         this.step.set('form');
       },
@@ -203,6 +220,7 @@ export class Transfers {
   protected newTransfer(): void {
     this.receipt.set(null);
     this.error.set(null);
+    this.confirmError.set(null);
     this.form.reset({ destination: 'third' });
     this.setDestination('third');
     this.step.set('form');

@@ -159,4 +159,46 @@ describe('Transfers', () => {
     );
     expect(el.querySelector<HTMLInputElement>('#thirdTarget')!.value).toBe('VIN-00000000');
   });
+
+  it('stays on the confirmation and retries with the same Idempotency-Key when the outcome is unknown', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '100');
+    await click(fixture, 'Continuar');
+    await click(fixture, 'Confirmar transferencia');
+    const first = httpTesting.expectOne('/api/transfers');
+    const key = first.request.headers.get('Idempotency-Key');
+    expect(key).toMatch(/^[0-9a-f-]{36}$/);
+    first.flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await fixture.whenStable();
+
+    expect(el.querySelector('[aria-label="Confirmación"] [role="alert"]')?.textContent).toContain(
+      'no se va a duplicar',
+    );
+    await click(fixture, 'Reintentar');
+    const retry = httpTesting.expectOne('/api/transfers');
+    expect(retry.request.headers.get('Idempotency-Key')).toBe(key);
+    retry.flush(RECEIPT);
+    await fixture.whenStable();
+    expect(el.textContent).toContain('¡Transferencia realizada!');
+  });
+
+  it('uses a new Idempotency-Key after a definitive answer', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '10');
+    await click(fixture, 'Continuar');
+    await click(fixture, 'Confirmar transferencia');
+    const first = httpTesting.expectOne('/api/transfers');
+    first.flush(null, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+
+    await click(fixture, 'Continuar');
+    await click(fixture, 'Confirmar transferencia');
+    const second = httpTesting.expectOne('/api/transfers');
+    expect(second.request.headers.get('Idempotency-Key')).not.toBe(
+      first.request.headers.get('Idempotency-Key'),
+    );
+    second.flush(RECEIPT);
+  });
 });

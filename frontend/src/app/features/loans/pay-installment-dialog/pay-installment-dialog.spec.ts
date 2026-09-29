@@ -56,4 +56,19 @@ describe('PayInstallmentDialog', () => {
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('saldo suficiente');
     expect(dialogRef.close).not.toHaveBeenCalled();
   });
+
+  it('retries a failed payment with the same Idempotency-Key', async () => {
+    const { fixture, el } = await render();
+    el.querySelector<HTMLButtonElement>('.submit')!.click();
+    const first = httpTesting.expectOne('/api/clients/current/loans/7/payments');
+    const key = first.request.headers.get('Idempotency-Key');
+    expect(key).toBeTruthy();
+    first.error(new ProgressEvent('error'));
+    await fixture.whenStable();
+
+    el.querySelector<HTMLButtonElement>('.submit')!.click();
+    const retry = httpTesting.expectOne('/api/clients/current/loans/7/payments');
+    expect(retry.request.headers.get('Idempotency-Key')).toBe(key);
+    retry.flush({ ...PERSONAL_LOAN, paymentsMade: 3 });
+  });
 });
