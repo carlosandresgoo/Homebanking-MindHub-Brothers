@@ -1,7 +1,7 @@
 # Proyecto: Homebanking MindHub Brothers
 
 Aplicación de homebanking: API Spring Boot (`/backend`, Gradle) y frontend Angular 21 (`/frontend`), desplegados por separado.
-Estado actual: Fases 0–2 completadas (reestructura, Boot 3.5, migración a Angular). Pendiente: Fase 3 (seguridad). Ver `MIGRATION_PLAN.md`.
+Estado: migración completada (Fases 0–3). Historial y decisiones en `MIGRATION_PLAN.md`; guía de uso en `README.md`.
 
 ## Comandos
 
@@ -10,61 +10,58 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 ### Backend
 - Compilar y testear: `./gradlew clean build`
 - Solo tests: `./gradlew test`
-- Arrancar: `./gradlew :backend:bootRun` (http://localhost:8080)
-- Consola H2: http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:homebanking`)
+- Arrancar (perfil `dev` por defecto): `./gradlew :backend:bootRun` (http://localhost:8080)
+- Consola H2 (solo `dev`): http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:homebanking`)
+- Vulnerabilidades: `./gradlew :backend:dependencyCheckAnalyze` (requiere `NVD_API_KEY`)
+- Tras cambiar dependencias: `./gradlew :backend:dependencies --write-locks`
 
 ### Frontend
 - Instalar: `cd frontend && npm ci`
 - Desarrollo: `npm start` (http://localhost:4200, proxy `/api` → http://localhost:8080)
 - Build: `npm run build` (salida en `frontend/dist/homebanking-frontend/browser`)
-- Tests: `npm test` (Vitest; `npx ng test --watch=false` para una sola pasada)
+- Tests: `npx ng test --watch=false` (Vitest)
 
 ### Docker
-- `docker compose up --build` → front en http://localhost:8081 (nginx hace de proxy de `/api` al backend)
+- `docker compose up --build` con un `.env` (ver `.env.example`) → http://localhost:8081
 
 ## Estructura
-- Raíz: `settings.gradle` (`include 'backend'`), `gradlew*`, `gradle/wrapper`, `gradle/libs.versions.toml`, `docker-compose.yml`
+- Raíz: `settings.gradle` (`include 'backend'`), `gradlew*`, `gradle/libs.versions.toml`, `docker-compose.yml`, `.env.example`
 - `backend/src/main/java/com/mindhub/homebanking/`
-  - `controller/` -> REST controllers (`/api/clients`, `/accounts`)
-  - `dto/`        -> DTOs expuestos por la API
-  - `domain/`     -> entidades JPA (`Client`, `Account`)
-  - `repository/` -> Spring Data JPA (también expuestos por Spring Data REST en `/rest`)
-  - `HomebankingApplication.java` -> arranque + datos de prueba (`CommandLineRunner`)
-- `backend/src/main/resources/application.properties` -> config (H2 en memoria, base-path REST `/rest`)
-- `frontend/src/app/`
-  - `core/models` (interfaces = DTOs del backend), `core/api` (servicios HttpClient), `core/interceptors`, `core/utils`
-  - `features/{home,accounts,manager}` -> páginas, cargadas en diferido desde `app.routes.ts`
-- `frontend/public/assets` -> imágenes; `frontend/src/styles.css` -> estilos globales
-- `docs/` -> documentación adicional
+  - `controller/` (`AuthController`, `ClientController`), `service/`, `repository/`, `domain/`, `dto/` (records), `mapper/`
+  - `security/` (`SecurityConfig`, `JwtConfig`, `AccessTokenService`, `RefreshTokenService`, `LoginRateLimiter`)
+  - `exception/` (`GlobalExceptionHandler` → ProblemDetail), `config/` (`SecurityProperties`, `DevDataSeeder`)
+- `backend/src/main/resources/application.yml` (perfiles `dev`/`prod`), `db/migration/` (Flyway)
+- `backend/src/test/.../support/IntegrationTest` + `TestData`: base de los tests MockMvc (perfil `test`)
+- `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards], `interceptors`, `utils`); `features/{home,login,accounts,manager}`
 
 ## Stack
-- Java 21 (toolchain), Spring Boot 3.5.16 (Jakarta EE, Hibernate 6), Gradle 8.14.5 (wrapper)
-- Spring Web, Spring Data JPA, Spring Data REST, H2 (en memoria, se pierde al reiniciar)
-- Angular 21 (zoneless, application builder con esbuild), Bootstrap 5.3 (npm), Vitest
+- Java 21, Spring Boot 3.5.16, Gradle 8.14.5, Spring Security 6 + oauth2-resource-server (JWT HS256), Flyway, Bucket4j
+- H2 (dev/test) y PostgreSQL (prod)
+- Angular 21 (zoneless, esbuild), Bootstrap 5.3, Vitest
 
 ## Convenciones backend
-- Nunca exponer entidades JPA en los controllers: usar DTOs (`new XxxDTO(entity)`)
-- Validación con Bean Validation (`@Valid`) en todas las entradas (requiere añadir `spring-boot-starter-validation`)
-- Errores con `@RestControllerAdvice`; devolver 404 en lugar de `null` cuando no existe el recurso
-- Inyección por constructor en código nuevo (el código existente usa `@Autowired` en campos; migrarlo al tocarlo)
-- Tests con JUnit 5; si se añade Spring Security, testear con `spring-security-test`
-- Paquetes por capas: `controller`, `service`, `repository`, `domain`, `dto`, `mapper`, `config`, `security`, `exception`
-- Versiones nuevas siempre en `gradle/libs.versions.toml`, nunca en `build.gradle`
+- Nunca exponer entidades JPA: DTOs (records) mapeados en `mapper/`
+- Entradas con records + Bean Validation (`@Valid`); solo los campos que el usuario puede fijar (sin mass assignment)
+- Errores con `GlobalExceptionHandler` y `ProblemDetail`; nada de stack traces ni mensajes internos
+- Inyección por constructor; servicios `@Transactional(readOnly = true)` por defecto
+- Cada endpoint con `@PreAuthorize`; rutas nuevas deben añadirse a `SecurityConfig` (deny-by-default)
+- Cambios de esquema solo con una nueva migración Flyway `V{n}__*.sql` (`ddl-auto=validate`)
+- Tests de seguridad con MockMvc extendiendo `IntegrationTest` (401/403/400 para cada endpoint nuevo)
+- Versiones en `gradle/libs.versions.toml`, nunca en `build.gradle`; regenerar `gradle.lockfile`
 
 ## Convenciones frontend
-- Standalone components, sin NgModules; `ChangeDetectionStrategy.OnPush` en todos
-- Signals para el estado; control flow `@if` / `@for` / `@let` (no `*ngIf` / `*ngFor`)
-- Cargas de datos con `toSignal(toLoadState(...))` (`core/utils/load-state.ts`) y ramas loading/loaded/error en la plantilla
-- Formularios reactivos (`NonNullableFormBuilder`); HttpClient con interceptors funcionales
-- URLs de la API relativas vía `environment.apiUrl` (`/api`), nunca `http://localhost:8080`
-- TypeScript estricto, sin `any`; cada componente/servicio con su `.spec.ts`
+- Standalone components, `ChangeDetectionStrategy.OnPush`, signals, `@if`/`@for`/`@let`
+- Datos con `toSignal(toLoadState(...))`; formularios reactivos; interceptors funcionales
+- El access token solo en memoria (`AuthService`); nunca en localStorage/sessionStorage
+- Rutas protegidas con `authGuard` / `roleGuard` (UX; la autorización real está en el backend)
+- URLs relativas vía `environment.apiUrl`; TypeScript estricto sin `any`; cada pieza con su `.spec.ts`
 
 ## Seguridad (reglas fijas)
-- Nunca commitear secretos, tokens ni contraseñas; usar variables de entorno
-- CORS restrictivo, sin `"*"`
-- Contraseñas con BCrypt/Argon2 cuando se añada autenticación
-- No loguear datos sensibles (datos de clientes, saldos, credenciales) ni en backend ni en `console.*`
-- La consola H2 y Spring Data REST (`/rest`) exponen datos sin autenticación: solo para desarrollo
+- Nunca commitear secretos: variables de entorno / `.env` (git-ignored)
+- CORS restrictivo por perfil (`app.security.cors.allowed-origins`), sin `"*"`
+- Contraseñas con `DelegatingPasswordEncoder` (bcrypt)
+- No loguear datos sensibles (contraseñas, tokens, datos personales, saldos); `toString` sin relaciones ni secretos
+- Consola H2 y datos semilla solo en el perfil `dev`
 
 ## Reglas de trabajo
 - Usar siempre el wrapper (`./gradlew`), nunca Gradle global

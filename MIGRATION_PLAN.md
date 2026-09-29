@@ -14,6 +14,34 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 | Plataforma | **Spring Boot 3.5.x + Java 21 + Gradle 8.14.x** (salto de versión mayor autorizado) |
 | Autenticación | **JWT propio**: login con email y contraseña, access token de 15 min y refresh token rotado en cookie HttpOnly |
 | Librería de UI | Se mantiene **Bootstrap** (instalado por npm, sin CDN) |
+| Alta de usuarios | **Solo ADMIN** (`POST /api/clients` desde `/manager`); sin registro público |
+| Usuarios semilla (dev) | Contraseña desde `DEV_SEED_PASSWORD` o generada e impresa una vez |
+
+## Estado (29/09/2026)
+
+| Fase | Estado | Commits (rama `Migration`) |
+|---|---|---|
+| 0 Análisis | ✅ | `7974806` |
+| 1 Reestructuración | ✅ | `7cda712` … `9bf40e3` |
+| 1.5 Plataforma (Boot 3.5.16, Java 21, Gradle 8.14.5) | ✅ | `490936a` … `3a37000` |
+| 2 Angular 21 + eliminación de Vue | ✅ | `26ae508` … `8f8d070` |
+| 3 Seguridad | ✅ (con pendientes abajo) | `fc3c7c7` … |
+
+### Problemas del análisis → resolución
+| # | Problema | Resuelto en |
+|---|---|---|
+| 1–3 | Sin auth, Spring Data REST abierto, consola H2 pública | Fase 3: JWT + deny-by-default, Data REST eliminado, H2 solo en `dev` |
+| 4 | Credencial filtrada en `origin/task10` y `origin/task11` | **Pendiente del equipo**: rotar esa contraseña (ramas no tocadas) |
+| 5–6 | Entidades expuestas, `@RequestMapping` sin verbo | DTOs records, `@GetMapping`/`@PostMapping`, `/accounts` eliminado |
+| 7–8 | `toString` recursivo, saldo `double` | `toString` sin relaciones; `BigDecimal(19,2)` |
+| 9–10 | CDN sin SRI, URL hardcodeada | Dependencias por npm; `environment.apiUrl` relativo |
+| 11–15 | Validación, 404, EAGER/N+1, `@Autowired`, `console.log` de datos | `@Valid` + ProblemDetail, LAZY + entity graphs, inyección por constructor |
+| 16–20 | Bugs y calidad del front Vue | Desaparecen con la migración |
+
+### Pendientes
+- **OWASP dependency-check** configurado pero sin ejecutar: la NVD rechaza la descarga sin `NVD_API_KEY`.
+- **Docker** (`docker compose up`) sin verificar: Docker no está instalado en la máquina de desarrollo.
+- Rate limit en memoria: con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
 
 ---
 
