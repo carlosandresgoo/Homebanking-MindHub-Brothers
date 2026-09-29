@@ -65,6 +65,10 @@ app:
       daily-limit: 200000
       daily-limit-with-second-factor: 1000000
       second-factor-threshold: 50000
+    fixed-terms:
+      min-amount: 1000
+      # Every day at 00:05 (bank time zone).
+      payout-cron: "0 5 0 * * *"
 
 ---
 spring:

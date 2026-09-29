@@ -3,6 +3,8 @@ package com.mindhub.homebanking.service;
 import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.domain.FixedTerm;
+import com.mindhub.homebanking.repository.FixedTermRepository;
 import com.mindhub.homebanking.dto.AccountDTO;
 import com.mindhub.homebanking.dto.AccountDetailDTO;
 import com.mindhub.homebanking.exception.ConflictException;
@@ -35,9 +37,12 @@ public class AccountService {
     private final AuditService audit;
     private final Clock clock;
 
+    private final FixedTermRepository fixedTermRepository;
+
     public AccountService(AccountRepository accountRepository, ClientRepository clientRepository,
                           AccountNumberGenerator accountNumbers, ClientMapper mapper, AuditService audit,
-                          Clock clock) {
+                          Clock clock, FixedTermRepository fixedTermRepository) {
+        this.fixedTermRepository = fixedTermRepository;
         this.audit = audit;
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
@@ -87,6 +92,9 @@ public class AccountService {
                 .orElseThrow(AccountService::notFound);
         if (!account.hasZeroBalance()) {
             throw new ConflictException("The account must have a zero balance to be closed");
+        }
+        if (fixedTermRepository.existsByAccountAndStatus(account, FixedTerm.Status.ACTIVE)) {
+            throw new ConflictException("The account has an active fixed term that will be paid into it");
         }
         account.close();
         audit.success(AuditAction.ACCOUNT_CLOSED, account.getNumber(), null);

@@ -49,6 +49,9 @@ public class MovementService {
             TransactionCategory.TRANSFER_IN, "Transferencia recibida",
             TransactionCategory.LOAN_DISBURSEMENT, "Préstamo acreditado",
             TransactionCategory.LOAN_PAYMENT, "Cuota de préstamo",
+            TransactionCategory.FIXED_TERM_DEPOSIT, "Plazo fijo constituido",
+            TransactionCategory.FIXED_TERM_PAYOUT, "Plazo fijo: capital",
+            TransactionCategory.FIXED_TERM_INTEREST, "Plazo fijo: intereses",
             TransactionCategory.OTHER, "Otro"));
 
     /** The CSV file: name and UTF-8 bytes (with BOM, so Excel shows accents correctly). */

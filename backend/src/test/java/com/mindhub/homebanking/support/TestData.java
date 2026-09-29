@@ -11,6 +11,7 @@ import com.mindhub.homebanking.repository.CardRepository;
 import com.mindhub.homebanking.repository.ClientLoanRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.ContactRepository;
+import com.mindhub.homebanking.repository.FixedTermRepository;
 import com.mindhub.homebanking.repository.IdempotencyRecordRepository;
 import com.mindhub.homebanking.repository.PasswordResetTokenRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
@@ -45,6 +46,7 @@ public class TestData {
     private final AuditEventRepository auditEvents;
     private final IdempotencyRecordRepository idempotencyRecords;
     private final ContactRepository contacts;
+    private final FixedTermRepository fixedTerms;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter loginRateLimiter;
     private final Clock clock;
@@ -53,12 +55,14 @@ public class TestData {
                     CardRepository cards, ClientLoanRepository clientLoans, RefreshTokenRepository refreshTokens,
                     PasswordResetTokenRepository resetTokens, AuditEventRepository auditEvents,
                     IdempotencyRecordRepository idempotencyRecords, ContactRepository contacts,
+                    FixedTermRepository fixedTerms,
                     PasswordEncoder passwordEncoder,
                     LoginRateLimiter loginRateLimiter, Clock clock) {
         this.clock = clock;
         this.auditEvents = auditEvents;
         this.idempotencyRecords = idempotencyRecords;
         this.contacts = contacts;
+        this.fixedTerms = fixedTerms;
         this.clientLoans = clientLoans;
         this.resetTokens = resetTokens;
         this.clients = clients;
@@ -78,6 +82,7 @@ public class TestData {
         auditEvents.deleteAllInBatch();
         idempotencyRecords.deleteAllInBatch();
         contacts.deleteAllInBatch();
+        fixedTerms.deleteAllInBatch();
         cards.deleteAllInBatch();
         clientLoans.deleteAllInBatch();
         transactions.deleteAllInBatch();

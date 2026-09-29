@@ -16,7 +16,16 @@ import java.time.ZoneId;
  */
 @Validated
 @ConfigurationProperties(prefix = "app.banking")
-public record BankingProperties(@NotNull ZoneId zone, @Valid @NotNull Transfers transfers) {
+public record BankingProperties(@NotNull ZoneId zone, @Valid @NotNull Transfers transfers,
+                                @Valid @NotNull FixedTerms fixedTerms) {
+
+    /**
+     * @param minAmount  smallest principal accepted
+     * @param payoutCron when matured fixed terms are paid (bank's time zone); they are also paid at
+     *                   start-up, so none is missed while the server was down
+     */
+    public record FixedTerms(@NotNull @DecimalMin("0.01") BigDecimal minAmount, @NotNull String payoutCron) {
+    }
 
     /**
      * Limits for transfers to other clients' accounts (moving money between one's own accounts is free).

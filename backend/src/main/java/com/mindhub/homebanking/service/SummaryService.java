@@ -72,8 +72,8 @@ public class SummaryService {
             boolean credit = t.getType() == TransactionType.CREDIT;
             LocalDate day = t.getDate().toLocalDate();
             netByDay.merge(day, credit ? t.getAmount() : t.getAmount().negate(), BigDecimal::add);
-            if (isOwnTransfer(t, ownNumbers)) {
-                continue; // money moved between the client's own accounts
+            if (isInternal(t, ownNumbers)) {
+                continue; // the client's money changing place, not coming in or going out
             }
             BigDecimal[] month = byMonth.get(YearMonth.from(day));
             if (month != null) {
@@ -107,8 +107,16 @@ public class SummaryService {
         return points;
     }
 
-    private static boolean isOwnTransfer(Transaction t, Set<String> ownNumbers) {
-        return (t.getCategory() == TransactionCategory.TRANSFER_OUT || t.getCategory() == TransactionCategory.TRANSFER_IN)
+    /**
+     * Transfers between the client's own accounts, and money going into or back from a fixed term
+     * (its interest, though, is income).
+     */
+    private static boolean isInternal(Transaction t, Set<String> ownNumbers) {
+        TransactionCategory category = t.getCategory();
+        if (category == TransactionCategory.FIXED_TERM_DEPOSIT || category == TransactionCategory.FIXED_TERM_PAYOUT) {
+            return true;
+        }
+        return (category == TransactionCategory.TRANSFER_OUT || category == TransactionCategory.TRANSFER_IN)
                 && t.getCounterparty() != null && ownNumbers.contains(t.getCounterparty());
     }
 }
