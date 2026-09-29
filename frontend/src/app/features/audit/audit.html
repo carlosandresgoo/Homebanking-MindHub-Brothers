@@ -1,0 +1,117 @@
+@let s = state();
+
+@if (s.status === 'loading') {
+  <mat-progress-bar class="page-loading" mode="indeterminate" aria-label="Cargando auditoría" />
+}
+
+<div class="hb-page">
+  <header class="hb-page-header">
+    <div>
+      <h1>Auditoría</h1>
+      <p>Registro inmutable de ingresos, cambios de seguridad y operaciones de dinero.</p>
+    </div>
+  </header>
+
+  <section class="table-card">
+    <form class="filters" [formGroup]="filters" aria-label="Filtros">
+      <mat-form-field>
+        <mat-label>Usuario</mat-label>
+        <mat-icon matPrefix>person_search</mat-icon>
+        <input matInput id="actor" formControlName="actor" placeholder="email" autocomplete="off" />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Acción</mat-label>
+        <mat-select formControlName="action" id="action">
+          <mat-option value="">Todas</mat-option>
+          @for (action of actions; track action) {
+            <mat-option [value]="action">{{ actionLabel[action] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Desde</mat-label>
+        <input matInput id="from" type="date" formControlName="from" />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Hasta</mat-label>
+        <input matInput id="to" type="date" formControlName="to" />
+      </mat-form-field>
+      <button mat-button type="button" class="clear" (click)="clear()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    </form>
+
+    @if (s.status === 'error') {
+      <p class="empty" role="alert">No pudimos cargar la auditoría.</p>
+    } @else {
+      <div class="table-scroll">
+        <table
+          mat-table
+          [dataSource]="s.status === 'loaded' ? s.data.content : []"
+          aria-label="Eventos"
+        >
+          <ng-container matColumnDef="occurredAt">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let e" class="nowrap hb-tabular">
+              {{ e.occurredAt | date: 'dd/MM/yy HH:mm:ss' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actor">
+            <th mat-header-cell *matHeaderCellDef>Usuario</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="actor">{{ e.actor ?? '—' }}</span>
+              @if (e.actorRole) {
+                <span class="muted">{{
+                  e.actorRole === 'ADMIN' ? 'Administrador' : 'Cliente'
+                }}</span>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Acción</th>
+            <td mat-cell *matCellDef="let e">{{ labelOf(e) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="target">
+            <th mat-header-cell *matHeaderCellDef>Objeto</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="hb-tabular">{{ e.target ?? '—' }}</span>
+              @if (e.details) {
+                <span class="muted">{{ e.details }}</span>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="outcome">
+            <th mat-header-cell *matHeaderCellDef>Resultado</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="outcome" [class.failure]="e.outcome === 'FAILURE'">
+                {{ e.outcome === 'SUCCESS' ? 'Éxito' : 'Fallo' }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="ip">
+            <th mat-header-cell *matHeaderCellDef>IP</th>
+            <td mat-cell *matCellDef="let e" class="hb-tabular muted-cell">{{ e.ip ?? '—' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          <tr class="mat-mdc-row" *matNoDataRow>
+            <td class="mat-mdc-cell empty" [attr.colspan]="columns.length">
+              {{ s.status === 'loading' ? 'Cargando…' : 'No hay eventos para esos filtros.' }}
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="s.status === 'loaded' ? s.data.totalElements : 0"
+        [pageIndex]="query().page"
+        [pageSize]="query().size"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        (page)="onPage($event)"
+        aria-label="Paginación de eventos"
+      />
+    }
+  </section>
+</div>

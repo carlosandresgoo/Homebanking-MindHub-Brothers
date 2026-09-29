@@ -27,6 +27,7 @@ const NAV: readonly NavItem[] = [
   { path: '/cards', label: 'Tarjetas', icon: 'credit_card', roles: ['CLIENT'] },
   { path: '/loans', label: 'Préstamos', icon: 'request_quote', roles: ['CLIENT'] },
   { path: '/manager', label: 'Clientes', icon: 'group', roles: ['ADMIN'] },
+  { path: '/audit', label: 'Auditoría', icon: 'fact_check', roles: ['ADMIN'] },
 ];
 
 @Component({

@@ -66,6 +66,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/loans/loans').then((m) => m.Loans),
       },
       {
+        path: 'audit',
+        title: 'Auditoría | MindHub Brothers',
+        canActivate: [roleGuard('ADMIN')],
+        loadComponent: () => import('./features/audit/audit').then((m) => m.Audit),
+      },
+      {
         path: 'profile',
         title: 'Mi perfil | MindHub Brothers',
         loadComponent: () => import('./features/profile/profile').then((m) => m.Profile),

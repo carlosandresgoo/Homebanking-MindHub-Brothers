@@ -54,6 +54,6 @@ describe('Shell', () => {
   it('shows "Clientes" to admins only', async () => {
     const { el } = await renderAs('ADMIN');
     const links = Array.from(el.querySelectorAll('.nav a')).map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/manager']);
+    expect(links).toEqual(['/manager', '/audit']);
   });
 });
