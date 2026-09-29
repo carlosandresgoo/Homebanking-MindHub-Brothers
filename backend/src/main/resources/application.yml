@@ -33,6 +33,8 @@ management:
       enabled: false
 
 app:
+  # Public URL of the Angular app, used in links sent by e-mail (e.g. password reset).
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
   security:
     jwt:
       # Base64-encoded HMAC key, at least 256 bits. Required outside the dev profile.

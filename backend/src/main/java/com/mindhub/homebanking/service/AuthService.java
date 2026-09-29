@@ -44,7 +44,11 @@ public class AuthService {
 
     /** Public sign-up: creates a CLIENT with an initial account and starts a session right away. */
     public Session register(CreateClientRequest request) {
-        Client client = clientService.register(request);
+        return startSession(clientService.register(request));
+    }
+
+    /** New access + refresh tokens for an already authenticated client (e.g. after a password change). */
+    public Session startSession(Client client) {
         return new Session(accessToken(client), refreshTokenService.issue(client));
     }
 

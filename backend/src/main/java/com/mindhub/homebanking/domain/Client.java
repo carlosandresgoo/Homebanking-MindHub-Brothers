@@ -44,6 +44,11 @@ public class Client {
         this.role = role;
     }
 
+    /** @param passwordHash already encoded (never the raw password) */
+    public void changePassword(String passwordHash) {
+        this.password = passwordHash;
+    }
+
     public void addAccount(Account account) {
         account.setClient(this);
         accounts.add(account);

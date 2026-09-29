@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestData.class)
+@Import({TestData.class, TestBeans.class})
 public abstract class IntegrationTest {
 
     @Autowired
@@ -35,9 +35,13 @@ public abstract class IntegrationTest {
 
     protected TestData.Ids ids;
 
+    @Autowired
+    protected CapturingMailer mailer;
+
     @BeforeEach
     void resetData() {
         ids = testData.reset();
+        mailer.clear();
     }
 
     protected MvcResult login(String email, String password) throws Exception {

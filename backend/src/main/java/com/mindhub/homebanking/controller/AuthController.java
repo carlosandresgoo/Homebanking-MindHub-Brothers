@@ -1,12 +1,19 @@
 package com.mindhub.homebanking.controller;
 
 import com.mindhub.homebanking.config.SecurityProperties;
+import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.dto.ChangePasswordRequest;
 import com.mindhub.homebanking.dto.CreateClientRequest;
+import com.mindhub.homebanking.dto.ForgotPasswordRequest;
 import com.mindhub.homebanking.dto.LoginRequest;
+import com.mindhub.homebanking.dto.ResetPasswordRequest;
 import com.mindhub.homebanking.dto.TokenResponse;
 import com.mindhub.homebanking.exception.InvalidRefreshTokenException;
 import com.mindhub.homebanking.security.LoginRateLimiter;
 import com.mindhub.homebanking.service.AuthService;
+import com.mindhub.homebanking.service.PasswordService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -30,11 +37,14 @@ public class AuthController {
     private static final String COOKIE_PATH = "/api/auth";
 
     private final AuthService authService;
+    private final PasswordService passwordService;
     private final LoginRateLimiter loginRateLimiter;
     private final SecurityProperties properties;
 
-    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter, SecurityProperties properties) {
+    public AuthController(AuthService authService, PasswordService passwordService,
+                          LoginRateLimiter loginRateLimiter, SecurityProperties properties) {
         this.authService = authService;
+        this.passwordService = passwordService;
         this.loginRateLimiter = loginRateLimiter;
         this.properties = properties;
     }
@@ -58,6 +68,37 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
                 .body(session.token());
+    }
+
+    /** Always 202, whether or not the e-mail exists (no account enumeration); rate-limited per IP. */
+    @PostMapping("/password/forgot")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
+                                               HttpServletRequest http) {
+        loginRateLimiter.consume("forgot:" + http.getRemoteAddr());
+        passwordService.requestReset(request.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** 204 on success; 400 for an unknown, expired or already used link. Signs out every session. */
+    @PostMapping("/password/reset")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request,
+                                              HttpServletRequest http) {
+        loginRateLimiter.consume("reset:" + http.getRemoteAddr());
+        passwordService.reset(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Logged-in password change: requires the current password, signs out every other session and
+     * returns a fresh session for this one.
+     */
+    @PostMapping("/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<TokenResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                                        Authentication authentication) {
+        Client client = passwordService.change(authentication.getName(), request.currentPassword(),
+                request.newPassword());
+        return withRefreshCookie(authService.startSession(client));
     }
 
     @PostMapping("/refresh")
