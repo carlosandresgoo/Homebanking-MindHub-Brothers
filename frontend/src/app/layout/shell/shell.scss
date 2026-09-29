@@ -92,6 +92,17 @@
   flex: 1;
 }
 
+// Printed pages (e.g. receipts) show only their content.
+@media print {
+  :host {
+    background: #fff;
+  }
+
+  .toolbar {
+    display: none;
+  }
+}
+
 // Icons only when the labels no longer fit; the label stays for screen readers.
 @media (max-width: 1000px) {
   .nav-label {

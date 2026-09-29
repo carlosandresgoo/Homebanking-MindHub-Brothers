@@ -319,6 +319,10 @@
                   Guardar en mi agenda
                 </button>
               }
+              <a mat-button class="receipt-link" [routerLink]="['/movements', r.transactionId]">
+                <mat-icon>print</mat-icon>
+                Comprobante
+              </a>
               <a mat-button [routerLink]="['/accounts', r.sourceAccountId]">
                 <mat-icon>receipt_long</mat-icon>
                 Ver movimientos

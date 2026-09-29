@@ -56,14 +56,7 @@ export interface AuditEvent {
   details: string | null;
 }
 
-/** Mirrors backend `PageDTO`. */
-export interface Page<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
+export type { Page } from './page.model';
 
 export interface AuditQuery {
   actor?: string;

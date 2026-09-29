@@ -149,7 +149,8 @@ describe('Transfers', () => {
     const receipt = el.querySelector('[aria-label="Comprobante"]')!;
     expect(receipt.textContent).toContain('¡Transferencia realizada!');
     expect(receipt.textContent).toMatch(/Nuevo saldo\s*\$\s*4\.900,00/);
-    expect(receipt.querySelector('a')?.getAttribute('href')).toBe('/accounts/11');
+    expect(receipt.querySelector('a.receipt-link')?.getAttribute('href')).toBe('/movements/99');
+    expect(receipt.querySelector('a[href="/accounts/11"]')).not.toBeNull();
   });
 
   it('transfers between my own accounts', async () => {

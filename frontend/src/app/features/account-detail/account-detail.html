@@ -74,35 +74,131 @@
       }
     </div>
 
-    @if (account.transactions.length === 0) {
+    <form class="filters" [formGroup]="filters" aria-label="Filtrar movimientos" novalidate>
+      <mat-form-field subscriptSizing="dynamic" class="search">
+        <mat-label>Buscar</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput id="q" formControlName="q" maxlength="50" autocomplete="off" />
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Desde</mat-label>
+        <input matInput id="from" type="date" formControlName="from" />
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Hasta</mat-label>
+        <input matInput id="to" type="date" formControlName="to" />
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Tipo</mat-label>
+        <mat-select id="type" formControlName="type">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="CREDIT">Ingresos</mat-option>
+          <mat-option value="DEBIT">Egresos</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Categoría</mat-label>
+        <mat-select id="category" formControlName="category">
+          <mat-option value="">Todas</mat-option>
+          @for (category of categories; track category) {
+            <mat-option [value]="category">{{ categoryLabel[category] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <div class="filter-actions">
+        @if (hasFilters()) {
+          <button mat-button type="button" (click)="clearFilters()">
+            <mat-icon>filter_alt_off</mat-icon>
+            Limpiar
+          </button>
+        }
+        <button
+          mat-stroked-button
+          type="button"
+          class="export"
+          (click)="exportCsv(account)"
+          [disabled]="exporting() || invalidRange()"
+        >
+          @if (exporting()) {
+            <mat-spinner diameter="18" aria-label="Exportando" />
+          } @else {
+            <mat-icon>download</mat-icon>
+          }
+          Exportar CSV
+        </button>
+      </div>
+    </form>
+
+    @let m = movements();
+    @if (invalidRange()) {
+      <p class="range-error" role="alert">La fecha «Desde» no puede ser posterior a «Hasta».</p>
+    } @else if (m.status === 'loading') {
+      <div class="skeleton list-skeleton"></div>
+    } @else if (m.status === 'error') {
+      <div class="state-card" role="alert">
+        <mat-icon class="state-icon error">cloud_off</mat-icon>
+        <h2>No pudimos cargar los movimientos</h2>
+        <button mat-flat-button type="button" (click)="paging.set({ ...paging() })">
+          Reintentar
+        </button>
+      </div>
+    } @else if (m.data.totalElements === 0) {
       <div class="state-card">
-        <mat-icon class="state-icon">receipt_long</mat-icon>
-        <h2>Todavía no hay movimientos</h2>
-        <p>Cuando recibas o envíes dinero, lo vas a ver acá.</p>
+        <mat-icon class="state-icon">{{ hasFilters() ? 'search_off' : 'receipt_long' }}</mat-icon>
+        @if (hasFilters()) {
+          <h2>No hay movimientos con esos filtros</h2>
+          <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
+        } @else {
+          <h2>Todavía no hay movimientos</h2>
+          <p>Cuando recibas o envíes dinero, lo vas a ver acá.</p>
+        }
       </div>
     } @else {
       <ul class="movements" role="list">
-        @for (tx of account.transactions; track tx.id) {
-          <li class="movement" [class.credit]="tx.type === 'CREDIT'">
-            <span class="movement-icon" aria-hidden="true">
-              <mat-icon>{{ tx.type === 'CREDIT' ? 'south_west' : 'north_east' }}</mat-icon>
-            </span>
-            <div class="movement-main">
-              <span class="description">{{ tx.description }}</span>
-              <span class="date">{{ tx.date | date: 'd MMM y, HH:mm' }}</span>
-            </div>
-            <div class="movement-amounts">
-              <strong class="amount hb-tabular">
-                <span class="hb-visually-hidden">{{
-                  tx.type === 'CREDIT' ? 'Ingreso' : 'Egreso'
-                }}</span>
-                {{ tx.type === 'CREDIT' ? '+' : '−' }} {{ tx.amount | currency }}
-              </strong>
-              <span class="after hb-tabular">Saldo {{ tx.balanceAfter | currency }}</span>
-            </div>
+        @for (tx of m.data.content; track tx.id) {
+          <li>
+            <a
+              class="movement"
+              [class.credit]="tx.type === 'CREDIT'"
+              [routerLink]="['/movements', tx.id]"
+              [attr.aria-label]="'Ver comprobante: ' + tx.description"
+            >
+              <span class="movement-icon" aria-hidden="true">
+                <mat-icon>{{ tx.type === 'CREDIT' ? 'south_west' : 'north_east' }}</mat-icon>
+              </span>
+              <div class="movement-main">
+                <span class="description">{{ tx.description }}</span>
+                <span class="date">
+                  {{ tx.date | date: 'd MMM y, HH:mm' }}
+                  @if (tx.category && tx.category !== 'OTHER') {
+                    · {{ categoryLabel[tx.category] }}
+                  }
+                </span>
+              </div>
+              <div class="movement-amounts">
+                <strong class="amount hb-tabular">
+                  <span class="hb-visually-hidden">{{
+                    tx.type === 'CREDIT' ? 'Ingreso' : 'Egreso'
+                  }}</span>
+                  {{ tx.type === 'CREDIT' ? '+' : '−' }} {{ tx.amount | currency }}
+                </strong>
+                <span class="after hb-tabular">Saldo {{ tx.balanceAfter | currency }}</span>
+              </div>
+              <mat-icon class="chevron" aria-hidden="true">chevron_right</mat-icon>
+            </a>
           </li>
         }
       </ul>
+      @if (m.data.totalElements > 10) {
+        <mat-paginator
+          [length]="m.data.totalElements"
+          [pageIndex]="m.data.page"
+          [pageSize]="paging().size"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+          aria-label="Páginas de movimientos"
+        />
+      }
     }
   }
 </div>

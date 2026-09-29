@@ -48,6 +48,11 @@ export const routes: Routes = [
           import('./features/account-detail/account-detail').then((m) => m.AccountDetailPage),
       },
       {
+        path: 'movements/:id',
+        title: 'Comprobante | MindHub Brothers',
+        loadComponent: () => import('./features/receipt/receipt').then((m) => m.Receipt),
+      },
+      {
         path: 'cards',
         title: 'Mis tarjetas | MindHub Brothers',
         canActivate: [roleGuard('CLIENT')],

@@ -1,0 +1,93 @@
+@let s = state();
+
+<div class="hb-page narrow">
+  @switch (s.status) {
+    @case ('loading') {
+      <div class="skeleton" aria-label="Cargando el comprobante"></div>
+    }
+    @case ('not-found') {
+      <div class="state-card" role="alert">
+        <mat-icon class="state-icon">search_off</mat-icon>
+        <h2>No encontramos este movimiento</h2>
+        <a mat-flat-button routerLink="/accounts">Ir a Mis cuentas</a>
+      </div>
+    }
+    @case ('error') {
+      <div class="state-card" role="alert">
+        <mat-icon class="state-icon error">cloud_off</mat-icon>
+        <h2>No pudimos cargar el comprobante</h2>
+        <a mat-flat-button routerLink="/accounts">Ir a Mis cuentas</a>
+      </div>
+    }
+    @case ('loaded') {
+      @let r = s.data;
+      <div class="toolbar-actions no-print">
+        <a mat-button [routerLink]="['/accounts', r.accountId]">
+          <mat-icon>arrow_back</mat-icon>
+          Volver a la cuenta
+        </a>
+        <button mat-flat-button type="button" class="print" (click)="print()">
+          <mat-icon>print</mat-icon>
+          Imprimir o guardar PDF
+        </button>
+      </div>
+
+      <article class="receipt" aria-labelledby="receipt-title">
+        <header class="receipt-header">
+          <app-brand />
+          <div class="meta">
+            <h1 id="receipt-title">Comprobante de movimiento</h1>
+            <span class="hb-tabular">N.º {{ r.id }}</span>
+          </div>
+        </header>
+
+        <div class="amount" [class.credit]="r.type === 'CREDIT'">
+          <span class="kind">{{ r.type === 'CREDIT' ? 'Ingreso' : 'Egreso' }}</span>
+          <strong class="hb-tabular">
+            {{ r.type === 'CREDIT' ? '+' : '−' }} {{ r.amount | currency }}
+          </strong>
+          <span class="concept">{{ r.description }}</span>
+        </div>
+
+        <dl class="details">
+          <div>
+            <dt>Fecha y hora</dt>
+            <dd>{{ r.date | date: "d 'de' MMMM 'de' y, HH:mm" }}</dd>
+          </div>
+          <div>
+            <dt>Tipo</dt>
+            <dd>{{ categoryLabel[r.category] }}</dd>
+          </div>
+          <div>
+            <dt>Cuenta</dt>
+            <dd class="hb-tabular">{{ r.accountNumber }}</dd>
+          </div>
+          <div>
+            <dt>Titular</dt>
+            <dd>{{ r.accountHolder }}</dd>
+          </div>
+          @if (r.counterparty) {
+            <div>
+              <dt>{{ r.type === 'CREDIT' ? 'Cuenta de origen' : 'Cuenta de destino' }}</dt>
+              <dd class="hb-tabular">
+                {{ r.counterparty }}
+                @if (r.counterpartyHolder) {
+                  <span class="holder">· {{ r.counterpartyHolder }}</span>
+                }
+              </dd>
+            </div>
+          }
+          <div>
+            <dt>Saldo después del movimiento</dt>
+            <dd class="hb-tabular">{{ r.balanceAfter | currency }}</dd>
+          </div>
+        </dl>
+
+        <footer class="receipt-footer">
+          Comprobante generado por la banca online de MindHub Brothers. Conservalo para tus
+          registros.
+        </footer>
+      </article>
+    }
+  }
+</div>
