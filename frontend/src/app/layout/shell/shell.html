@@ -41,6 +41,10 @@
         <span class="role">{{ roleLabel() }}</span>
       </div>
       <mat-divider />
+      <a mat-menu-item routerLink="/profile">
+        <mat-icon>manage_accounts</mat-icon>
+        <span>Mi perfil</span>
+      </a>
       <button mat-menu-item (click)="logout()">
         <mat-icon>logout</mat-icon>
         <span>Cerrar sesión</span>

@@ -143,6 +143,12 @@ mat-icon[matPrefix] {
   }
 }
 
+.forgot {
+  justify-self: end;
+  margin-top: -8px;
+  font: var(--mat-sys-label-large);
+}
+
 .signup {
   margin: 24px 0 0;
   text-align: center;

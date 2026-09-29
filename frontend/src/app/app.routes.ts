@@ -20,6 +20,17 @@ export const routes: Routes = [
     loadComponent: () => import('./features/register/register').then((m) => m.Register),
   },
   {
+    path: 'forgot-password',
+    title: 'Restablecer contraseña | MindHub Brothers',
+    loadComponent: () =>
+      import('./features/password/forgot-password').then((m) => m.ForgotPassword),
+  },
+  {
+    path: 'reset-password',
+    title: 'Nueva contraseña | MindHub Brothers',
+    loadComponent: () => import('./features/password/reset-password').then((m) => m.ResetPassword),
+  },
+  {
     // Authenticated area: toolbar + user menu around the private pages.
     path: '',
     canActivate: [authGuard],
@@ -53,6 +64,11 @@ export const routes: Routes = [
         title: 'Préstamos | MindHub Brothers',
         canActivate: [roleGuard('CLIENT')],
         loadComponent: () => import('./features/loans/loans').then((m) => m.Loans),
+      },
+      {
+        path: 'profile',
+        title: 'Mi perfil | MindHub Brothers',
+        loadComponent: () => import('./features/profile/profile').then((m) => m.Profile),
       },
       {
         path: 'manager',

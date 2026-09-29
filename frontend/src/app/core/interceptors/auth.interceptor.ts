@@ -3,14 +3,14 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AUTH_URL, AuthService } from '../auth/auth.service';
+import { AuthService, PUBLIC_AUTH_URLS } from '../auth/auth.service';
 
 /**
  * Adds the Bearer token to API calls. On a 401 it refreshes the session once and retries;
  * if the refresh fails too, the session is expired and the user is sent to the login page.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith(environment.apiUrl) || req.url.startsWith(AUTH_URL)) {
+  if (!req.url.startsWith(environment.apiUrl) || PUBLIC_AUTH_URLS.includes(req.url)) {
     return next(req);
   }
   const auth = inject(AuthService);

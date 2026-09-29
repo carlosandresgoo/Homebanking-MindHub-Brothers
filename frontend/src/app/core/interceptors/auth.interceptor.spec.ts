@@ -47,6 +47,19 @@ describe('authInterceptor', () => {
     req.flush({});
   });
 
+  it('sends the token to authenticated auth endpoints but not to public ones', () => {
+    logIn('jwt-1');
+    http.post('/api/auth/password', {}).subscribe();
+    expect(httpTesting.expectOne('/api/auth/password').request.headers.get('Authorization')).toBe(
+      'Bearer jwt-1',
+    );
+
+    http.post('/api/auth/password/forgot', {}).subscribe();
+    expect(
+      httpTesting.expectOne('/api/auth/password/forgot').request.headers.has('Authorization'),
+    ).toBe(false);
+  });
+
   it('never sends the token to other hosts', () => {
     logIn('jwt-1');
     http.get('https://example.com/api/clients').subscribe();

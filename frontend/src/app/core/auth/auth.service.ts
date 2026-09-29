@@ -9,6 +9,16 @@ import { CreateClientRequest } from '../models/client.model';
 
 export const AUTH_URL = `${environment.apiUrl}/auth`;
 
+/** Anonymous auth endpoints: they never carry a Bearer token and a 401 there must not trigger a refresh. */
+export const PUBLIC_AUTH_URLS: readonly string[] = [
+  `${AUTH_URL}/login`,
+  `${AUTH_URL}/register`,
+  `${AUTH_URL}/refresh`,
+  `${AUTH_URL}/logout`,
+  `${AUTH_URL}/password/forgot`,
+  `${AUTH_URL}/password/reset`,
+];
+
 /**
  * Holds the session. The access token lives only in memory (a signal), never in localStorage, so an
  * XSS cannot read it from storage. The refresh token is an HttpOnly cookie the browser sends to
@@ -38,6 +48,23 @@ export class AuthService {
     return this.http
       .post<TokenResponse>(`${AUTH_URL}/register`, request)
       .pipe(map((response) => this.startSession(response).role));
+  }
+
+  /** Logged-in change: other sessions are signed out; this one continues with fresh tokens. */
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http
+      .post<TokenResponse>(`${AUTH_URL}/password`, { currentPassword, newPassword })
+      .pipe(map((response) => void this.startSession(response)));
+  }
+
+  /** Always succeeds (the API never reveals whether the e-mail exists). */
+  forgotPassword(email: string): Observable<void> {
+    return this.http.post<void>(`${AUTH_URL}/password/forgot`, { email });
+  }
+
+  /** 400 when the link is invalid, expired or already used. */
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${AUTH_URL}/password/reset`, { token, newPassword });
   }
 
   /** Concurrent callers share one request, so a burst of 401s triggers a single rotation. */

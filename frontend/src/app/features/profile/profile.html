@@ -1,0 +1,97 @@
+@let s = state();
+
+<div class="hb-page narrow">
+  <header class="hb-page-header">
+    <div>
+      <h1>Mi perfil</h1>
+      <p>Tus datos y la seguridad de tu cuenta.</p>
+    </div>
+  </header>
+
+  <section class="card" aria-labelledby="data-title">
+    <h2 id="data-title"><mat-icon>badge</mat-icon> Datos personales</h2>
+    @if (s.status === 'loaded') {
+      <div class="identity">
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <div>
+          <strong>{{ s.data.name }} {{ s.data.lastName }}</strong>
+          <span>{{ s.data.email }}</span>
+          <span class="role">{{ s.data.role === 'ADMIN' ? 'Administrador' : 'Cliente' }}</span>
+        </div>
+      </div>
+    } @else if (s.status === 'error') {
+      <p class="muted" role="alert">No pudimos cargar tus datos.</p>
+    } @else {
+      <p class="muted">Cargando…</p>
+    }
+  </section>
+
+  <section class="card" aria-labelledby="password-title">
+    <h2 id="password-title"><mat-icon>lock_reset</mat-icon> Cambiar contraseña</h2>
+    <p class="muted">Al cambiarla cerramos tu sesión en los demás dispositivos.</p>
+
+    @if (error(); as message) {
+      <div class="error-banner" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <form
+      [formGroup]="passwordForm"
+      #formDirective="ngForm"
+      (ngSubmit)="changePassword(formDirective)"
+      novalidate
+    >
+      <mat-form-field>
+        <mat-label>Contraseña actual</mat-label>
+        <input
+          matInput
+          id="currentPassword"
+          type="password"
+          formControlName="currentPassword"
+          autocomplete="current-password"
+        />
+        <mat-error>Ingresá tu contraseña actual.</mat-error>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Nueva contraseña</mat-label>
+        <input
+          matInput
+          id="newPassword"
+          type="password"
+          formControlName="newPassword"
+          autocomplete="new-password"
+        />
+        <mat-hint>Mínimo {{ passwordMin }} caracteres.</mat-hint>
+        @if (passwordForm.controls.newPassword.hasError('required')) {
+          <mat-error>Elegí una contraseña.</mat-error>
+        } @else {
+          <mat-error>Entre {{ passwordMin }} y 72 caracteres.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Repetí la nueva contraseña</mat-label>
+        <input
+          matInput
+          id="confirm"
+          type="password"
+          formControlName="confirm"
+          autocomplete="new-password"
+        />
+      </mat-form-field>
+      @if (passwordForm.hasError('mismatch') && passwordForm.controls.confirm.touched) {
+        <p class="field-error" role="alert">Las contraseñas no coinciden.</p>
+      }
+      <div class="actions">
+        <button mat-flat-button type="submit" class="save" [disabled]="saving()">
+          @if (saving()) {
+            <mat-spinner diameter="20" aria-label="Guardando" />
+          } @else {
+            Guardar contraseña
+          }
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
