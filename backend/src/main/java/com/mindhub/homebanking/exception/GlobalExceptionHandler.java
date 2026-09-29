@@ -47,6 +47,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    @ExceptionHandler(AccountLockedException.class)
+    ProblemDetail handleLocked(AccountLockedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.LOCKED, ex.getMessage());
+        problem.setProperty("reason", ex.getReason().name());
+        if (ex.getLockedUntil() != null) {
+            problem.setProperty("lockedUntil", ex.getLockedUntil().toString());
+        }
+        return problem;
+    }
+
     @ExceptionHandler(InvalidResetTokenException.class)
     ProblemDetail handleInvalidResetToken(InvalidResetTokenException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());

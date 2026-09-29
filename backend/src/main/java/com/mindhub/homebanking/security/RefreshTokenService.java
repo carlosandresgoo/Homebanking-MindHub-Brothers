@@ -58,6 +58,11 @@ public class RefreshTokenService {
     public Rotation rotate(String raw) {
         RefreshToken token = find(raw);
         Client client = token.getClient();
+        if (!client.isEnabled()) {
+            // Blocked by an admin: no new access tokens, whatever the refresh token.
+            token.revoke();
+            throw new InvalidRefreshTokenException("Client blocked");
+        }
         if (token.isRevoked()) {
             // Reuse of a rotated token: someone else may hold the chain. Kill all sessions of the client.
             repository.revokeAllByClient(client);

@@ -75,13 +75,14 @@ class AuthenticationTest extends IntegrationTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists(HttpHeaders.RETRY_AFTER));
 
-        // A different client IP has its own bucket.
+        // A different client IP has its own bucket (another user: Melba's account is now locked, see
+        // AccountLockoutTest).
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .with(request -> {
                             request.setRemoteAddr("10.0.0.2");
                             return request;
                         })
-                        .content(json(Map.of("email", TestData.CLIENT_EMAIL, "password", TestData.PASSWORD))))
+                        .content(json(Map.of("email", TestData.OTHER_CLIENT_EMAIL, "password", TestData.PASSWORD))))
                 .andExpect(status().isOk());
     }
 

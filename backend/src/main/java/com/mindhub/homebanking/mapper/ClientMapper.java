@@ -9,8 +9,16 @@ import com.mindhub.homebanking.dto.ClientDTO;
 import com.mindhub.homebanking.dto.TransactionDTO;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
+
 @Component
 public class ClientMapper {
+
+    private final Clock clock;
+
+    public ClientMapper(Clock clock) {
+        this.clock = clock;
+    }
 
     /** Closed accounts are not part of the client's view. */
     public ClientDTO toDto(Client client) {
@@ -20,6 +28,8 @@ public class ClientMapper {
                 client.getLastName(),
                 client.getEmail(),
                 client.getRole(),
+                client.isEnabled(),
+                client.isLocked(clock.instant()),
                 client.getAccounts().stream().filter(Account::isActive).map(this::toDto).toList());
     }
 

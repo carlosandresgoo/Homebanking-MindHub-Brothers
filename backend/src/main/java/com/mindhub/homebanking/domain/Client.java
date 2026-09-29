@@ -2,6 +2,8 @@ package com.mindhub.homebanking.domain;
 
 import jakarta.persistence.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,46 @@ public class Client {
     @OrderBy("id")
     private List<Account> accounts = new ArrayList<>();
 
+    /** false = blocked by an administrator: cannot sign in until unblocked. */
+    @Column(nullable = false)
+    private boolean enabled = true;
+
+    /** Consecutive failed logins since the last successful one. */
+    @Column(nullable = false)
+    private int failedLoginAttempts;
+
+    /** Temporary lock after too many failed logins; null or in the past = not locked. */
+    private Instant lockedUntil;
+
     protected Client() {
+    }
+
+    public boolean isLocked(Instant now) {
+        return lockedUntil != null && now.isBefore(lockedUntil);
+    }
+
+    /** Counts a failed login and locks the account for {@code lockFor} when {@code maxAttempts} is reached. */
+    public void registerFailedLogin(Instant now, int maxAttempts, Duration lockFor) {
+        failedLoginAttempts++;
+        if (failedLoginAttempts >= maxAttempts) {
+            lockedUntil = now.plus(lockFor);
+            failedLoginAttempts = 0;
+        }
+    }
+
+    public void registerSuccessfulLogin() {
+        failedLoginAttempts = 0;
+        lockedUntil = null;
+    }
+
+    public void block() {
+        this.enabled = false;
+    }
+
+    /** Also clears any temporary lock. */
+    public void unblock() {
+        this.enabled = true;
+        registerSuccessfulLogin();
     }
 
     public Client(String name, String lastName, String email, String passwordHash, Role role) {
@@ -76,6 +117,14 @@ public class Client {
 
     public Role getRole() {
         return role;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
     }
 
     public List<Account> getAccounts() {

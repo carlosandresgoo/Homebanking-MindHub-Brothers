@@ -23,10 +23,12 @@ public class AuthService {
     private final ClientService clientService;
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
+    private final LoginAttemptService loginAttempts;
 
     public AuthService(AuthenticationManager authenticationManager, ClientRepository clientRepository,
                        ClientService clientService, AccessTokenService accessTokenService,
-                       RefreshTokenService refreshTokenService) {
+                       RefreshTokenService refreshTokenService, LoginAttemptService loginAttempts) {
+        this.loginAttempts = loginAttempts;
         this.authenticationManager = authenticationManager;
         this.clientRepository = clientRepository;
         this.clientService = clientService;
@@ -34,9 +36,19 @@ public class AuthService {
         this.refreshTokenService = refreshTokenService;
     }
 
-    /** @throws org.springframework.security.core.AuthenticationException on bad credentials */
+    /**
+     * @throws org.springframework.security.core.AuthenticationException on bad credentials
+     * @throws com.mindhub.homebanking.exception.AccountLockedException when blocked or temporarily locked
+     */
     public Session login(String email, String password) {
-        authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, password));
+        loginAttempts.checkAllowed(email);
+        try {
+            authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, password));
+        } catch (BadCredentialsException e) {
+            loginAttempts.recordFailure(email);
+            throw e;
+        }
+        loginAttempts.recordSuccess(email);
         Client client = clientRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
         return new Session(accessToken(client), refreshTokenService.issue(client));

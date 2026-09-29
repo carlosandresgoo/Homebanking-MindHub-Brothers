@@ -5,11 +5,13 @@ import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
 import com.mindhub.homebanking.dto.ClientDTO;
 import com.mindhub.homebanking.dto.CreateClientRequest;
+import com.mindhub.homebanking.exception.BusinessRuleException;
 import com.mindhub.homebanking.exception.ConflictException;
 import com.mindhub.homebanking.exception.ResourceNotFoundException;
 import com.mindhub.homebanking.mapper.ClientMapper;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.repository.RefreshTokenRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,11 +31,14 @@ public class ClientService {
     private final AccountNumberGenerator accountNumbers;
     private final ClientMapper clientMapper;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final Clock clock;
 
     public ClientService(ClientRepository clientRepository, AccountRepository accountRepository,
                          AccountNumberGenerator accountNumbers, ClientMapper clientMapper,
-                         PasswordEncoder passwordEncoder, Clock clock) {
+                         PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository,
+                         Clock clock) {
+        this.refreshTokenRepository = refreshTokenRepository;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
         this.accountNumbers = accountNumbers;
@@ -56,6 +61,27 @@ public class ClientService {
         return clientRepository.findWithAccountsByEmailIgnoreCase(email)
                 .map(clientMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
+    }
+
+    /**
+     * Admin block/unblock. Only CLIENT accounts can be blocked (an admin cannot lock out another admin
+     * or themselves); blocking revokes every refresh token so existing sessions end within one access
+     * token lifetime. Unblocking also clears a temporary lockout.
+     */
+    @Transactional
+    public ClientDTO setEnabled(Long id, boolean enabled) {
+        Client client = clientRepository.findWithAccountsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
+        if (client.getRole() != Role.CLIENT) {
+            throw new BusinessRuleException("Only client accounts can be blocked or unblocked");
+        }
+        if (enabled) {
+            client.unblock();
+        } else {
+            client.block();
+            refreshTokenRepository.revokeAllByClient(client);
+        }
+        return clientMapper.toDto(client);
     }
 
     /** Admin creation (POST /api/clients). */

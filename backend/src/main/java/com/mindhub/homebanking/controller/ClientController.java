@@ -1,6 +1,8 @@
 package com.mindhub.homebanking.controller;
 
 import com.mindhub.homebanking.dto.ClientDTO;
+import com.mindhub.homebanking.dto.ClientStatusRequest;
+import org.springframework.web.bind.annotation.PatchMapping;
 import com.mindhub.homebanking.dto.CreateClientRequest;
 import com.mindhub.homebanking.service.ClientService;
 import jakarta.validation.Valid;
@@ -45,6 +47,13 @@ public class ClientController {
     @PreAuthorize("hasRole('ADMIN')")
     public ClientDTO getClient(@PathVariable Long id) {
         return clientService.findById(id);
+    }
+
+    /** Block ({@code enabled=false}) or unblock a client. 422 for admin accounts. */
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ClientDTO setStatus(@PathVariable Long id, @Valid @RequestBody ClientStatusRequest request) {
+        return clientService.setEnabled(id, request.enabled());
     }
 
     @PostMapping

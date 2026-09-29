@@ -22,6 +22,7 @@ public class ClientUserDetailsService implements UserDetailsService {
                 .map(client -> User.withUsername(client.getEmail())
                         .password(client.getPassword())
                         .roles(client.getRole().name())
+                        .disabled(!client.isEnabled())
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException("Bad credentials"));
     }
