@@ -1,0 +1,95 @@
+<h2 mat-dialog-title class="title">
+  <mat-icon>savings</mat-icon>
+  Constituir plazo fijo
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-dialog-content class="content">
+    @if (error(); as message) {
+      <div class="error-banner" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <mat-form-field>
+      <mat-label>Desde la cuenta</mat-label>
+      <mat-select id="ftAccount" formControlName="accountNumber">
+        @for (account of data.accounts; track account.id) {
+          <mat-option [value]="account.number">
+            {{ account.number }} · {{ account.balance | currency }}
+          </mat-option>
+        }
+      </mat-select>
+      <mat-hint>Al vencimiento te acreditamos capital e intereses en esta cuenta.</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Monto</mat-label>
+      <span matTextPrefix>$&nbsp;</span>
+      <input
+        matInput
+        id="ftAmount"
+        type="number"
+        inputmode="decimal"
+        [min]="minAmount"
+        step="0.01"
+        formControlName="amount"
+        class="hb-tabular"
+      />
+      @if (form.controls.amount.hasError('required')) {
+        <mat-error>Ingresá un monto.</mat-error>
+      } @else if (form.controls.amount.hasError('min')) {
+        <mat-error>El mínimo es {{ minAmount | currency }}.</mat-error>
+      } @else if (form.controls.amount.hasError('funds')) {
+        <mat-error>Supera el saldo de la cuenta.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="terms">
+      <span class="label" id="term-label">Plazo</span>
+      <mat-button-toggle-group
+        formControlName="termDays"
+        aria-labelledby="term-label"
+        hideSingleSelectionIndicator
+      >
+        @for (plan of data.plans; track plan.termDays) {
+          <mat-button-toggle [value]="plan.termDays">
+            <span class="days">{{ plan.termDays }} días</span>
+            <span class="rate">TNA {{ plan.annualRate | percent: '1.0-2' }}</span>
+          </mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+    </div>
+
+    <mat-slide-toggle formControlName="autoRenew" id="ftAutoRenew">
+      Renovar automáticamente al vencer (capital + intereses)
+    </mat-slide-toggle>
+
+    <section class="simulation" aria-live="polite" aria-label="Simulación">
+      @if (simulation(); as sim) {
+        <div>
+          <span>Intereses</span>
+          <strong class="hb-tabular positive">+ {{ sim.interest | currency }}</strong>
+        </div>
+        <div>
+          <span>Cobrás el {{ sim.maturity | date: "d 'de' MMMM" }}</span>
+          <strong class="hb-tabular">{{ sim.total | currency }}</strong>
+        </div>
+      } @else {
+        <p>Ingresá un monto desde {{ minAmount | currency }} para ver cuánto ganás.</p>
+      }
+    </section>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="submitting()">Cancelar</button>
+    <button mat-flat-button type="submit" class="submit" [disabled]="submitting()">
+      @if (submitting()) {
+        <mat-spinner diameter="20" aria-label="Constituyendo" />
+      } @else {
+        Constituir
+      }
+    </button>
+  </mat-dialog-actions>
+</form>

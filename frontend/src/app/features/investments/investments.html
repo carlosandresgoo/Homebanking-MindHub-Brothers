@@ -1,0 +1,133 @@
+@let s = state();
+
+@if (s.status === 'loading' || opening()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+}
+
+<div class="hb-page">
+  <header class="hb-page-header">
+    <div>
+      <h1>Plazo fijo</h1>
+      <p>Hacé crecer tu dinero con una tasa fija. Al vencer, te acreditamos capital e intereses.</p>
+    </div>
+    <button
+      mat-flat-button
+      type="button"
+      class="new-button"
+      (click)="openNew()"
+      [disabled]="opening()"
+    >
+      <mat-icon>add</mat-icon>
+      Constituir plazo fijo
+    </button>
+  </header>
+
+  @switch (s.status) {
+    @case ('error') {
+      <div class="state-card" role="alert">
+        <mat-icon class="state-icon error">cloud_off</mat-icon>
+        <h2>No pudimos cargar tus plazos fijos</h2>
+        <button mat-flat-button type="button" (click)="retry()">Reintentar</button>
+      </div>
+    }
+    @case ('loaded') {
+      @if (s.data.length === 0) {
+        <div class="state-card">
+          <mat-icon class="state-icon">savings</mat-icon>
+          <h2>Todavía no tenés plazos fijos</h2>
+          <p>Simulá cuánto ganás antes de confirmar: elegís el monto y el plazo.</p>
+          <button mat-flat-button type="button" (click)="openNew()">Simular plazo fijo</button>
+        </div>
+      } @else {
+        <section class="totals" aria-label="Resumen">
+          <div>
+            <span>Invertido</span>
+            <strong class="hb-tabular">{{ invested() | currency }}</strong>
+          </div>
+          <div>
+            <span>Intereses a cobrar</span>
+            <strong class="hb-tabular positive">+ {{ toEarn() | currency }}</strong>
+          </div>
+          <div>
+            <span>Intereses ya cobrados</span>
+            <strong class="hb-tabular">{{ earned() | currency }}</strong>
+          </div>
+        </section>
+
+        @if (active().length > 0) {
+          <h2 class="section-title">Vigentes</h2>
+          <ul class="grid" role="list">
+            @for (term of active(); track term.id) {
+              <li class="term">
+                <div class="term-top">
+                  <span class="term-icon" aria-hidden="true"><mat-icon>savings</mat-icon></span>
+                  <div>
+                    <strong class="hb-tabular">{{ term.principal | currency }}</strong>
+                    <span>
+                      {{ term.termDays }} días · TNA {{ term.annualRate | percent: '1.0-2' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="progress">
+                  <mat-progress-bar
+                    mode="determinate"
+                    [value]="progress(term) * 100"
+                    [attr.aria-label]="'Faltan ' + daysLeft(term) + ' días'"
+                  />
+                  <span>
+                    Vence el {{ term.maturityDate | date: "d 'de' MMMM" }} ·
+                    {{
+                      daysLeft(term) === 1 ? 'falta 1 día' : 'faltan ' + daysLeft(term) + ' días'
+                    }}
+                  </span>
+                </div>
+
+                <dl>
+                  <div>
+                    <dt>Intereses</dt>
+                    <dd class="hb-tabular positive">+ {{ term.interest | currency }}</dd>
+                  </div>
+                  <div>
+                    <dt>Cobrás</dt>
+                    <dd class="hb-tabular strong">{{ term.total | currency }}</dd>
+                  </div>
+                  <div>
+                    <dt>Cuenta</dt>
+                    <dd class="hb-tabular">{{ term.accountNumber }}</dd>
+                  </div>
+                </dl>
+
+                <mat-slide-toggle
+                  [checked]="term.autoRenew"
+                  (change)="toggleRenew(term, $event)"
+                  [attr.aria-label]="'Renovar automáticamente el plazo fijo N.º ' + term.id"
+                >
+                  Renovar automáticamente
+                </mat-slide-toggle>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (paid().length > 0) {
+          <h2 class="section-title">Cobrados</h2>
+          <ul class="history" role="list">
+            @for (term of paid(); track term.id) {
+              <li>
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+                <div class="history-main">
+                  <strong class="hb-tabular">{{ term.principal | currency }}</strong>
+                  <span>
+                    {{ term.termDays }} días · cobrado el {{ term.paidAt | date: "d 'de' MMMM y" }}
+                  </span>
+                </div>
+                <span class="hb-tabular positive">+ {{ term.interest | currency }}</span>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  }
+</div>

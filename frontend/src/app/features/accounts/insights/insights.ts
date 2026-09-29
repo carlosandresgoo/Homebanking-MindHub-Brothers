@@ -20,6 +20,10 @@ const CATEGORY_COLOR: Record<TransactionCategory, string> = {
   DEPOSIT: 'var(--hb-positive)',
   TRANSFER_IN: 'var(--mat-sys-outline)',
   LOAN_DISBURSEMENT: 'var(--mat-sys-error)',
+  // Never spending (see the backend summary), listed for completeness.
+  FIXED_TERM_DEPOSIT: 'var(--mat-sys-outline)',
+  FIXED_TERM_PAYOUT: 'var(--mat-sys-outline)',
+  FIXED_TERM_INTEREST: 'var(--hb-positive)',
 };
 
 const SERIES: BarSeries[] = [

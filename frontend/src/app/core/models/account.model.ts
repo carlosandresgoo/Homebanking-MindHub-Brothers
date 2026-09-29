@@ -11,7 +11,15 @@ export type TransactionType = 'CREDIT' | 'DEBIT';
 
 /** Mirrors backend `com.mindhub.homebanking.domain.TransactionCategory`. */
 export type TransactionCategory =
-  'DEPOSIT' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'LOAN_DISBURSEMENT' | 'LOAN_PAYMENT' | 'OTHER';
+  | 'DEPOSIT'
+  | 'TRANSFER_OUT'
+  | 'TRANSFER_IN'
+  | 'LOAN_DISBURSEMENT'
+  | 'LOAN_PAYMENT'
+  | 'FIXED_TERM_DEPOSIT'
+  | 'FIXED_TERM_PAYOUT'
+  | 'FIXED_TERM_INTEREST'
+  | 'OTHER';
 
 /** Mirrors backend `com.mindhub.homebanking.dto.TransactionDTO`. */
 export interface Transaction {
@@ -33,6 +41,9 @@ export const CATEGORY_LABEL: Record<TransactionCategory, string> = {
   TRANSFER_IN: 'Transferencia recibida',
   LOAN_DISBURSEMENT: 'Préstamo acreditado',
   LOAN_PAYMENT: 'Cuota de préstamo',
+  FIXED_TERM_DEPOSIT: 'Plazo fijo constituido',
+  FIXED_TERM_PAYOUT: 'Plazo fijo: capital',
+  FIXED_TERM_INTEREST: 'Plazo fijo: intereses',
   OTHER: 'Otro',
 };
 

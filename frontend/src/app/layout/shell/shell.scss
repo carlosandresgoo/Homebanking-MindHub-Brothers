@@ -103,8 +103,23 @@
   }
 }
 
-// Icons only when the labels no longer fit; the label stays for screen readers.
-@media (max-width: 1000px) {
+// Six labelled links are tight on laptops: slimmer buttons first...
+@media (max-width: 1400px) {
+  .toolbar-inner {
+    gap: 12px;
+  }
+
+  .nav {
+    gap: 0;
+  }
+
+  .nav-link {
+    padding: 0 10px;
+  }
+}
+
+// ...then icons only; the label stays for screen readers.
+@media (max-width: 1200px) {
   .nav-label {
     position: absolute;
     width: 1px;
@@ -114,23 +129,18 @@
     white-space: nowrap;
   }
 
+  .nav-link {
+    min-width: 0;
+    padding: 0 12px;
+  }
+
   .nav-link mat-icon {
     margin: 0;
   }
 }
 
-@media (max-width: 600px) {
-  .nav {
-    gap: 0;
-    justify-content: space-between;
-    min-width: 0;
-  }
-
-  .nav-link {
-    min-width: 0;
-    padding: 0 10px;
-  }
-
+// Only the avatar in the user button.
+@media (max-width: 720px) {
   .user-name,
   .user-button .chevron {
     display: none;
@@ -143,5 +153,17 @@
 
   .avatar {
     margin-right: 0;
+  }
+}
+
+// Phones: spread the icons over the whole width.
+@media (max-width: 600px) {
+  .nav {
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .nav-link {
+    padding: 0 10px;
   }
 }
