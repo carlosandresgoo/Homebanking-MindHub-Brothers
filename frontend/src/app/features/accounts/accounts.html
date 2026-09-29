@@ -22,10 +22,25 @@
       </button>
     </div>
   } @else {
+    @let canOpen = s.data.accounts.length < maxAccounts;
     <header class="hb-page-header">
       <div>
         <h1>Hola, {{ s.data.name }}</h1>
         <p>Este es el resumen de tus cuentas.</p>
+      </div>
+      <div class="open-account">
+        <button
+          mat-flat-button
+          class="open-button"
+          (click)="openAccount()"
+          [disabled]="!canOpen || opening()"
+        >
+          <mat-icon>add</mat-icon>
+          Abrir cuenta
+        </button>
+        @if (!canOpen) {
+          <span class="limit-hint">Tenés el máximo de {{ maxAccounts }} cuentas activas.</span>
+        }
       </div>
     </header>
 
@@ -46,27 +61,34 @@
       <div class="state-card">
         <mat-icon class="state-icon">savings</mat-icon>
         <h2>Todavía no tenés cuentas</h2>
-        <p>Cuando el banco abra una cuenta a tu nombre, la vas a ver acá.</p>
+        <p>Abrí tu primera cuenta con el botón «Abrir cuenta».</p>
       </div>
     } @else {
       <ul class="grid" role="list">
         @for (account of s.data.accounts; track account.id) {
-          <li class="account-card">
-            <div class="account-top">
-              <span class="account-icon"><mat-icon>account_balance_wallet</mat-icon></span>
-              <div>
-                <span class="account-type">Cuenta</span>
-                <span class="account-number hb-tabular">{{ account.number | uppercase }}</span>
+          <li>
+            <a
+              class="account-card"
+              [routerLink]="['/accounts', account.id]"
+              [attr.aria-label]="'Ver movimientos de la cuenta ' + (account.number | uppercase)"
+            >
+              <div class="account-top">
+                <span class="account-icon"><mat-icon>account_balance_wallet</mat-icon></span>
+                <div>
+                  <span class="account-type">Cuenta</span>
+                  <span class="account-number hb-tabular">{{ account.number | uppercase }}</span>
+                </div>
               </div>
-            </div>
-            <div class="account-balance">
-              <span>Saldo disponible</span>
-              <strong class="hb-tabular">{{ account.balance | currency }}</strong>
-            </div>
-            <div class="account-footer">
-              <mat-icon>event</mat-icon>
-              Abierta el {{ account.creationDate | date: 'longDate' }}
-            </div>
+              <div class="account-balance">
+                <span>Saldo disponible</span>
+                <strong class="hb-tabular">{{ account.balance | currency }}</strong>
+              </div>
+              <div class="account-footer">
+                <mat-icon>event</mat-icon>
+                Abierta el {{ account.creationDate | date: 'longDate' }}
+                <mat-icon class="go">chevron_right</mat-icon>
+              </div>
+            </a>
           </li>
         }
       </ul>

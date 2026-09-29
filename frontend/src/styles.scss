@@ -53,6 +53,8 @@ html {
   --hb-radius: 20px;
   // Brand gradient uses fixed tones (azure 40 -> cyan 40): white text on it must stay readable in
   // dark mode too, where --mat-sys-primary turns into a light pastel.
+  // Money in (credits) — Material 3 has no "success" role, so it is defined here for both schemes.
+  --hb-positive: light-dark(#146c2e, #6dd58c);
   --hb-brand-start: #005cbb;
   --hb-brand-end: #006a6a;
   --hb-hero-gradient: linear-gradient(

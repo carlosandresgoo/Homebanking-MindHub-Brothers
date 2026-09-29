@@ -148,14 +148,21 @@
                     <ul class="account-list" role="list">
                       @for (account of row.accounts; track account.id) {
                         <li>
-                          <mat-icon>account_balance_wallet</mat-icon>
-                          <span class="hb-tabular account-number">{{
-                            account.number | uppercase
-                          }}</span>
-                          <span class="muted"
-                            >Abierta el {{ account.creationDate | date: 'mediumDate' }}</span
+                          <a
+                            class="account-link"
+                            [routerLink]="['/accounts', account.id]"
+                            (click)="$event.stopPropagation()"
+                            [attr.aria-label]="'Ver movimientos de ' + (account.number | uppercase)"
                           >
-                          <strong class="hb-tabular">{{ account.balance | currency }}</strong>
+                            <mat-icon>account_balance_wallet</mat-icon>
+                            <span class="hb-tabular account-number">{{
+                              account.number | uppercase
+                            }}</span>
+                            <span class="muted"
+                              >Abierta el {{ account.creationDate | date: 'mediumDate' }}</span
+                            >
+                            <strong class="hb-tabular">{{ account.balance | currency }}</strong>
+                          </a>
                         </li>
                       }
                     </ul>

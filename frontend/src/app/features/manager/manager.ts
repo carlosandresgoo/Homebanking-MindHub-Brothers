@@ -19,6 +19,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { BehaviorSubject, switchMap } from 'rxjs';
 
 import { ClientService } from '../../core/api/client.service';
@@ -50,6 +51,7 @@ export interface ClientRow extends Client {
     MatProgressBarModule,
     MatSortModule,
     MatTableModule,
+    RouterLink,
   ],
   // Provided here (not app-wide) so the paginator stays in this lazy chunk.
   providers: [{ provide: MatPaginatorIntl, useClass: SpanishPaginatorIntl }],

@@ -26,7 +26,11 @@
           {{ isAuthenticated() ? 'Ir a mi banca' : 'Ingresar a mi cuenta' }}
           <mat-icon iconPositionEnd>arrow_forward</mat-icon>
         </a>
-        <a mat-stroked-button class="cta-outline" href="#nosotros">Conocenos</a>
+        @if (isAuthenticated()) {
+          <a mat-stroked-button class="cta-outline" href="#nosotros">Conocenos</a>
+        } @else {
+          <a mat-stroked-button class="cta-outline" routerLink="/register">Abrí tu cuenta gratis</a>
+        }
       </div>
     </div>
 

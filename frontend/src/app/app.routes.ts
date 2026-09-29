@@ -15,6 +15,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login').then((m) => m.Login),
   },
   {
+    path: 'register',
+    title: 'Abrí tu cuenta | MindHub Brothers',
+    loadComponent: () => import('./features/register/register').then((m) => m.Register),
+  },
+  {
     // Authenticated area: toolbar + user menu around the private pages.
     path: '',
     canActivate: [authGuard],
@@ -24,6 +29,12 @@ export const routes: Routes = [
         path: 'accounts',
         title: 'Mis cuentas | MindHub Brothers',
         loadComponent: () => import('./features/accounts/accounts').then((m) => m.Accounts),
+      },
+      {
+        path: 'accounts/:id',
+        title: 'Detalle de cuenta | MindHub Brothers',
+        loadComponent: () =>
+          import('./features/account-detail/account-detail').then((m) => m.AccountDetailPage),
       },
       {
         path: 'manager',

@@ -1,0 +1,98 @@
+@let s = state();
+
+@if (s.status === 'loading' || closing()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando la cuenta" />
+}
+
+<div class="hb-page">
+  <a mat-button class="back" [routerLink]="backLink()">
+    <mat-icon>arrow_back</mat-icon>
+    {{ backLabel() }}
+  </a>
+
+  @if (s.status === 'loading') {
+    <div class="skeleton header-skeleton"></div>
+    <div class="skeleton list-skeleton"></div>
+  } @else if (s.status === 'not-found') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon">search_off</mat-icon>
+      <h2>No encontramos esta cuenta</h2>
+      <p>Puede que se haya cerrado o que no te pertenezca.</p>
+      <a mat-flat-button [routerLink]="backLink()">Volver a {{ backLabel() }}</a>
+    </div>
+  } @else if (s.status === 'error') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon error">cloud_off</mat-icon>
+      <h2>No pudimos cargar la cuenta</h2>
+      <p>Revisá tu conexión e intentá de nuevo.</p>
+      <button mat-flat-button (click)="retry()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    @let account = s.data;
+    <section class="account-hero" aria-label="Cuenta">
+      <div>
+        <span class="label">Cuenta</span>
+        <h1 class="hb-tabular">{{ account.number | uppercase }}</h1>
+        <span class="opened">Abierta el {{ account.creationDate | date: 'longDate' }}</span>
+      </div>
+      <div class="balance">
+        <span class="label">Saldo disponible</span>
+        <strong class="hb-tabular">{{ account.balance | currency }}</strong>
+      </div>
+    </section>
+
+    <div class="movements-header">
+      <h2>Movimientos</h2>
+      @if (isClient()) {
+        <div class="close-area">
+          <button
+            mat-stroked-button
+            class="close-button"
+            (click)="close(account)"
+            [disabled]="account.balance !== 0 || closing()"
+          >
+            <mat-icon>block</mat-icon>
+            Cerrar cuenta
+          </button>
+          @if (account.balance !== 0) {
+            <span class="hint">Para cerrarla, el saldo debe ser {{ 0 | currency }}.</span>
+          }
+        </div>
+      }
+    </div>
+
+    @if (account.transactions.length === 0) {
+      <div class="state-card">
+        <mat-icon class="state-icon">receipt_long</mat-icon>
+        <h2>Todavía no hay movimientos</h2>
+        <p>Cuando recibas o envíes dinero, lo vas a ver acá.</p>
+      </div>
+    } @else {
+      <ul class="movements" role="list">
+        @for (tx of account.transactions; track tx.id) {
+          <li class="movement" [class.credit]="tx.type === 'CREDIT'">
+            <span class="movement-icon" aria-hidden="true">
+              <mat-icon>{{ tx.type === 'CREDIT' ? 'south_west' : 'north_east' }}</mat-icon>
+            </span>
+            <div class="movement-main">
+              <span class="description">{{ tx.description }}</span>
+              <span class="date">{{ tx.date | date: 'd MMM y, HH:mm' }}</span>
+            </div>
+            <div class="movement-amounts">
+              <strong class="amount hb-tabular">
+                <span class="hb-visually-hidden">{{
+                  tx.type === 'CREDIT' ? 'Ingreso' : 'Egreso'
+                }}</span>
+                {{ tx.type === 'CREDIT' ? '+' : '−' }} {{ tx.amount | currency }}
+              </strong>
+              <span class="after hb-tabular">Saldo {{ tx.balanceAfter | currency }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

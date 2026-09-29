@@ -84,4 +84,50 @@ describe('Accounts', () => {
 
     expect(el.querySelectorAll('.account-card')).toHaveLength(2);
   });
+
+  it('links each account card to its detail page', async () => {
+    const { fixture, el } = render();
+    httpTesting.expectOne('/api/clients/current').flush(MELBA);
+    await fixture.whenStable();
+
+    expect(el.querySelector('a.account-card')?.getAttribute('href')).toBe('/accounts/1');
+  });
+
+  it('opens a new account and reloads the list', async () => {
+    const { fixture, el } = render();
+    httpTesting.expectOne('/api/clients/current').flush(MELBA);
+    await fixture.whenStable();
+
+    el.querySelector<HTMLButtonElement>('.open-button')!.click();
+    const req = httpTesting.expectOne({ method: 'POST', url: '/api/clients/current/accounts' });
+    req.flush({ id: 3, number: 'VIN-12345678', creationDate: '2026-10-01T10:00:00', balance: 0 });
+
+    const withNew: Client = {
+      ...MELBA,
+      accounts: [
+        ...MELBA.accounts,
+        { id: 3, number: 'VIN-12345678', creationDate: '2026-10-01T10:00:00', balance: 0 },
+      ],
+    };
+    httpTesting.expectOne('/api/clients/current').flush(withNew);
+    await fixture.whenStable();
+
+    expect(el.querySelectorAll('.account-card')).toHaveLength(3);
+  });
+
+  it('disables "Abrir cuenta" at the limit of 3 active accounts', async () => {
+    const { fixture, el } = render();
+    const full: Client = {
+      ...MELBA,
+      accounts: [
+        ...MELBA.accounts,
+        { id: 3, number: 'VIN-3', creationDate: '2026-10-01T10:00:00', balance: 0 },
+      ],
+    };
+    httpTesting.expectOne('/api/clients/current').flush(full);
+    await fixture.whenStable();
+
+    expect(el.querySelector<HTMLButtonElement>('.open-button')!.disabled).toBe(true);
+    expect(el.querySelector('.limit-hint')?.textContent).toContain('máximo de 3 cuentas');
+  });
 });

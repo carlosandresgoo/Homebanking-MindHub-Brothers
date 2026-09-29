@@ -5,6 +5,7 @@ import { Observable, catchError, finalize, firstValueFrom, map, of, shareReplay 
 
 import { environment } from '../../../environments/environment';
 import { LoginRequest, Role, TokenResponse } from '../models/auth.model';
+import { CreateClientRequest } from '../models/client.model';
 
 export const AUTH_URL = `${environment.apiUrl}/auth`;
 
@@ -29,6 +30,13 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<Role> {
     return this.http
       .post<TokenResponse>(`${AUTH_URL}/login`, credentials)
+      .pipe(map((response) => this.startSession(response).role));
+  }
+
+  /** Public sign-up: the API creates a CLIENT with an initial account and logs it in. */
+  register(request: CreateClientRequest): Observable<Role> {
+    return this.http
+      .post<TokenResponse>(`${AUTH_URL}/register`, request)
       .pipe(map((response) => this.startSession(response).role));
   }
 

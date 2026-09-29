@@ -104,6 +104,17 @@ form {
   gap: 16px;
 }
 
+// Used by the sign-up form (register shares this stylesheet).
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
 mat-icon[matPrefix] {
   margin: 0 4px 0 12px;
   color: var(--mat-sys-on-surface-variant);
@@ -132,6 +143,16 @@ mat-icon[matPrefix] {
   }
 }
 
+.signup {
+  margin: 24px 0 0;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  a {
+    font-weight: 600;
+  }
+}
+
 .back {
-  margin-top: 24px;
+  margin-top: 16px;
 }

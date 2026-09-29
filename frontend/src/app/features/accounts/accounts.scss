@@ -60,6 +60,42 @@ mat-progress-bar {
   list-style: none;
 }
 
+.open-account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+
+  @media (max-width: 600px) {
+    align-items: flex-start;
+  }
+}
+
+.open-button {
+  height: 48px;
+}
+
+.limit-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+// Each card is a link to the account detail.
+a.account-card {
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+
+  .go {
+    margin-left: auto;
+    color: var(--mat-sys-primary);
+  }
+}
+
 .account-card {
   display: flex;
   flex-direction: column;
