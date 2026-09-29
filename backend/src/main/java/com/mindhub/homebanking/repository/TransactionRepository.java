@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
@@ -27,6 +28,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
     default BigDecimal sumSentToOthersSince(Client client, LocalDateTime since) {
         return sumSentToOthersSince(client, since, TransactionCategory.TRANSFER_OUT);
     }
+
+    /** Every movement of the client's accounts (open or closed) since {@code since}. */
+    @Query("select t from Transaction t where t.account.client = :client and t.date >= :since")
+    List<Transaction> findByClientSince(@Param("client") Client client, @Param("since") LocalDateTime since);
 
     /** A movement with its account and owner, for the receipt. */
     @EntityGraph(attributePaths = {"account", "account.client"})

@@ -19,6 +19,9 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     List<Account> findByClientEmailIgnoreCaseAndActiveTrueOrderByIdAsc(String email);
 
+    /** Open and closed accounts. */
+    List<Account> findByClient(Client client);
+
     @EntityGraph(attributePaths = "client")
     Optional<Account> findWithClientById(Long id);
 
