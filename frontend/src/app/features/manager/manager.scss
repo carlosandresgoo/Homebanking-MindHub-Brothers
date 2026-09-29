@@ -130,8 +130,8 @@ table {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
   font: var(--mat-sys-label-large);
 }
 
@@ -153,8 +153,8 @@ table {
   font: var(--mat-sys-label-medium);
 
   &.admin {
-    background: var(--mat-sys-tertiary-container);
-    color: var(--mat-sys-on-tertiary-container);
+    background: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
   }
 }
 

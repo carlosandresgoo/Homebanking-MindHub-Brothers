@@ -20,7 +20,7 @@ mat-progress-bar {
   border-radius: 24px;
   color: #fff;
   background: var(--hb-hero-gradient);
-  box-shadow: 0 16px 40px color-mix(in srgb, var(--mat-sys-primary) 30%, transparent);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--hb-brand-start) 30%, transparent);
 }
 
 .summary-label {

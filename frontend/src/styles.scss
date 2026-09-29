@@ -48,14 +48,18 @@ html {
     )
   );
 
-  // App-level tokens derived from the Material system tokens.
+  // App-level tokens.
   --hb-page-max-width: 1120px;
   --hb-radius: 20px;
+  // Brand gradient uses fixed tones (azure 40 -> cyan 40): white text on it must stay readable in
+  // dark mode too, where --mat-sys-primary turns into a light pastel.
+  --hb-brand-start: #005cbb;
+  --hb-brand-end: #006a6a;
   --hb-hero-gradient: linear-gradient(
     135deg,
-    var(--mat-sys-primary) 0%,
-    color-mix(in srgb, var(--mat-sys-primary) 55%, var(--mat-sys-tertiary)) 55%,
-    var(--mat-sys-tertiary) 100%
+    var(--hb-brand-start) 0%,
+    color-mix(in srgb, var(--hb-brand-start) 55%, var(--hb-brand-end)) 55%,
+    var(--hb-brand-end) 100%
   );
 }
 
@@ -107,6 +111,8 @@ a {
   h1 {
     margin: 0;
     font: var(--mat-sys-headline-medium);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   p {

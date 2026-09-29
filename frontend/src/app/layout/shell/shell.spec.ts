@@ -27,16 +27,14 @@ describe('Shell', () => {
 
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
-    httpTesting
-      .expectOne('/api/clients/current')
-      .flush({
-        id: 1,
-        name: 'Melba',
-        lastName: 'Morel',
-        email: 'melba@gmail.com',
-        role,
-        accounts: [],
-      });
+    httpTesting.expectOne('/api/clients/current').flush({
+      id: 1,
+      name: 'Melba',
+      lastName: 'Morel',
+      email: 'melba@gmail.com',
+      role,
+      accounts: [],
+    });
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
