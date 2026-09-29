@@ -1,0 +1,138 @@
+<section class="card" aria-labelledby="two-factor-title">
+  <div class="title-row">
+    <h2 id="two-factor-title"><mat-icon>phonelink_lock</mat-icon> Verificación en dos pasos</h2>
+    @if (enabled()) {
+      <span class="status on"><mat-icon>verified_user</mat-icon> Activada</span>
+    } @else {
+      <span class="status off">Desactivada</span>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <div class="error-banner" role="alert">
+      <mat-icon>error</mat-icon>
+      <span>{{ message }}</span>
+    </div>
+  }
+
+  @switch (mode()) {
+    @case ('idle') {
+      @if (enabled()) {
+        <p class="muted">
+          Te pedimos un código de tu app de autenticación al ingresar y en las transferencias
+          grandes a terceros.
+        </p>
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="startDisabling()">Desactivar</button>
+        </div>
+      } @else {
+        <p class="muted">
+          Sumá una capa de seguridad con una app de autenticación (Google Authenticator, Microsoft
+          Authenticator, 1Password…): te vamos a pedir un código al ingresar y en las transferencias
+          grandes. Además, tu límite diario para transferir a terceros sube.
+        </p>
+        <div class="actions">
+          <button
+            mat-flat-button
+            type="button"
+            class="wide"
+            (click)="startEnrollment()"
+            [disabled]="busy()"
+          >
+            @if (busy()) {
+              <mat-spinner diameter="20" aria-label="Preparando" />
+            } @else {
+              Activar
+            }
+          </button>
+        </div>
+      }
+    }
+
+    @case ('enrolling') {
+      <ol class="steps">
+        <li>
+          Escaneá este código con tu app de autenticación.
+          <div class="qr-row">
+            @if (qr(); as src) {
+              <img
+                [src]="src"
+                width="208"
+                height="208"
+                alt="Código QR para tu app de autenticación"
+              />
+            }
+            <div class="manual">
+              <span>¿No podés escanear? Ingresá esta clave:</span>
+              <code class="secret">{{ secret() }}</code>
+            </div>
+          </div>
+        </li>
+        <li>Escribí el código de 6 dígitos que te muestra la app.</li>
+      </ol>
+      <form [formGroup]="enrollForm" (ngSubmit)="confirmEnrollment()" novalidate>
+        <mat-form-field>
+          <mat-label>Código de 6 dígitos</mat-label>
+          <input
+            matInput
+            id="enrollCode"
+            formControlName="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+          />
+          <mat-error>Ingresá los 6 dígitos del código.</mat-error>
+        </mat-form-field>
+        <div class="actions">
+          <button mat-button type="button" (click)="cancel()" [disabled]="busy()">Cancelar</button>
+          <button mat-flat-button type="submit" class="wide" [disabled]="busy()">
+            @if (busy()) {
+              <mat-spinner diameter="20" aria-label="Verificando" />
+            } @else {
+              Confirmar y activar
+            }
+          </button>
+        </div>
+      </form>
+    }
+
+    @case ('disabling') {
+      <p class="muted">Para desactivarla confirmá tu contraseña y un código de la app.</p>
+      <form [formGroup]="disableForm" (ngSubmit)="confirmDisabling()" novalidate>
+        <mat-form-field>
+          <mat-label>Contraseña</mat-label>
+          <input
+            matInput
+            id="disablePassword"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          <mat-error>Ingresá tu contraseña.</mat-error>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Código de 6 dígitos</mat-label>
+          <input
+            matInput
+            id="disableCode"
+            formControlName="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+          />
+          <mat-error>Ingresá los 6 dígitos del código.</mat-error>
+        </mat-form-field>
+        <div class="actions">
+          <button mat-button type="button" (click)="cancel()" [disabled]="busy()">Cancelar</button>
+          <button mat-flat-button type="submit" class="wide danger" [disabled]="busy()">
+            @if (busy()) {
+              <mat-spinner diameter="20" aria-label="Desactivando" />
+            } @else {
+              Desactivar
+            }
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

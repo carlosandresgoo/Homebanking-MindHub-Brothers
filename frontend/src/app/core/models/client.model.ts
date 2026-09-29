@@ -12,7 +12,17 @@ export interface Client {
   enabled?: boolean;
   /** true while temporarily locked after too many failed logins. */
   locked?: boolean;
+  /** true when sign-in and large transfers need an authenticator app code. */
+  twoFactorEnabled?: boolean;
   accounts: Account[];
+}
+
+/** Mirrors backend `TwoFactorSetupDTO`: shown once while enrolling. */
+export interface TwoFactorSetup {
+  /** Base32, for manual entry in the app. */
+  secret: string;
+  /** otpauth:// URI, rendered as a QR code. */
+  otpauthUri: string;
 }
 
 /** Mirrors backend `com.mindhub.homebanking.dto.CreateClientRequest`. */

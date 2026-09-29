@@ -6,6 +6,9 @@ export type AuditAction =
   | 'PASSWORD_CHANGED'
   | 'PASSWORD_RESET_REQUESTED'
   | 'PASSWORD_RESET'
+  | 'TWO_FACTOR_ENABLED'
+  | 'TWO_FACTOR_DISABLED'
+  | 'TWO_FACTOR_RESET'
   | 'CLIENT_CREATED'
   | 'CLIENT_BLOCKED'
   | 'CLIENT_UNBLOCKED'
@@ -25,6 +28,9 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   PASSWORD_CHANGED: 'Cambio de contraseña',
   PASSWORD_RESET_REQUESTED: 'Pedido de recuperación',
   PASSWORD_RESET: 'Contraseña restablecida',
+  TWO_FACTOR_ENABLED: '2FA activada',
+  TWO_FACTOR_DISABLED: '2FA desactivada',
+  TWO_FACTOR_RESET: '2FA quitada por admin',
   CLIENT_CREATED: 'Alta de cliente',
   CLIENT_BLOCKED: 'Cliente bloqueado',
   CLIENT_UNBLOCKED: 'Cliente desbloqueado',

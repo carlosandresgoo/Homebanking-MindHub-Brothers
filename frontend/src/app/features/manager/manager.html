@@ -120,6 +120,17 @@
                     <mat-icon>{{ row.status === 'blocked' ? 'lock_open' : 'block' }}</mat-icon>
                   </button>
                 }
+                @if (row.twoFactorEnabled) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="status-action"
+                    (click)="resetTwoFactor(row, $event)"
+                    [attr.aria-label]="'Quitar la verificación en dos pasos de ' + row.fullName"
+                  >
+                    <mat-icon>phonelink_erase</mat-icon>
+                  </button>
+                }
               </div>
             </td>
           </ng-container>

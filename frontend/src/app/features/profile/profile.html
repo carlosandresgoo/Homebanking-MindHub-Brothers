@@ -26,6 +26,13 @@
     }
   </section>
 
+  @if (s.status === 'loaded' && s.data.role === 'CLIENT') {
+    <app-two-factor-card
+      [enabled]="twoFactorEnabled()"
+      (changed)="twoFactorEnabled.set(!!$event.twoFactorEnabled)"
+    />
+  }
+
   <section class="card" aria-labelledby="password-title">
     <h2 id="password-title"><mat-icon>lock_reset</mat-icon> Cambiar contraseña</h2>
     <p class="muted">Al cambiarla cerramos tu sesión en los demás dispositivos.</p>

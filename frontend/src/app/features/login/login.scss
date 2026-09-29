@@ -149,6 +149,30 @@ mat-icon[matPrefix] {
   font: var(--mat-sys-label-large);
 }
 
+.code-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  mat-icon {
+    flex: none;
+  }
+
+  p {
+    margin: 0;
+    font: var(--mat-sys-body-medium);
+  }
+}
+
+.other-account {
+  justify-self: end;
+  margin-top: -8px;
+}
+
 .signup {
   margin: 24px 0 0;
   text-align: center;

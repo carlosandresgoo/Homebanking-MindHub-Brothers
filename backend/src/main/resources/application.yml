@@ -95,6 +95,10 @@ app:
       cookie-secure: false
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  banking:
+    transfers:
+      # Lower than production so the 2FA prompt can be tried with the seeded balances.
+      second-factor-threshold: 10000
 
 ---
 spring:

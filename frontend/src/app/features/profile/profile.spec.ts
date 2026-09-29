@@ -26,10 +26,10 @@ describe('Profile', () => {
 
   afterEach(() => httpTesting.verify());
 
-  async function render() {
+  async function render(client: object = MELBA) {
     const fixture = TestBed.createComponent(Profile);
     fixture.detectChanges();
-    httpTesting.expectOne('/api/clients/current').flush(MELBA);
+    httpTesting.expectOne('/api/clients/current').flush(client);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     const fill = (current: string, next: string, confirm: string) => {
@@ -46,6 +46,14 @@ describe('Profile', () => {
     expect(el.textContent).toContain('Melba Morel');
     expect(el.textContent).toContain('melba@gmail.com');
     expect(el.querySelector('.avatar')?.textContent?.trim()).toBe('MM');
+  });
+
+  it('offers two-step verification to clients only', async () => {
+    const client = await render({ ...MELBA, twoFactorEnabled: true });
+    expect(client.el.querySelector('app-two-factor-card')?.textContent).toContain('Activada');
+
+    const admin = await render({ ...MELBA, role: 'ADMIN' });
+    expect(admin.el.querySelector('app-two-factor-card')).toBeNull();
   });
 
   it('changes the password and clears the form', async () => {

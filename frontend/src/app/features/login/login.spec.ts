@@ -141,4 +141,57 @@ describe('Login', () => {
 
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Demasiados intentos');
   });
+
+  it('asks for the authenticator code when 2FA is on, then sends it with the credentials', async () => {
+    const { fixture, el, fill, submit } = render();
+    fill('melba@gmail.com', 'secret');
+    submit();
+    const first = httpTesting.expectOne('/api/auth/login');
+    expect(first.request.body.secondFactorCode).toBeUndefined();
+    first.flush({ secondFactor: 'REQUIRED' }, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Tenés activada la verificación en dos pasos');
+    expect(el.querySelector('#password')).toBeNull();
+
+    typeInto(el, '#code', '12345');
+    submit();
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Ingresá los 6 dígitos del código.');
+    httpTesting.expectNone('/api/auth/login');
+
+    typeInto(el, '#code', '123456');
+    submit();
+    const second = httpTesting.expectOne('/api/auth/login');
+    expect(second.request.body).toEqual({
+      email: 'melba@gmail.com',
+      password: 'secret',
+      secondFactorCode: '123456',
+    });
+    second.flush({ secondFactor: 'INVALID' }, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('El código no es correcto');
+
+    typeInto(el, '#code', '654321');
+    submit();
+    httpTesting.expectOne('/api/auth/login').flush(ok('CLIENT'));
+    expect(navigate).toHaveBeenLastCalledWith('/accounts');
+  });
+
+  it('goes back to email and password from the code step', async () => {
+    const { fixture, el, fill, submit } = render();
+    fill('melba@gmail.com', 'secret');
+    submit();
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush({ secondFactor: 'REQUIRED' }, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+
+    Array.from(el.querySelectorAll<HTMLButtonElement>('button'))
+      .find((b) => b.textContent?.includes('Usar otra cuenta'))!
+      .click();
+    await fixture.whenStable();
+    expect(el.querySelector<HTMLInputElement>('#password')!.value).toBe('');
+    expect(el.querySelector('#code')).toBeNull();
+  });
 });

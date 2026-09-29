@@ -5,7 +5,7 @@ import { MatButtonToggleHarness } from '@angular/material/button-toggle/testing'
 import { MatSelectHarness } from '@angular/material/select/testing';
 
 import { Account } from '../../core/models/account.model';
-import { TransferReceipt } from '../../core/models/transfer.model';
+import { TransferLimits, TransferReceipt } from '../../core/models/transfer.model';
 import { provideTestDefaults, typeInto } from '../../testing/providers';
 import { Transfers } from './transfers';
 
@@ -26,6 +26,15 @@ const RECEIPT: TransferReceipt = {
   sourceBalanceAfter: 4900,
 };
 
+const LIMITS: TransferLimits = {
+  dailyLimit: 200000,
+  usedToday: 0,
+  remainingToday: 200000,
+  secondFactorEnabled: false,
+  secondFactorThreshold: 50000,
+  limitWithSecondFactor: 1000000,
+};
+
 describe('Transfers', () => {
   let httpTesting: HttpTestingController;
 
@@ -39,11 +48,12 @@ describe('Transfers', () => {
 
   afterEach(() => httpTesting.verify());
 
-  async function render(from?: string) {
+  async function render(from?: string, limits: TransferLimits = LIMITS) {
     const fixture = TestBed.createComponent(Transfers);
     if (from) fixture.componentRef.setInput('from', from);
     fixture.detectChanges();
     httpTesting.expectOne('/api/clients/current/accounts').flush(ACCOUNTS);
+    httpTesting.expectOne('/api/transfers/limits').flush(limits);
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
@@ -181,6 +191,97 @@ describe('Transfers', () => {
     retry.flush(RECEIPT);
     await fixture.whenStable();
     expect(el.textContent).toContain('¡Transferencia realizada!');
+  });
+
+  it('checks the daily limit only for transfers to other people', async () => {
+    const { fixture, el } = await render(undefined, {
+      ...LIMITS,
+      usedToday: 199700,
+      remainingToday: 300,
+    });
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '500');
+    await fixture.whenStable();
+    expect(el.querySelector('.limit-info')?.textContent).toMatch(/hasta\s*\$\s*300,00/);
+    expect(el.querySelector('.limit-info a')?.getAttribute('href')).toBe('/profile');
+
+    await click(fixture, 'Continuar');
+    expect(el.textContent).toContain('Supera tu límite diario para transferir a terceros.');
+    expect(el.querySelector('[aria-label="Confirmación"]')).toBeNull();
+
+    // Typing one of my own accounts is not a transfer to others: no limit.
+    typeInto(el, '#thirdTarget', 'VIN002');
+    await click(fixture, 'Continuar');
+    expect(el.querySelector('[aria-label="Confirmación"]')).not.toBeNull();
+    expect(el.querySelector('.limit-info')).toBeNull();
+  });
+
+  it('asks for the authenticator code for large transfers when 2FA is on', async () => {
+    const { fixture, el } = await render(undefined, {
+      ...LIMITS,
+      secondFactorEnabled: true,
+      secondFactorThreshold: 1000,
+    });
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '1000');
+    await click(fixture, 'Continuar');
+
+    expect(el.querySelector('#secondFactorCode')).not.toBeNull();
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting.expectNone('/api/transfers');
+    expect(el.textContent).toContain('Ingresá los 6 dígitos del código.');
+
+    typeInto(el, '#secondFactorCode', '123456');
+    await click(fixture, 'Confirmar transferencia');
+    const req = httpTesting.expectOne('/api/transfers');
+    expect(req.request.body.secondFactorCode).toBe('123456');
+    req.flush(RECEIPT);
+  });
+
+  it('asks for a code when the API requires one, and for another one when it is wrong', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '100');
+    await click(fixture, 'Continuar');
+    expect(el.querySelector('#secondFactorCode')).toBeNull();
+
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting
+      .expectOne('/api/transfers')
+      .flush({ secondFactor: 'REQUIRED' }, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('necesitamos el código');
+
+    typeInto(el, '#secondFactorCode', '111111');
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting
+      .expectOne('/api/transfers')
+      .flush({ secondFactor: 'INVALID' }, { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('El código no es correcto');
+    expect(el.querySelector<HTMLInputElement>('#secondFactorCode')!.value).toBe('');
+    expect(el.querySelector('[aria-label="Confirmación"]')).not.toBeNull();
+  });
+
+  it('explains the daily limit refused by the API and refreshes the allowance', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '100');
+    await click(fixture, 'Continuar');
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting
+      .expectOne('/api/transfers')
+      .flush(
+        { code: 'DAILY_LIMIT_EXCEEDED', remaining: 50 },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
+    httpTesting.expectOne('/api/clients/current/accounts').flush(ACCOUNTS);
+    httpTesting.expectOne('/api/transfers/limits').flush({ ...LIMITS, remainingToday: 50 });
+    await fixture.whenStable();
+
+    expect(el.querySelector('[role="alert"]')?.textContent).toMatch(
+      /Supera tu límite diario.*hasta \$\s*50,00/,
+    );
   });
 
   it('uses a new Idempotency-Key after a definitive answer', async () => {

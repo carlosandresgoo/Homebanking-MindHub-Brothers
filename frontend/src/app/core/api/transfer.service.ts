@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { TransferReceipt, TransferRequest } from '../models/transfer.model';
+import { TransferLimits, TransferReceipt, TransferRequest } from '../models/transfer.model';
 import { idempotencyHeaders } from './idempotency';
 
 @Injectable({ providedIn: 'root' })
@@ -18,5 +18,9 @@ export class TransferService {
     return this.http.post<TransferReceipt>(`${environment.apiUrl}/transfers`, request, {
       headers: idempotencyHeaders(idempotencyKey),
     });
+  }
+
+  getLimits(): Observable<TransferLimits> {
+    return this.http.get<TransferLimits>(`${environment.apiUrl}/transfers/limits`);
   }
 }

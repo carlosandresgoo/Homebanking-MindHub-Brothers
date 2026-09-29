@@ -30,6 +30,11 @@ export class ClientService {
     return this.http.patch<Client>(`${this.baseUrl}/${id}/status`, { enabled });
   }
 
+  /** ADMIN only: turns 2FA off for a client who lost their phone. */
+  resetTwoFactor(id: number): Observable<Client> {
+    return this.http.delete<Client>(`${this.baseUrl}/${id}/2fa`);
+  }
+
   /** ADMIN only. */
   createClient(request: CreateClientRequest): Observable<Client> {
     return this.http.post<Client>(this.baseUrl, request);

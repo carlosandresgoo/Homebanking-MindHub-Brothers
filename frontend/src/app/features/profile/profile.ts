@@ -1,5 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   FormGroupDirective,
@@ -23,10 +30,12 @@ import {
   passwordsMatch,
 } from '../../core/validation/password';
 import { initials } from '../../shared/initials';
+import { TwoFactorCard } from './two-factor-card/two-factor-card';
 
 @Component({
   selector: 'app-profile',
   imports: [
+    TwoFactorCard,
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
@@ -45,6 +54,11 @@ export class Profile {
   protected readonly passwordMin = PASSWORD_MIN;
   protected readonly state = toSignal(toLoadState(inject(ClientService).getCurrentClient()), {
     requireSync: true,
+  });
+  /** Follows the loaded client, then whatever the 2FA card reports. */
+  protected readonly twoFactorEnabled = linkedSignal(() => {
+    const s = this.state();
+    return s.status === 'loaded' && !!s.data.twoFactorEnabled;
   });
   protected readonly initials = computed(() => {
     const s = this.state();

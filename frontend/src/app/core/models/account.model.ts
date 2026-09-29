@@ -9,10 +9,15 @@ export interface Account {
 
 export type TransactionType = 'CREDIT' | 'DEBIT';
 
+/** Mirrors backend `com.mindhub.homebanking.domain.TransactionCategory`. */
+export type TransactionCategory =
+  'DEPOSIT' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'LOAN_DISBURSEMENT' | 'LOAN_PAYMENT' | 'OTHER';
+
 /** Mirrors backend `com.mindhub.homebanking.dto.TransactionDTO`. */
 export interface Transaction {
   id: number;
   type: TransactionType;
+  category?: TransactionCategory;
   amount: number;
   description: string;
   date: string;

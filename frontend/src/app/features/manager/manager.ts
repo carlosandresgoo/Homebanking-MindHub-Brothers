@@ -164,6 +164,32 @@ export class Manager {
       });
   }
 
+  /** For a client who lost their phone: turns 2FA off so they can enroll a new one. */
+  protected resetTwoFactor(row: ClientRow, event: Event): void {
+    event.stopPropagation();
+    const data: ConfirmDialogData = {
+      title: `Quitar la verificación en dos pasos`,
+      message: `${row.fullName} va a poder ingresar solo con su contraseña hasta que la active de nuevo. Hacelo solo si verificaste su identidad.`,
+      confirmLabel: 'Quitar',
+      icon: 'phonelink_erase',
+      danger: true,
+    };
+    this.dialog
+      .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data, width: '440px' })
+      .afterClosed()
+      .pipe(
+        filter(Boolean),
+        switchMap(() => this.clientService.resetTwoFactor(row.id)),
+      )
+      .subscribe({
+        next: () => {
+          this.snackBar.open(`Quitamos la verificación en dos pasos de ${row.fullName}.`, 'OK');
+          this.reload$.next();
+        },
+        error: () => this.snackBar.open('No pudimos quitarla. Intentá de nuevo.', 'OK'),
+      });
+  }
+
   protected openNewClient(): void {
     this.dialog
       .open<NewClientDialog, void, Client>(NewClientDialog, { width: '520px', maxWidth: '95vw' })

@@ -141,8 +141,25 @@
               <mat-error>Usá como máximo 2 decimales.</mat-error>
             } @else if (form.controls.amount.hasError('funds')) {
               <mat-error>Supera tu saldo disponible.</mat-error>
+            } @else if (form.controls.amount.hasError('limit')) {
+              <mat-error>Supera tu límite diario para transferir a terceros.</mat-error>
             }
           </mat-form-field>
+
+          @if (toThirdParty() && limits(); as l) {
+            <div class="limit-info">
+              <mat-icon>speed</mat-icon>
+              <span>
+                Hoy podés transferir a terceros hasta
+                <strong class="hb-tabular">{{ l.remainingToday | currency }}</strong>
+                (límite diario {{ l.dailyLimit | currency }}).
+                @if (!l.secondFactorEnabled && l.limitWithSecondFactor > l.dailyLimit) {
+                  <a routerLink="/profile">Activá la verificación en dos pasos</a> para subirlo a
+                  {{ l.limitWithSecondFactor | currency }}.
+                }
+              </span>
+            </div>
+          }
 
           <mat-form-field>
             <mat-label>Descripción (opcional)</mat-label>
@@ -191,6 +208,24 @@
               </dd>
             </div>
           </dl>
+          @if (needsCode()) {
+            <mat-form-field class="code-field">
+              <mat-label>Código de tu app de autenticación</mat-label>
+              <mat-icon matPrefix>phonelink_lock</mat-icon>
+              <input
+                matInput
+                id="secondFactorCode"
+                [formControl]="code"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+              />
+              <mat-hint
+                >Por seguridad, las transferencias grandes a terceros llevan código.</mat-hint
+              >
+              <mat-error>Ingresá los 6 dígitos del código.</mat-error>
+            </mat-form-field>
+          }
           @if (confirmError(); as message) {
             <div class="error-banner" role="alert">
               <mat-icon>error</mat-icon>
@@ -211,7 +246,7 @@
             >
               @if (submitting()) {
                 <mat-spinner diameter="20" aria-label="Transfiriendo" />
-              } @else if (confirmError()) {
+              } @else if (retryable()) {
                 Reintentar
               } @else {
                 Confirmar transferencia

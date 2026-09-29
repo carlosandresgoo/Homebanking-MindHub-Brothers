@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { ErrorStateMatcher } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -9,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { Role } from '../../core/models/auth.model';
+import { Role, secondFactorProblem } from '../../core/models/auth.model';
 import { Brand } from '../../shared/brand/brand';
 
 @Component({
@@ -38,10 +39,17 @@ export class Login {
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
+  /** Second step for clients with 2FA: the password was right, now the app code. */
+  protected readonly needsCode = signal(false);
+  /** The form was already submitted once: the new code field should not start out red. */
+  protected readonly touchedOnly: ErrorStateMatcher = {
+    isErrorState: (control) => !!control && control.invalid && control.touched,
+  };
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
+    code: [{ value: '', disabled: true }, [Validators.required, Validators.pattern(/^\d{6}$/)]],
   });
 
   protected submit(): void {
@@ -49,16 +57,42 @@ export class Login {
       this.form.markAllAsTouched();
       return;
     }
+    const { email, password, code } = this.form.getRawValue();
     this.submitting.set(true);
     this.error.set(null);
-    this.auth.login(this.form.getRawValue()).subscribe({
-      next: (role) => void this.router.navigateByUrl(this.targetUrl(role)),
-      error: (err: unknown) => {
-        this.submitting.set(false);
-        this.form.controls.password.reset();
-        this.error.set(messageFor(err));
-      },
-    });
+    this.auth
+      .login({ email, password, secondFactorCode: this.needsCode() ? code : undefined })
+      .subscribe({
+        next: (role) => void this.router.navigateByUrl(this.targetUrl(role)),
+        error: (err: unknown) => {
+          this.submitting.set(false);
+          const problem = secondFactorProblem(err);
+          if (problem) {
+            this.askForCode();
+            this.error.set(
+              problem === 'INVALID'
+                ? 'El código no es correcto o ya venció. Probá con el que muestra tu app ahora.'
+                : null,
+            );
+            return;
+          }
+          this.backToPassword();
+          this.error.set(messageFor(err));
+        },
+      });
+  }
+
+  /** Leaves the code step (e.g. to use another account). */
+  protected backToPassword(): void {
+    this.needsCode.set(false);
+    this.form.controls.code.disable();
+    this.form.controls.password.reset();
+  }
+
+  private askForCode(): void {
+    this.needsCode.set(true);
+    this.form.controls.code.enable();
+    this.form.controls.code.reset();
   }
 
   private targetUrl(role: Role): string {
