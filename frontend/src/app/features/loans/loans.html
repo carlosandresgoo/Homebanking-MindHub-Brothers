@@ -1,0 +1,137 @@
+@let s = state();
+
+@if (s.status === 'loading') {
+  <mat-progress-bar class="page-loading" mode="indeterminate" aria-label="Cargando tus préstamos" />
+}
+
+<div class="hb-page">
+  <header class="hb-page-header">
+    <div>
+      <h1>Préstamos</h1>
+      <p>Pedí un préstamo y seguí el pago de tus cuotas.</p>
+    </div>
+    <button
+      mat-flat-button
+      class="apply-button"
+      (click)="apply()"
+      [disabled]="s.status !== 'loaded' || activeLoanIds().length === s.data.catalog.length"
+    >
+      <mat-icon>request_quote</mat-icon>
+      Pedir préstamo
+    </button>
+  </header>
+
+  @if (s.status === 'loading') {
+    <div class="grid">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  } @else if (s.status === 'error') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon error">cloud_off</mat-icon>
+      <h2>No pudimos cargar tus préstamos</h2>
+      <p>Revisá tu conexión e intentá de nuevo.</p>
+      <button mat-flat-button (click)="retry()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    <section aria-labelledby="my-loans">
+      <h2 id="my-loans" class="section-title">Mis préstamos</h2>
+      @if (s.data.loans.length === 0) {
+        <div class="state-card">
+          <mat-icon class="state-icon">savings</mat-icon>
+          <h2>Todavía no tenés préstamos</h2>
+          <p>Elegí uno de nuestros préstamos más abajo para empezar.</p>
+        </div>
+      } @else {
+        <ul class="grid" role="list">
+          @for (loan of s.data.loans; track loan.id) {
+            <li class="loan-card" [class.paid]="loan.paidOff">
+              <div class="loan-top">
+                <span class="loan-icon"
+                  ><mat-icon>{{ icon[loan.code] }}</mat-icon></span
+                >
+                <div>
+                  <h3>Préstamo {{ loan.name }}</h3>
+                  <span class="muted">
+                    {{ loan.amount | currency }} · pedido el
+                    {{ loan.createdAt | date: 'd MMM y' }}
+                  </span>
+                </div>
+                @if (loan.paidOff) {
+                  <span class="badge">Cancelado</span>
+                }
+              </div>
+
+              <div class="progress">
+                <mat-progress-bar
+                  mode="determinate"
+                  [value]="progress(loan)"
+                  [attr.aria-label]="'Cuotas pagas: ' + loan.paymentsMade + ' de ' + loan.payments"
+                />
+                <span class="muted"
+                  >{{ loan.paymentsMade }} de {{ loan.payments }} cuotas pagas</span
+                >
+              </div>
+
+              <dl class="figures">
+                <div>
+                  <dt>Te falta pagar</dt>
+                  <dd class="hb-tabular">{{ loan.outstanding | currency }}</dd>
+                </div>
+                <div>
+                  <dt>{{ loan.paidOff ? 'Total pagado' : 'Próxima cuota' }}</dt>
+                  <dd class="hb-tabular">
+                    {{ (loan.paidOff ? loan.totalDue : loan.nextInstallment) | currency }}
+                  </dd>
+                </div>
+              </dl>
+
+              @if (!loan.paidOff) {
+                <button mat-flat-button class="pay-button" (click)="pay(loan)">
+                  <mat-icon>payments</mat-icon>
+                  Pagar cuota {{ loan.paymentsMade + 1 }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section aria-labelledby="catalog">
+      <h2 id="catalog" class="section-title">Nuestros préstamos</h2>
+      <ul class="grid catalog" role="list">
+        @for (product of s.data.catalog; track product.id) {
+          <li class="product-card">
+            <span class="loan-icon large"
+              ><mat-icon>{{ icon[product.code] }}</mat-icon></span
+            >
+            <h3>{{ product.name }}</h3>
+            <p class="amount hb-tabular">
+              Hasta {{ product.maxAmount | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
+            </p>
+            <ul class="facts" role="list">
+              <li>
+                <mat-icon>calendar_month</mat-icon>
+                {{ product.payments[0] }} a
+                {{ product.payments[product.payments.length - 1] }} cuotas
+              </li>
+              <li><mat-icon>percent</mat-icon> Interés {{ product.interestRate | percent }}</li>
+            </ul>
+            <button
+              mat-stroked-button
+              (click)="apply(product.id)"
+              [disabled]="isActive(product)"
+              [attr.aria-label]="'Solicitar préstamo ' + product.name"
+            >
+              {{ isActive(product) ? 'Ya tenés uno activo' : 'Solicitar' }}
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>

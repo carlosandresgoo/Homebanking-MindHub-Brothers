@@ -1,0 +1,118 @@
+<h2 mat-dialog-title class="title">
+  <mat-icon>request_quote</mat-icon>
+  Pedir un préstamo
+</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-dialog-content>
+    @if (error(); as message) {
+      <div class="error-banner" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <fieldset>
+      <legend>Tipo de préstamo</legend>
+      <div class="products" role="radiogroup" aria-label="Tipo de préstamo">
+        @for (option of data.catalog; track option.id) {
+          <button
+            type="button"
+            class="product"
+            role="radio"
+            [class.selected]="form.controls.loanId.value === option.id"
+            [attr.aria-checked]="form.controls.loanId.value === option.id"
+            [disabled]="isActive(option)"
+            (click)="form.controls.loanId.setValue(option.id)"
+          >
+            <mat-icon>{{ icon[option.code] }}</mat-icon>
+            <span class="product-name">{{ option.name }}</span>
+            <small>
+              @if (isActive(option)) {
+                Ya tenés uno activo
+              } @else {
+                Hasta {{ option.maxAmount | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
+              }
+            </small>
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    @if (loan(); as selected) {
+      <div class="row">
+        <mat-form-field>
+          <mat-label>Monto</mat-label>
+          <span matTextPrefix>$&nbsp;</span>
+          <input
+            matInput
+            id="amount"
+            type="number"
+            inputmode="decimal"
+            min="1"
+            [max]="selected.maxAmount"
+            formControlName="amount"
+            class="hb-tabular"
+          />
+          <mat-hint>Máximo {{ selected.maxAmount | currency }}</mat-hint>
+          @if (form.controls.amount.hasError('required')) {
+            <mat-error>Ingresá el monto.</mat-error>
+          } @else if (form.controls.amount.hasError('max')) {
+            <mat-error>Supera el máximo de {{ selected.maxAmount | currency }}.</mat-error>
+          } @else if (form.controls.amount.hasError('min')) {
+            <mat-error>El monto mínimo es {{ 1 | currency }}.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Cuotas</mat-label>
+          <mat-select formControlName="payments" id="payments">
+            @for (count of selected.payments; track count) {
+              <mat-option [value]="count">{{ count }} cuotas</mat-option>
+            }
+          </mat-select>
+          <mat-error>Elegí la cantidad de cuotas.</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field>
+        <mat-label>Acreditar en</mat-label>
+        <mat-icon matPrefix>account_balance_wallet</mat-icon>
+        <mat-select formControlName="accountNumber" id="accountNumber">
+          @for (account of data.accounts; track account.id) {
+            <mat-option [value]="account.number">{{ account.number }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>Elegí una cuenta.</mat-error>
+      </mat-form-field>
+
+      <dl class="simulation" aria-live="polite">
+        <div>
+          <dt>Interés</dt>
+          <dd>{{ selected.interestRate | percent }}</dd>
+        </div>
+        <div>
+          <dt>Total a devolver</dt>
+          <dd class="hb-tabular">{{ total() !== null ? (total() | currency) : '—' }}</dd>
+        </div>
+        <div class="highlight">
+          <dt>Cuota estimada</dt>
+          <dd class="hb-tabular">
+            {{ installment() !== null ? (installment() | currency) : '—' }}
+          </dd>
+        </div>
+      </dl>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="submitting()">Cancelar</button>
+    <button mat-flat-button type="submit" class="submit" [disabled]="submitting()">
+      @if (submitting()) {
+        <mat-spinner diameter="18" aria-label="Enviando solicitud" />
+      } @else {
+        Solicitar préstamo
+      }
+    </button>
+  </mat-dialog-actions>
+</form>

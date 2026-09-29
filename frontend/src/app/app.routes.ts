@@ -49,6 +49,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/transfers/transfers').then((m) => m.Transfers),
       },
       {
+        path: 'loans',
+        title: 'Préstamos | MindHub Brothers',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () => import('./features/loans/loans').then((m) => m.Loans),
+      },
+      {
         path: 'manager',
         title: 'Clientes | MindHub Brothers',
         canActivate: [roleGuard('ADMIN')],
