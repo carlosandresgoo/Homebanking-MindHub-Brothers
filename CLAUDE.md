@@ -1,7 +1,8 @@
 # Proyecto: Homebanking MindHub Brothers
 
 Aplicación de homebanking: API Spring Boot (`/backend`, Gradle) y frontend Angular 21 (`/frontend`), desplegados por separado.
-Estado: migración completada (Fases 0–3). Historial y decisiones en `MIGRATION_PLAN.md`; guía de uso en `README.md`.
+Estado: migración completada (Fases 0–3) y funcionalidad de `task11` portada (registro, cuentas y movimientos,
+transferencias, tarjetas, préstamos). Historial y decisiones en `MIGRATION_PLAN.md`; guía de uso en `README.md`.
 
 ## Comandos
 
@@ -27,13 +28,14 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 ## Estructura
 - Raíz: `settings.gradle` (`include 'backend'`), `gradlew*`, `gradle/libs.versions.toml`, `docker-compose.yml`, `.env.example`
 - `backend/src/main/java/com/mindhub/homebanking/`
-  - `controller/` (`AuthController`, `ClientController`), `service/`, `repository/`, `domain/`, `dto/` (records), `mapper/`
+  - `controller/` (Auth, Client, Account, Transfer, Card, Loan), `service/`, `repository/`, `domain/`, `dto/` (records), `mapper/`
   - `security/` (`SecurityConfig`, `JwtConfig`, `AccessTokenService`, `RefreshTokenService`, `LoginRateLimiter`)
   - `exception/` (`GlobalExceptionHandler` → ProblemDetail), `config/` (`SecurityProperties`, `DevDataSeeder`)
 - `backend/src/main/resources/application.yml` (perfiles `dev`/`prod`), `db/migration/` (Flyway)
 - `backend/src/test/.../support/IntegrationTest` + `TestData`: base de los tests MockMvc (perfil `test`)
-- `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards], `interceptors`, `utils`); `features/{home,login,accounts,manager}`
-- `frontend/src/app/layout/shell` (toolbar + menú de usuario del área privada), `shared/` (`brand`, `initials`), `testing/`
+- `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards], `interceptors`, `utils`, `i18n`)
+- `frontend/src/app/features/{home,login,register,accounts,account-detail,transfers,cards,loans,manager}`
+- `frontend/src/app/layout/shell` (toolbar + menú de usuario del área privada), `shared/` (`brand`, `bank-card`, `confirm-dialog`, `initials`), `testing/` (providers y fixtures)
 
 ## Stack
 - Java 21, Spring Boot 3.5.16, Gradle 8.14.5, Spring Security 6 + oauth2-resource-server (JWT HS256), Flyway, Bucket4j
@@ -45,8 +47,13 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - Entradas con records + Bean Validation (`@Valid`); solo los campos que el usuario puede fijar (sin mass assignment)
 - Errores con `GlobalExceptionHandler` y `ProblemDetail`; nada de stack traces ni mensajes internos
 - Inyección por constructor; servicios `@Transactional(readOnly = true)` por defecto
-- Cada endpoint con `@PreAuthorize`; rutas nuevas deben añadirse a `SecurityConfig` (deny-by-default)
-- Cambios de esquema solo con una nueva migración Flyway `V{n}__*.sql` (`ddl-auto=validate`)
+- Cada endpoint con `@PreAuthorize`; rutas fuera de `/api/**` deben añadirse a `SecurityConfig` (deny-by-default)
+- Propiedad en el servicio: un recurso de otro cliente responde 404 (`ResourceNotFoundException`), nunca 403
+- Errores de negocio con `BusinessRuleException` (422); duplicados con `ConflictException` (409)
+- Dinero siempre `BigDecimal` (2 decimales); los saldos solo cambian con `Account.credit/debit` (generan el movimiento)
+- Operaciones que mueven dinero: `@Transactional` + `findByIdForUpdate` (bloqueo de filas en orden ascendente de id)
+- Nunca guardar ni loguear PAN completo ni CVV (solo `last4` + hash)
+- Cambios de esquema solo con una nueva migración Flyway `V{n}__*.sql` (`ddl-auto=validate`); datos de referencia también por Flyway
 - Tests de seguridad con MockMvc extendiendo `IntegrationTest` (401/403/400 para cada endpoint nuevo)
 - Versiones en `gradle/libs.versions.toml`, nunca en `build.gradle`; regenerar `gradle.lockfile`
 

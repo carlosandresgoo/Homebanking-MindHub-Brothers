@@ -14,7 +14,7 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 | Plataforma | **Spring Boot 3.5.x + Java 21 + Gradle 8.14.x** (salto de versión mayor autorizado) |
 | Autenticación | **JWT propio**: login con email y contraseña, access token de 15 min y refresh token rotado en cookie HttpOnly |
 | Librería de UI | Se mantiene **Bootstrap** (instalado por npm, sin CDN) |
-| Alta de usuarios | **Solo ADMIN** (`POST /api/clients` desde `/manager`); sin registro público |
+| Alta de usuarios | Registro público en `/register` (rate limit) + alta por ADMIN desde `/manager` |
 | Usuarios semilla (dev) | Contraseña desde `DEV_SEED_PASSWORD` o generada e impresa una vez |
 
 ## Estado (29/09/2026)
@@ -25,7 +25,19 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 | 1 Reestructuración | ✅ | `7cda712` … `9bf40e3` |
 | 1.5 Plataforma (Boot 3.5.16, Java 21, Gradle 8.14.5) | ✅ | `490936a` … `3a37000` |
 | 2 Angular 21 + eliminación de Vue | ✅ | `26ae508` … `8f8d070` |
-| 3 Seguridad | ✅ (con pendientes abajo) | `fc3c7c7` … |
+| 3 Seguridad | ✅ (con pendientes abajo) | `fc3c7c7` … `938a3c3` |
+| Extra: rediseño con Angular Material 3 (es-AR, modo oscuro) | ✅ | `380f2fd` … `2897230` |
+| Extra: portar funcionalidad de `origin/task11` | ✅ | `3e15f2d` … `cf611b5` |
+
+### Funcionalidad portada desde `task11` (y fallos corregidos)
+| Módulo | Qué incluye | Fallo de `task11` corregido |
+|---|---|---|
+| Registro + cuentas | Registro público (con rate limit), cuenta inicial, abrir (máx. 3) y cerrar cuentas, movimientos | Cualquier cliente podía ver y cerrar cuentas ajenas |
+| Tarjetas | Pedir crédito/débito GOLD/SILVER/TITANIUM, desactivar | PAN y CVV guardados y devueltos siempre; desactivar tarjetas ajenas; `Math.random()` |
+| Transferencias | Propias y a terceros, atómicas, con bloqueo de filas | 500 con cuenta inexistente; doble gasto concurrente; `double` |
+| Préstamos | Catálogo (Flyway), solicitar, pagar por cuotas | Cualquier cliente podía pagar/alterar préstamos ajenos |
+
+Decisiones: registro **público** (cambia la decisión anterior de "solo ADMIN"); el CVV no se guarda (se muestra una sola vez al emitir); los préstamos se pagan por cuotas fijas (la última ajusta el redondeo).
 
 ### Problemas del análisis → resolución
 | # | Problema | Resuelto en |
@@ -42,6 +54,8 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 - **OWASP dependency-check** configurado pero sin ejecutar: la NVD rechaza la descarga sin `NVD_API_KEY`.
 - **Docker** (`docker compose up`) sin verificar: Docker no está instalado en la máquina de desarrollo.
 - Rate limit en memoria: con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
+- Nombres y apellidos solo aceptan letras sin tildes (regla heredada); con la UI en español convendría admitir tildes, ñ, espacios y guiones.
+- Si se agregan pagos con tarjeta hará falta un tratamiento del CVV acorde (hoy no se guarda).
 
 ---
 

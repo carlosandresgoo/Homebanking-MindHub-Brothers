@@ -27,26 +27,43 @@ $env:DEV_SEED_PASSWORD = 'elige-una-contraseña'   # opcional
 cd frontend; npm start
 ```
 
-Usuarios de prueba (solo `dev`): `melba@gmail.com` (CLIENT, cuentas vin001/vin002) y `admin@mindhub.com` (ADMIN).
-Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log al arrancar.
+Usuarios de prueba (solo `dev`):
+- `melba@gmail.com` (CLIENT): cuentas VIN001 y VIN002 con movimientos, tarjetas Gold débito y Titanium crédito, y un préstamo Personal con 2 cuotas pagas.
+- `admin@mindhub.com` (ADMIN).
+
+Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log al arrancar. También podés crear tu propio usuario en `/register`.
 
 | Ruta del front | Acceso |
 |---|---|
 | `/` | pública |
-| `/login` | pública |
-| `/accounts` | usuario logueado: "Mis cuentas" (saldo total y tarjetas por cuenta) |
+| `/login`, `/register` | pública (ingreso y alta de clientes) |
+| `/accounts` | usuario logueado: "Mis cuentas" (saldo total, abrir cuenta) |
+| `/accounts/:id` | dueño o ADMIN: movimientos, transferir, cerrar cuenta |
+| `/transfers` | CLIENT: transferir (datos → confirmación → comprobante) |
+| `/cards` | CLIENT: tarjetas (pedir, ver, desactivar) |
+| `/loans` | CLIENT: préstamos (catálogo, solicitar, pagar cuotas) |
 | `/manager` | ADMIN: "Clientes" (métricas, tabla con búsqueda/orden/paginación, alta en diálogo) |
 
 ## API
 | Método | Ruta | Acceso |
 |---|---|---|
 | POST | `/api/auth/login` | pública (máx. 5 intentos/min por IP) |
-| POST | `/api/auth/refresh` | cookie `refresh_token` |
-| POST | `/api/auth/logout` | cookie `refresh_token` |
+| POST | `/api/auth/register` | pública (máx. 5/min por IP); crea un CLIENT con una cuenta e inicia sesión |
+| POST | `/api/auth/refresh`, `/api/auth/logout` | cookie `refresh_token` |
 | GET | `/api/clients/current` | autenticado |
-| GET | `/api/clients`, `/api/clients/{id}` | ADMIN |
-| POST | `/api/clients` | ADMIN |
+| GET / POST | `/api/clients`, GET `/api/clients/{id}` | ADMIN |
+| GET / POST | `/api/clients/current/accounts` | autenticado / CLIENT (máx. 3 activas) |
+| GET / DELETE | `/api/accounts/{id}` | dueño o ADMIN / dueño (cierra con saldo 0) |
+| POST | `/api/transfers` | CLIENT (origen propio; atómica y con bloqueo) |
+| GET / POST | `/api/clients/current/cards` | CLIENT (una activa por tipo y color) |
+| DELETE | `/api/cards/{id}` | dueño |
+| GET | `/api/loans` | autenticado (catálogo) |
+| POST | `/api/loans` | CLIENT (un préstamo activo por tipo) |
+| GET | `/api/clients/current/loans` | CLIENT |
+| POST | `/api/clients/current/loans/{id}/payments` | dueño (paga la próxima cuota) |
 | GET | `/actuator/health` | pública; `/actuator/info` solo ADMIN |
+
+Los recursos de otro cliente responden **404** (no se puede averiguar si existen). Reglas de negocio incumplidas (saldo insuficiente, montos o cuotas no permitidos) responden **422**; duplicados, **409**.
 
 Autenticación: access token JWT (15 min) en `Authorization: Bearer`, y refresh token rotatorio (7 días) en una cookie `HttpOnly; Secure; SameSite=Strict`. Los errores se devuelven como `application/problem+json`.
 
@@ -81,10 +98,10 @@ Levanta PostgreSQL, el backend con el perfil `prod` (Flyway migra el esquema; `d
 ```
 backend/
   src/main/java/com/mindhub/homebanking/
-    controller/   AuthController, ClientController
-    service/      AuthService, ClientService
+    controller/   Auth, Client, Account, Transfer, Card, Loan
+    service/      casos de uso (+ generadores de números de cuenta y tarjeta)
     security/     SecurityConfig, JwtConfig, tokens, rate limiter
-    domain/       Client, Account, RefreshToken, Role (JPA)
+    domain/       Client, Account, Transaction, Card, Loan, ClientLoan, RefreshToken (JPA)
     repository/   Spring Data JPA
     dto/ mapper/  records de entrada/salida y mapeo
     exception/    GlobalExceptionHandler (ProblemDetail)
@@ -93,7 +110,8 @@ backend/
   Dockerfile, gradle.lockfile, dependency-check-suppressions.xml
 frontend/
   src/app/core/      models, api, auth (servicio + guards), interceptors, utils
-  src/app/features/  home, login, accounts, manager (+ new-client-dialog)
+  src/app/features/  home, login, register, accounts, account-detail, transfers, cards, loans, manager
+  src/app/shared/    brand, bank-card, confirm-dialog
   src/app/layout/    shell del área privada (toolbar + menú de usuario)
   src/styles.scss    tema Material 3 y estilos globales
   Dockerfile, nginx.conf, security-headers.conf, proxy.conf.json
