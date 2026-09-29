@@ -1,79 +1,66 @@
 package com.mindhub.homebanking.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 public class Account {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private String number;
-    private LocalDateTime creationDate;
-    private double balance;
+    private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="client_id")
+    @Column(nullable = false, unique = true, length = 20)
+    private String number;
+
+    @Column(nullable = false)
+    private LocalDateTime creationDate;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal balance;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "client_id")
     private Client client;
 
-
-    public Account() {
+    protected Account() {
     }
 
-    public Account(String number, LocalDateTime creationDate, double balance, Client client) {
+    public Account(String number, LocalDateTime creationDate, BigDecimal balance) {
         this.number = number;
         this.creationDate = creationDate;
         this.balance = balance;
-        this.client = client;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-
     public String getNumber() {
         return number;
-    }
-
-    public void setNumber(String number) {
-        this.number = number;
     }
 
     public LocalDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
-        this.balance = balance;
-    }
-    @JsonIgnore
     public Client getClient() {
         return client;
     }
 
-    public void setClient(Client client) {
+    void setClient(Client client) {
         this.client = client;
     }
 
+    /** Excludes the client relation and the balance (no recursion, no financial data in logs). */
     @Override
     public String toString() {
-        return "Account{" +
-                "id=" + id +
-                ", number='" + number + '\'' +
-                ", creationDate=" + creationDate +
-                ", balance=" + balance +
-                ", client=" + client +
-                '}';
+        return "Account{id=" + id + ", number='" + number + "'}";
     }
 }

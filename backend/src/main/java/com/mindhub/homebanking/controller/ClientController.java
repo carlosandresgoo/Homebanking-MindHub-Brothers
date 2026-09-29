@@ -1,37 +1,58 @@
 package com.mindhub.homebanking.controller;
 
-
 import com.mindhub.homebanking.dto.ClientDTO;
-import com.mindhub.homebanking.domain.Client;
-import com.mindhub.homebanking.repository.ClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.mindhub.homebanking.dto.CreateClientRequest;
+import com.mindhub.homebanking.service.ClientService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
-
 
 @RestController
-    public class ClientController {
+@RequestMapping("/api/clients")
+public class ClientController {
 
-        @Autowired
-        private ClientRepository repository;
+    private final ClientService clientService;
 
-        @RequestMapping("/api/clients")
-        public List<ClientDTO> getClient() {
-            return repository.findAll().stream().map(client -> new ClientDTO(client)).collect(toList());
-        }
-
-    @RequestMapping("/api/clients/{id}")
-    public ClientDTO getClient (@PathVariable Long id){
-        Optional<Client> optionalClient = repository.findById(id);
-        return optionalClient.map(client -> new ClientDTO(client)).orElse(null);
+    public ClientController(ClientService clientService) {
+        this.clientService = clientService;
     }
 
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ClientDTO> getClients() {
+        return clientService.findAll();
     }
 
+    /** The authenticated client's own data; the identity comes from the token, never from the request. */
+    @GetMapping("/current")
+    @PreAuthorize("isAuthenticated()")
+    public ClientDTO getCurrentClient(Authentication authentication) {
+        return clientService.findByEmail(authentication.getName());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ClientDTO getClient(@PathVariable Long id) {
+        return clientService.findById(id);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ClientDTO> createClient(@Valid @RequestBody CreateClientRequest request) {
+        ClientDTO created = clientService.create(request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}").buildAndExpand(created.id()).toUri();
+        return ResponseEntity.created(location).body(created);
+    }
+}

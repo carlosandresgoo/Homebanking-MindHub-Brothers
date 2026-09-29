@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: homebanking
+  profiles:
+    default: dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  h2:
+    console:
+      enabled: false
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
+    include-exception: false
+  # Honour X-Forwarded-* from the nginx reverse proxy (client IP for rate limiting, scheme for cookies).
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+  info:
+    env:
+      enabled: false
+
+app:
+  security:
+    jwt:
+      # Base64-encoded HMAC key, at least 256 bits. Required outside the dev profile.
+      secret: ${JWT_SECRET:}
+      issuer: homebanking
+      access-token-ttl: 15m
+    refresh-token:
+      ttl: 7d
+      cookie-name: refresh_token
+      cookie-secure: true
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    login-rate-limit:
+      capacity: 5
+      period: 1m
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:homebanking;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  security:
+    refresh-token:
+      # Plain http on localhost during development.
+      cookie-secure: false
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}

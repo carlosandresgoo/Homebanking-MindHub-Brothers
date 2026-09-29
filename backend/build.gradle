@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	alias(libs.plugins.spring.boot)
 	alias(libs.plugins.spring.dependency.management)
+	alias(libs.plugins.owasp.dependencycheck)
 }
 
 group = 'com.mindhub'
@@ -16,15 +17,38 @@ java {
 repositories {
 	mavenCentral()
 }
+
 dependencies {
+	implementation libs.spring.boot.starter.actuator
 	implementation libs.spring.boot.starter.data.jpa
-	implementation libs.spring.boot.starter.data.rest
+	implementation libs.spring.boot.starter.oauth2.resource.server
+	implementation libs.spring.boot.starter.security
+	implementation libs.spring.boot.starter.validation
 	implementation libs.spring.boot.starter.web
+	implementation libs.flyway.core
+	implementation libs.flyway.database.postgresql
+	implementation libs.bucket4j.core
 	runtimeOnly libs.h2
+	runtimeOnly libs.postgresql
 	testImplementation libs.spring.boot.starter.test
+	testImplementation libs.spring.security.test
 	testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+dependencyCheck {
+	// Free key from https://nvd.nist.gov/developers/request-an-api-key; without it the NVD download is slow.
+	nvd {
+		apiKey = System.getenv('NVD_API_KEY')
+	}
+	failBuildOnCVSS = 7.0f
+	suppressionFile = 'dependency-check-suppressions.xml'
+	analyzers {
+		assemblyEnabled = false
+		nodeEnabled = false
+		nodeAuditEnabled = false
+	}
 }

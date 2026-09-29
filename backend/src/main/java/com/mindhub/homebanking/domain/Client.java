@@ -1,77 +1,85 @@
 package com.mindhub.homebanking.domain;
 
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Client {
 
-    private String name;
-    private String lastName;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
+
+    @Column(nullable = false, length = 50)
+    private String name;
+
+    @Column(nullable = false, length = 50)
+    private String lastName;
+
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @OneToMany(mappedBy="client", fetch= FetchType.EAGER)
-     private Set<Account> accounts = new HashSet<>();
+    /** Password hash with its encoder id prefix (e.g. {@code {bcrypt}...}); never the raw password. */
+    @Column(nullable = false)
+    private String password;
 
-    public Client() {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @OneToMany(mappedBy = "client")
+    @OrderBy("id")
+    private List<Account> accounts = new ArrayList<>();
+
+    protected Client() {
     }
 
-    public Client(String name, String lastName, String email) {
+    public Client(String name, String lastName, String email, String passwordHash, Role role) {
         this.name = name;
         this.lastName = lastName;
         this.email = email;
+        this.password = passwordHash;
+        this.role = role;
     }
+
     public void addAccount(Account account) {
         account.setClient(this);
         accounts.add(account);
     }
+
+    public Long getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
-    }
-
-
-    public Set<Account> getAccounts() {
-        return accounts;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getLastName() {
         return lastName;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public String getPassword() {
+        return password;
     }
 
+    public Role getRole() {
+        return role;
+    }
 
+    public List<Account> getAccounts() {
+        return accounts;
+    }
+
+    /** Excludes the password and the accounts relation (avoids recursion and leaking data into logs). */
     @Override
     public String toString() {
-        return "Client{" +
-                "name='" + name + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", id=" + id +
-                ", email='" + email + '\'' +
-                ", accounts=" + accounts +
-                '}';
+        return "Client{id=" + id + ", role=" + role + '}';
     }
 }
