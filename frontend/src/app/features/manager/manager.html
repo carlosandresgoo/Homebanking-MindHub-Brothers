@@ -1,0 +1,88 @@
+<header>
+  <a routerLink="/accounts">account</a>&ngsp;<a routerLink="/">home</a>
+</header>
+
+<main>
+  <div class="container d-flex justify-content-center p-5">
+    <div id="form-1" class="d-flex justify-content-center">
+      <form [formGroup]="form" (ngSubmit)="addClient()" novalidate>
+        <h2 class="text-center">Client Manager</h2>
+        <div class="mb-3">
+          <div class="mb-3">
+            <label for="name" class="form-label m-2">Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="name"
+              formControlName="name"
+              [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid"
+            />
+            <div class="invalid-feedback">Letters only (a-z, A-Z).</div>
+          </div>
+          <div class="mb-3">
+            <label for="lastName" class="form-label">lastName</label>
+            <input
+              type="text"
+              class="form-control"
+              id="lastName"
+              formControlName="lastName"
+              [class.is-invalid]="form.controls.lastName.touched && form.controls.lastName.invalid"
+            />
+            <div class="invalid-feedback">Letters only (a-z, A-Z).</div>
+          </div>
+          <label for="email" class="form-label">Email address</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            aria-describedby="emailHelp"
+            formControlName="email"
+            [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          />
+          <div class="invalid-feedback">Enter a valid email address.</div>
+          <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+        </div>
+        <button type="submit" class="btn btn-success">Add Clients</button>
+      </form>
+    </div>
+    <!-- Whitespace inside <pre> is significant: it reproduces the spacing of the original page. -->
+    <pre id="pre-1">
+                <h2 class="text-center">Client REST response</h2>
+                <p class="request">{{ clientsJson() | json }}</p>
+            </pre>
+  </div>
+
+  <div class="container d-flex flex-column justify-content-center align-item-center col-8">
+    <h2 class="text-center">Client list</h2>
+    @let s = state();
+    @if (s.status === 'error') {
+      <p class="text-center text-danger" role="alert">Could not load the clients. Please try again later.</p>
+    }
+    <table class="tabla col-8">
+      <thead class="text-center">
+        <tr>
+          <th>Name</th>
+          <th>lastName</th>
+          <th>Email</th>
+          <th>Search</th>
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        @if (s.status === 'loaded') {
+          @for (client of s.data; track client.id) {
+            <tr>
+              <td>{{ client.name }}</td>
+              <td>{{ client.lastName }}</td>
+              <td>{{ client.email }}</td>
+              <td>
+                <a routerLink="/accounts"><img src="assets/search.jpg" class="search-img" alt="search" /></a>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<footer></footer>
