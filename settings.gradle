@@ -1,1 +1,3 @@
 rootProject.name = 'homebanking'
+
+include 'backend'
