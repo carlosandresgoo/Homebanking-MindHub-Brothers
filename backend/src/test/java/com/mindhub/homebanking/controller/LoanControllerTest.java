@@ -38,6 +38,12 @@ class LoanControllerTest extends IntegrationTest {
                 .andReturn();
     }
 
+    private JsonNode latestMovement(String token, long accountId) throws Exception {
+        return body(mvc.perform(get("/api/accounts/" + accountId + "/transactions")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andReturn()).get("content").get(0);
+    }
+
     private JsonNode account(String token, long id) throws Exception {
         return body(mvc.perform(get("/api/accounts/" + id).header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andReturn());
@@ -72,7 +78,7 @@ class LoanControllerTest extends IntegrationTest {
 
         JsonNode account = account(token, ids.accountId());
         assertThat(account.get("balance").decimalValue()).isEqualByComparingTo("15000.00");
-        assertThat(account.get("transactions").get(0).get("description").asText())
+        assertThat(latestMovement(token, ids.accountId()).get("description").asText())
                 .isEqualTo("Préstamo Personal acreditado");
 
         mvc.perform(get("/api/clients/current/loans").header(HttpHeaders.AUTHORIZATION, bearer(token)))
@@ -110,7 +116,7 @@ class LoanControllerTest extends IntegrationTest {
         assertThat(first.getResponse().getStatus()).isEqualTo(200);
         assertThat(body(first).get("paymentsMade").asInt()).isEqualTo(1);
         assertThat(body(first).get("outstanding").decimalValue()).isEqualByComparingTo("6000.00");
-        assertThat(account(token, ids.accountId()).get("transactions").get(0).get("description").asText())
+        assertThat(latestMovement(token, ids.accountId()).get("description").asText())
                 .isEqualTo("Cuota 1/6 préstamo Personal");
 
         for (int i = 2; i <= 6; i++) {

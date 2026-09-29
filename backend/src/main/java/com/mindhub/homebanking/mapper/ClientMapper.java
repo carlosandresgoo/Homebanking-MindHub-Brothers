@@ -43,8 +43,7 @@ public class ClientMapper {
                 account.getId(),
                 account.getNumber(),
                 account.getCreationDate(),
-                account.getBalance(),
-                account.getTransactions().stream().map(this::toDto).toList());
+                account.getBalance());
     }
 
     public TransactionDTO toDto(Transaction transaction) {

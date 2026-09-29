@@ -25,14 +25,18 @@ class AccountControllerTest extends IntegrationTest {
     }
 
     @Test
-    void accountDetailIncludesMovementsForTheOwner() throws Exception {
+    void accountDetailAndMovementsForTheOwner() throws Exception {
         String token = accessToken(TestData.CLIENT_EMAIL);
         mvc.perform(get("/api/accounts/" + ids.accountId()).header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(5000.00))
-                .andExpect(jsonPath("$.transactions", hasSize(1)))
-                .andExpect(jsonPath("$.transactions[0].type").value("CREDIT"))
-                .andExpect(jsonPath("$.transactions[0].balanceAfter").value(5000.00));
+                .andExpect(jsonPath("$.transactions").doesNotExist());
+        mvc.perform(get("/api/accounts/" + ids.accountId() + "/transactions")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].type").value("CREDIT"))
+                .andExpect(jsonPath("$.content[0].balanceAfter").value(5000.00));
     }
 
     @Test

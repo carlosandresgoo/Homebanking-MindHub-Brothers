@@ -60,9 +60,9 @@ class TransferLimitTest extends IntegrationTest {
     void movementsCarryTheirCategory() throws Exception {
         String token = accessToken(TestData.CLIENT_EMAIL);
         transfer(token, "VIN001", "VIN999", "10.00");
-        mvc.perform(get("/api/accounts/" + ids.accountId()).header(HttpHeaders.AUTHORIZATION, bearer(token)))
-                .andExpect(jsonPath("$.transactions[0].category").value("TRANSFER_OUT"))
-                .andExpect(jsonPath("$.transactions[1].category").value("DEPOSIT"));
+        mvc.perform(get("/api/accounts/" + ids.accountId() + "/transactions").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(jsonPath("$.content[0].category").value("TRANSFER_OUT"))
+                .andExpect(jsonPath("$.content[1].category").value("DEPOSIT"));
     }
 
     @Test

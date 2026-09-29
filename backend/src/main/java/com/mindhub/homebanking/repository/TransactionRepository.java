@@ -3,14 +3,17 @@ package com.mindhub.homebanking.repository;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Transaction;
 import com.mindhub.homebanking.domain.TransactionCategory;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
 
     /** Total sent to accounts of other clients since {@code since} (transfers between own accounts excluded). */
     @Query("""
@@ -24,4 +27,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     default BigDecimal sumSentToOthersSince(Client client, LocalDateTime since) {
         return sumSentToOthersSince(client, since, TransactionCategory.TRANSFER_OUT);
     }
+
+    /** A movement with its account and owner, for the receipt. */
+    @EntityGraph(attributePaths = {"account", "account.client"})
+    Optional<Transaction> findWithAccountById(Long id);
 }

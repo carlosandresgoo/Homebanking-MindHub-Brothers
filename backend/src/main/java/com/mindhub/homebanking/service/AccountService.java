@@ -54,11 +54,15 @@ public class AccountService {
 
     /** Owner or ADMIN only; closed accounts are not visible. */
     public AccountDetailDTO findDetail(Long id, String email, boolean admin) {
-        Account account = accountRepository.findWithTransactionsById(id)
+        return mapper.toDetailDto(findVisible(id, email, admin));
+    }
+
+    /** The account if the caller may see it (owner or ADMIN, and still open); 404 otherwise. */
+    public Account findVisible(Long id, String email, boolean admin) {
+        return accountRepository.findWithClientById(id)
                 .filter(Account::isActive)
                 .filter(a -> admin || isOwner(a, email))
                 .orElseThrow(AccountService::notFound);
-        return mapper.toDetailDto(account);
     }
 
     @Transactional

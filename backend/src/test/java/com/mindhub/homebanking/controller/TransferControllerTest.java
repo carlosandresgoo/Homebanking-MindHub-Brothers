@@ -45,16 +45,18 @@ class TransferControllerTest extends IntegrationTest {
         assertThat(body(result).has("targetBalanceAfter")).isFalse();
 
         mvc.perform(get("/api/accounts/" + ids.accountId()).header(HttpHeaders.AUTHORIZATION, bearer(melba)))
-                .andExpect(jsonPath("$.balance").value(3765.50))
-                .andExpect(jsonPath("$.transactions", hasSize(2)))
-                .andExpect(jsonPath("$.transactions[0].type").value("DEBIT"))
-                .andExpect(jsonPath("$.transactions[0].amount").value(1234.50));
+                .andExpect(jsonPath("$.balance").value(3765.50));
+        mvc.perform(get("/api/accounts/" + ids.accountId() + "/transactions").header(HttpHeaders.AUTHORIZATION, bearer(melba)))
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].type").value("DEBIT"))
+                .andExpect(jsonPath("$.content[0].amount").value(1234.50));
 
         String other = accessToken(TestData.OTHER_CLIENT_EMAIL);
         mvc.perform(get("/api/accounts/" + ids.otherAccountId()).header(HttpHeaders.AUTHORIZATION, bearer(other)))
-                .andExpect(jsonPath("$.balance").value(1235.50))
-                .andExpect(jsonPath("$.transactions[0].type").value("CREDIT"))
-                .andExpect(jsonPath("$.transactions[0].description").value("Transferencia de VIN001 · Cena"));
+                .andExpect(jsonPath("$.balance").value(1235.50));
+        mvc.perform(get("/api/accounts/" + ids.otherAccountId() + "/transactions").header(HttpHeaders.AUTHORIZATION, bearer(other)))
+                .andExpect(jsonPath("$.content[0].type").value("CREDIT"))
+                .andExpect(jsonPath("$.content[0].description").value("Transferencia de VIN001 · Cena"));
     }
 
     @Test
@@ -81,8 +83,9 @@ class TransferControllerTest extends IntegrationTest {
         assertThat(transfer(melba, body("VIN001", "vin001", 10, null)).getResponse().getStatus()).isEqualTo(422);
 
         mvc.perform(get("/api/accounts/" + ids.accountId()).header(HttpHeaders.AUTHORIZATION, bearer(melba)))
-                .andExpect(jsonPath("$.balance").value(5000.00))
-                .andExpect(jsonPath("$.transactions", hasSize(1)));
+                .andExpect(jsonPath("$.balance").value(5000.00));
+        mvc.perform(get("/api/accounts/" + ids.accountId() + "/transactions").header(HttpHeaders.AUTHORIZATION, bearer(melba)))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

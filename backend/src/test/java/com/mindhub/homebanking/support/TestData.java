@@ -3,6 +3,7 @@ package com.mindhub.homebanking.support;
 import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
+import com.mindhub.homebanking.domain.Transaction;
 import com.mindhub.homebanking.domain.TransactionCategory;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.AuditEventRepository;
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 /**
@@ -45,13 +47,15 @@ public class TestData {
     private final ContactRepository contacts;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter loginRateLimiter;
+    private final Clock clock;
 
     public TestData(ClientRepository clients, AccountRepository accounts, TransactionRepository transactions,
                     CardRepository cards, ClientLoanRepository clientLoans, RefreshTokenRepository refreshTokens,
                     PasswordResetTokenRepository resetTokens, AuditEventRepository auditEvents,
                     IdempotencyRecordRepository idempotencyRecords, ContactRepository contacts,
                     PasswordEncoder passwordEncoder,
-                    LoginRateLimiter loginRateLimiter) {
+                    LoginRateLimiter loginRateLimiter, Clock clock) {
+        this.clock = clock;
         this.auditEvents = auditEvents;
         this.idempotencyRecords = idempotencyRecords;
         this.contacts = contacts;
@@ -94,11 +98,11 @@ public class TestData {
     /** Opens an account for {@code owner}; a positive {@code initial} is added as a deposit. */
     @Transactional
     public Account account(Client owner, String number, BigDecimal initial) {
-        Account account = new Account(number, LocalDateTime.now(), BigDecimal.ZERO);
+        Account account = new Account(number, LocalDateTime.now(clock), BigDecimal.ZERO);
         owner.addAccount(account);
         accounts.save(account);
         if (initial.signum() > 0) {
-            transactions.save(account.credit(initial, TransactionCategory.DEPOSIT, "Depósito inicial", LocalDateTime.now()));
+            transactions.save(account.credit(initial, TransactionCategory.DEPOSIT, "Depósito inicial", LocalDateTime.now(clock)));
         }
         return account;
     }
@@ -107,6 +111,16 @@ public class TestData {
     @Transactional
     public Account account(String ownerEmail, String number, BigDecimal initial) {
         return account(clients.findByEmailIgnoreCase(ownerEmail).orElseThrow(), number, initial);
+    }
+
+    /** Adds a movement dated {@code date} (credit or debit) to the account with that number. */
+    @Transactional
+    public Transaction movement(String accountNumber, boolean credit, String amount, TransactionCategory category,
+                                String description, LocalDateTime date) {
+        Account account = accounts.findById(accounts.findIdByNumber(accountNumber).orElseThrow()).orElseThrow();
+        BigDecimal value = new BigDecimal(amount);
+        return transactions.save(credit ? account.credit(value, category, description, date)
+                : account.debit(value, category, description, date));
     }
 
     public record Ids(Long clientId, Long otherClientId, Long accountId, Long otherAccountId) {
