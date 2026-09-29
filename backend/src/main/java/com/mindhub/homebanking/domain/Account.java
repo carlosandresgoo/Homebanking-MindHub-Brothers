@@ -1,16 +1,14 @@
 package com.mindhub.homebanking.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 public class Account {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
-    @GenericGenerator(name = "native", strategy = "native")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String number;
     private LocalDateTime creationDate;

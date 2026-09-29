@@ -2,11 +2,7 @@ package com.mindhub.homebanking.dto;
 
 import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.Client;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import java.util.Set;
 
 public class ClientDTO {

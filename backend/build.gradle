@@ -6,7 +6,12 @@ plugins {
 
 group = 'com.mindhub'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = libs.versions.java.get()
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+	}
+}
 
 repositories {
 	mavenCentral()
@@ -23,6 +28,7 @@ dependencies {
 	implementation libs.spring.boot.starter.web
 	runtimeOnly libs.h2
 	testImplementation libs.spring.boot.starter.test
+	testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.named('test') {
