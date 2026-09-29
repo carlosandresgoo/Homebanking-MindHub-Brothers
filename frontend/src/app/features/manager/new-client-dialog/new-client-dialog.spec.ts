@@ -36,12 +36,12 @@ describe('NewClientDialog', () => {
 
   it('validates before calling the API', async () => {
     const { fixture, el, submit } = render();
-    typeInto(el, '#name', 'José');
+    typeInto(el, '#name', 'Chl0e');
     typeInto(el, '#password', 'short');
     submit();
     await fixture.whenStable();
 
-    expect(el.textContent).toContain('Solo letras, sin tildes ni espacios.');
+    expect(el.textContent).toContain('Solo letras (con tildes), espacios, apóstrofos o guiones.');
     expect(el.textContent).toContain('Ingresá el apellido.');
     expect(el.textContent).toContain('Entre 12 y 72 caracteres.');
     httpTesting.expectNone('/api/clients');

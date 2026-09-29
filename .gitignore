@@ -5,6 +5,9 @@ HELP.md
 .env
 .env.*
 !.env.example
+
+### Local dev data: H2 database files and generated dev keys ###
+data/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

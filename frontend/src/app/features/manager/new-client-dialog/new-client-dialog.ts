@@ -10,11 +10,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ClientService } from '../../../core/api/client.service';
 import { Client } from '../../../core/models/client.model';
-
-/** Same rules as the backend's CreateClientRequest (BCrypt ignores bytes past 72). */
-const LETTERS_ONLY = /^[a-zA-Z]+$/;
-export const PASSWORD_MIN = 12;
-const PASSWORD_MAX = 72;
+import { PASSWORD_MIN, newPasswordValidators } from '../../../core/validation/password';
+import { PERSON_NAME_ERROR, personNameValidators } from '../../../core/validation/person-name';
 
 /** Creates a client; closes with the created {@link Client}, or nothing if cancelled. */
 @Component({
@@ -37,21 +34,16 @@ export class NewClientDialog {
   private readonly dialogRef = inject<MatDialogRef<NewClientDialog, Client>>(MatDialogRef);
 
   protected readonly passwordMin = PASSWORD_MIN;
+  protected readonly nameError = PERSON_NAME_ERROR;
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
-    name: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(LETTERS_ONLY)]],
-    lastName: [
-      '',
-      [Validators.required, Validators.maxLength(50), Validators.pattern(LETTERS_ONLY)],
-    ],
+    name: ['', personNameValidators],
+    lastName: ['', personNameValidators],
     email: ['', [Validators.required, Validators.email]],
-    password: [
-      '',
-      [Validators.required, Validators.minLength(PASSWORD_MIN), Validators.maxLength(PASSWORD_MAX)],
-    ],
+    password: ['', newPasswordValidators],
   });
 
   protected submit(): void {

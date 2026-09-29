@@ -9,12 +9,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { PASSWORD_MIN, newPasswordValidators } from '../../core/validation/password';
+import { PERSON_NAME_ERROR, personNameValidators } from '../../core/validation/person-name';
 import { Brand } from '../../shared/brand/brand';
-
-/** Same rules as the backend's CreateClientRequest (BCrypt ignores bytes past 72). */
-const LETTERS_ONLY = /^[a-zA-Z]+$/;
-const PASSWORD_MIN = 12;
-const PASSWORD_MAX = 72;
 
 @Component({
   selector: 'app-register',
@@ -37,21 +34,16 @@ export class Register {
   private readonly router = inject(Router);
 
   protected readonly passwordMin = PASSWORD_MIN;
+  protected readonly nameError = PERSON_NAME_ERROR;
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
-    name: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(LETTERS_ONLY)]],
-    lastName: [
-      '',
-      [Validators.required, Validators.maxLength(50), Validators.pattern(LETTERS_ONLY)],
-    ],
+    name: ['', personNameValidators],
+    lastName: ['', personNameValidators],
     email: ['', [Validators.required, Validators.email]],
-    password: [
-      '',
-      [Validators.required, Validators.minLength(PASSWORD_MIN), Validators.maxLength(PASSWORD_MAX)],
-    ],
+    password: ['', newPasswordValidators],
   });
 
   protected submit(): void {

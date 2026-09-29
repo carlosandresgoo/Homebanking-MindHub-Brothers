@@ -21,7 +21,7 @@
         @if (form.controls.name.hasError('required')) {
           <mat-error>Ingresá el nombre.</mat-error>
         } @else if (form.controls.name.hasError('pattern')) {
-          <mat-error>Solo letras, sin tildes ni espacios.</mat-error>
+          <mat-error>{{ nameError }}</mat-error>
         }
       </mat-form-field>
 
@@ -31,7 +31,7 @@
         @if (form.controls.lastName.hasError('required')) {
           <mat-error>Ingresá el apellido.</mat-error>
         } @else if (form.controls.lastName.hasError('pattern')) {
-          <mat-error>Solo letras, sin tildes ni espacios.</mat-error>
+          <mat-error>{{ nameError }}</mat-error>
         }
       </mat-form-field>
     </div>

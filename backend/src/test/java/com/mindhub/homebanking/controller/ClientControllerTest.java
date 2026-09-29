@@ -44,6 +44,20 @@ class ClientControllerTest extends IntegrationTest {
     }
 
     @Test
+    void acceptsSpanishNamesWithAccentsSpacesAndHyphens() throws Exception {
+        String admin = accessToken(TestData.ADMIN_EMAIL);
+        Map<String, Object> spanish = new java.util.HashMap<>(VALID);
+        spanish.put("name", "María José");
+        spanish.put("lastName", "Núñez-Pérez");
+
+        mvc.perform(post("/api/clients").header(HttpHeaders.AUTHORIZATION, bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(spanish)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("María José"))
+                .andExpect(jsonPath("$.lastName").value("Núñez-Pérez"));
+    }
+
+    @Test
     void massAssignmentOfRoleAndIdIsIgnored() throws Exception {
         String admin = accessToken(TestData.ADMIN_EMAIL);
         Map<String, Object> malicious = new java.util.HashMap<>(VALID);

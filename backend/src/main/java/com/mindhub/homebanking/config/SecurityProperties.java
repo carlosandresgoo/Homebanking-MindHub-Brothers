@@ -18,8 +18,11 @@ public record SecurityProperties(
         @Valid @NotNull Cors cors,
         @Valid @NotNull LoginRateLimit loginRateLimit) {
 
-    /** {@code secret} may be blank only in the dev profile, where a random key is generated at startup. */
-    public record Jwt(String secret, @NotBlank String issuer, @NotNull Duration accessTokenTtl) {
+    /**
+     * {@code secret} may be blank only in the dev/test profiles, where a random key is generated. In dev,
+     * {@code devKeyFile} persists that random key so sessions survive restarts.
+     */
+    public record Jwt(String secret, @NotBlank String issuer, @NotNull Duration accessTokenTtl, String devKeyFile) {
     }
 
     public record RefreshToken(@NotNull Duration ttl, @NotBlank String cookieName, boolean cookieSecure) {
