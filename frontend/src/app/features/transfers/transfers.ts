@@ -28,9 +28,15 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
-import { BehaviorSubject, catchError, of, startWith, switchMap } from 'rxjs';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { BehaviorSubject, catchError, filter, of, startWith, switchMap } from 'rxjs';
 
 import { AccountService } from '../../core/api/account.service';
+import { ContactService } from '../../core/api/contact.service';
+import { Contact } from '../../core/models/contact.model';
+import { ContactDialog, ContactDialogData } from '../contacts/contact-dialog/contact-dialog';
 import { IdempotentOperation, isOutcomeUnknown } from '../../core/api/idempotency';
 import { TransferService } from '../../core/api/transfer.service';
 import { Account } from '../../core/models/account.model';
@@ -54,6 +60,7 @@ const amountFormat: ValidatorFn = (control: AbstractControl): ValidationErrors |
   imports: [
     CurrencyPipe,
     DatePipe,
+    MatAutocompleteModule,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
@@ -73,8 +80,14 @@ export class Transfers {
   private readonly accountService = inject(AccountService);
   private readonly transferService = inject(TransferService);
 
+  private readonly contactService = inject(ContactService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+
   /** Optional `?from=<accountId>` to preselect the source account. */
   readonly from = input<string>();
+  /** Optional `?to=<accountNumber>` (e.g. from the recipients page) to prefill the destination. */
+  readonly to = input<string>();
 
   protected readonly step = signal<Step>('form');
   protected readonly submitting = signal(false);
@@ -104,6 +117,15 @@ export class Transfers {
       switchMap(() => this.transferService.getLimits().pipe(catchError(() => of(null)))),
     ),
     { initialValue: null },
+  );
+
+  /** Saved recipients for the destination autocomplete (empty if they cannot be loaded). */
+  private readonly contactsReload$ = new BehaviorSubject<void>(undefined);
+  protected readonly contacts = toSignal(
+    this.contactsReload$.pipe(
+      switchMap(() => this.contactService.getMine().pipe(catchError(() => of<Contact[]>([])))),
+    ),
+    { initialValue: [] as Contact[] },
   );
 
   /** Authenticator code, asked for on the confirmation step when the transfer needs it. */
@@ -149,6 +171,23 @@ export class Transfers {
       !this.accounts().some((a) => a.number === this.targetNumber()),
   );
 
+  /** The saved recipient for the typed destination, if any. */
+  protected readonly matchedContact = computed(() =>
+    this.formValue().destination === 'third'
+      ? this.contacts().find((c) => c.accountNumber === this.targetNumber())
+      : undefined,
+  );
+
+  /** Recipients matching what is typed in the destination (by alias, name or number). */
+  protected readonly contactOptions = computed(() => {
+    const typed = (this.formValue().thirdTarget ?? '').trim().toLowerCase();
+    const all = this.contacts();
+    if (!typed || this.matchedContact()) return this.matchedContact() ? [] : all;
+    return all.filter((c) =>
+      `${c.alias} ${c.holderDisplay} ${c.accountNumber}`.toLowerCase().includes(typed),
+    );
+  });
+
   protected readonly needsCode = computed(() => {
     const limits = this.limits();
     const amount = this.formValue().amount ?? 0;
@@ -169,6 +208,13 @@ export class Transfers {
       const preferred =
         accounts.find((a) => a.id === fromId) ?? accounts.find((a) => a.balance > 0) ?? accounts[0];
       this.form.controls.source.setValue(preferred.number);
+    });
+    // Prefill the destination from ?to= once (it stays editable).
+    effect(() => {
+      const to = this.to()?.trim().toUpperCase();
+      if (to && !this.form.controls.thirdTarget.value) {
+        this.form.controls.thirdTarget.setValue(to);
+      }
     });
     // The amount is bounded by the balance and, to others, today's remaining limit. The validator
     // reads the signals when it runs; the effect only re-validates when they change.
@@ -280,6 +326,21 @@ export class Transfers {
         this.step.set('form');
       },
     });
+  }
+
+  /** After a transfer to someone new: save them to the agenda. */
+  protected saveContact(accountNumber: string): void {
+    this.dialog
+      .open<ContactDialog, ContactDialogData, Contact>(ContactDialog, {
+        data: { accountNumber },
+        maxWidth: '95vw',
+      })
+      .afterClosed()
+      .pipe(filter((saved): saved is Contact => !!saved))
+      .subscribe((saved) => {
+        this.snackBar.open(`Guardaste a ${saved.alias} en tu agenda.`, 'OK');
+        this.contactsReload$.next();
+      });
   }
 
   /** Back to an empty form with fresh balances (the source is preselected again by the effect). */

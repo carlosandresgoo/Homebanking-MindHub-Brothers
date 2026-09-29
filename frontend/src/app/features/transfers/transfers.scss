@@ -197,6 +197,17 @@ mat-icon[matPrefix] {
 }
 
 // --- Shared ---------------------------------------------------------------------
+.option-alias {
+  display: block;
+  font: var(--mat-sys-body-large);
+}
+
+.option-detail {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
 .limit-info {
   display: flex;
   align-items: flex-start;

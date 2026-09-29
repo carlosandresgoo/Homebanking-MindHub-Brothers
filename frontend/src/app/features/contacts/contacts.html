@@ -1,0 +1,102 @@
+@let s = state();
+
+@if (s.status === 'loading') {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+}
+
+<div class="hb-page narrow">
+  <header class="hb-page-header">
+    <div>
+      <h1>Destinatarios</h1>
+      <p>Las cuentas a las que les transferís seguido, con un nombre fácil de reconocer.</p>
+    </div>
+    <button mat-flat-button type="button" class="add-button" (click)="add()">
+      <mat-icon>person_add</mat-icon>
+      Agregar
+    </button>
+  </header>
+
+  @switch (s.status) {
+    @case ('error') {
+      <div class="state-card" role="alert">
+        <mat-icon class="state-icon error">cloud_off</mat-icon>
+        <h2>No pudimos cargar tu agenda</h2>
+        <p>Revisá tu conexión e intentá de nuevo.</p>
+        <button mat-stroked-button type="button" (click)="retry()">Reintentar</button>
+      </div>
+    }
+    @case ('loaded') {
+      @if (s.data.length === 0) {
+        <div class="state-card">
+          <mat-icon class="state-icon">contacts</mat-icon>
+          <h2>Todavía no guardaste destinatarios</h2>
+          <p>Agregalos acá o después de transferirles, y la próxima vez elegilos por su alias.</p>
+          <button mat-flat-button type="button" (click)="add()">Agregar destinatario</button>
+        </div>
+      } @else {
+        @if (s.data.length > 5) {
+          <mat-form-field class="search" subscriptSizing="dynamic">
+            <mat-label>Buscar</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input
+              matInput
+              id="contactSearch"
+              [value]="query()"
+              #search
+              (input)="query.set(search.value)"
+              autocomplete="off"
+            />
+          </mat-form-field>
+        }
+        <ul class="list" aria-label="Destinatarios">
+          @for (contact of visible(); track contact.id) {
+            <li class="contact">
+              <span class="avatar" aria-hidden="true">{{
+                contact.alias.charAt(0).toUpperCase()
+              }}</span>
+              <div class="info">
+                <strong>{{ contact.alias }}</strong>
+                <span>
+                  {{ contact.holderDisplay }} ·
+                  <span class="hb-tabular">{{ contact.accountNumber }}</span>
+                </span>
+              </div>
+              <div class="actions">
+                <a
+                  mat-stroked-button
+                  class="transfer"
+                  routerLink="/transfers"
+                  [queryParams]="{ to: contact.accountNumber }"
+                >
+                  <mat-icon>send</mat-icon>
+                  <span class="label">Transferir</span>
+                </a>
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="edit(contact)"
+                  [attr.aria-label]="'Editar el alias de ' + contact.alias"
+                  matTooltip="Editar alias"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="delete"
+                  (click)="remove(contact)"
+                  [attr.aria-label]="'Borrar a ' + contact.alias"
+                  matTooltip="Borrar"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="no-results">Ningún destinatario coincide con «{{ query() }}».</li>
+          }
+        </ul>
+      }
+    }
+  }
+</div>

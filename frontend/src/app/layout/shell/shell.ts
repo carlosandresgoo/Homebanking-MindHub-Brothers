@@ -24,6 +24,7 @@ interface NavItem {
 const NAV: readonly NavItem[] = [
   { path: '/accounts', label: 'Mis cuentas', icon: 'account_balance_wallet', roles: ['CLIENT'] },
   { path: '/transfers', label: 'Transferir', icon: 'swap_horiz', roles: ['CLIENT'] },
+  { path: '/contacts', label: 'Destinatarios', icon: 'contacts', roles: ['CLIENT'] },
   { path: '/cards', label: 'Tarjetas', icon: 'credit_card', roles: ['CLIENT'] },
   { path: '/loans', label: 'Préstamos', icon: 'request_quote', roles: ['CLIENT'] },
   { path: '/manager', label: 'Clientes', icon: 'group', roles: ['ADMIN'] },

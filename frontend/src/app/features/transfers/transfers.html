@@ -92,8 +92,12 @@
             </mat-form-field>
           } @else {
             <mat-form-field>
-              <mat-label>Número de cuenta destino</mat-label>
-              <mat-icon matPrefix>tag</mat-icon>
+              <mat-label>
+                {{
+                  contacts().length ? 'Destinatario o número de cuenta' : 'Número de cuenta destino'
+                }}
+              </mat-label>
+              <mat-icon matPrefix>{{ matchedContact() ? 'person' : 'tag' }}</mat-icon>
               <input
                 matInput
                 id="thirdTarget"
@@ -101,7 +105,25 @@
                 placeholder="VIN-12345678"
                 autocomplete="off"
                 class="uppercase"
+                [matAutocomplete]="recipients"
               />
+              <mat-autocomplete #recipients="matAutocomplete" class="recipient-panel">
+                @for (contact of contactOptions(); track contact.id) {
+                  <mat-option [value]="contact.accountNumber">
+                    <span class="option-alias">{{ contact.alias }}</span>
+                    <span class="option-detail">
+                      {{ contact.holderDisplay }} · {{ contact.accountNumber }}
+                    </span>
+                  </mat-option>
+                }
+              </mat-autocomplete>
+              @if (matchedContact(); as c) {
+                <mat-hint>{{ c.alias }} · {{ c.holderDisplay }}</mat-hint>
+              } @else if (!contacts().length) {
+                <mat-hint>
+                  <a routerLink="/contacts">Guardá destinatarios</a> para elegirlos por su alias.
+                </mat-hint>
+              }
               @if (form.controls.thirdTarget.hasError('required')) {
                 <mat-error>Ingresá el número de cuenta.</mat-error>
               } @else if (form.controls.thirdTarget.hasError('same')) {
@@ -192,6 +214,8 @@
                 {{ targetNumber() }}
                 @if (form.controls.destination.value === 'own') {
                   <span class="tag">Cuenta propia</span>
+                } @else if (matchedContact(); as c) {
+                  <span class="tag">{{ c.alias }}</span>
                 }
               </dd>
             </div>
@@ -289,6 +313,12 @@
               </div>
             </dl>
             <div class="actions">
+              @if (toThirdParty() && !matchedContact()) {
+                <button mat-button type="button" (click)="saveContact(r.targetAccountNumber)">
+                  <mat-icon>person_add</mat-icon>
+                  Guardar en mi agenda
+                </button>
+              }
               <a mat-button [routerLink]="['/accounts', r.sourceAccountId]">
                 <mat-icon>receipt_long</mat-icon>
                 Ver movimientos

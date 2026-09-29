@@ -4,7 +4,12 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatButtonToggleHarness } from '@angular/material/button-toggle/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
 
+import { MatAutocompleteHarness } from '@angular/material/autocomplete/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
+
 import { Account } from '../../core/models/account.model';
+import { Contact } from '../../core/models/contact.model';
 import { TransferLimits, TransferReceipt } from '../../core/models/transfer.model';
 import { provideTestDefaults, typeInto } from '../../testing/providers';
 import { Transfers } from './transfers';
@@ -24,6 +29,14 @@ const RECEIPT: TransferReceipt = {
   description: 'Transferencia a VIN999 · Cena',
   date: '2026-09-29T12:00:00',
   sourceBalanceAfter: 4900,
+};
+
+const LUCIA: Contact = {
+  id: 1,
+  alias: 'Lucía',
+  accountNumber: 'VIN999',
+  holderDisplay: 'Lucía P.',
+  createdAt: '2026-09-01T10:00:00',
 };
 
 const LIMITS: TransferLimits = {
@@ -48,12 +61,19 @@ describe('Transfers', () => {
 
   afterEach(() => httpTesting.verify());
 
-  async function render(from?: string, limits: TransferLimits = LIMITS) {
+  async function render(
+    from?: string,
+    limits: TransferLimits = LIMITS,
+    contacts: Contact[] = [],
+    to?: string,
+  ) {
     const fixture = TestBed.createComponent(Transfers);
     if (from) fixture.componentRef.setInput('from', from);
+    if (to) fixture.componentRef.setInput('to', to);
     fixture.detectChanges();
     httpTesting.expectOne('/api/clients/current/accounts').flush(ACCOUNTS);
     httpTesting.expectOne('/api/transfers/limits').flush(limits);
+    httpTesting.expectOne('/api/clients/current/contacts').flush(contacts);
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
@@ -191,6 +211,55 @@ describe('Transfers', () => {
     retry.flush(RECEIPT);
     await fixture.whenStable();
     expect(el.textContent).toContain('¡Transferencia realizada!');
+  });
+
+  it('picks a saved recipient by alias and shows it in the confirmation', async () => {
+    const { fixture, el } = await render(undefined, LIMITS, [LUCIA]);
+    const loader = TestbedHarnessEnvironment.loader(fixture);
+    const autocomplete = await loader.getHarness(MatAutocompleteHarness);
+    await autocomplete.enterText('luc');
+    const options = await autocomplete.getOptions();
+    expect(await options[0].getText()).toContain('Lucía');
+    await autocomplete.selectOption({ text: /Lucía/ });
+
+    expect(el.querySelector<HTMLInputElement>('#thirdTarget')!.value).toBe('VIN999');
+    expect(el.textContent).toContain('Lucía · Lucía P.');
+    typeInto(el, '#amount', '10');
+    await click(fixture, 'Continuar');
+    expect(el.querySelector('[aria-label="Confirmación"] .tag')?.textContent).toContain('Lucía');
+  });
+
+  it('prefills the destination from ?to=', async () => {
+    const { el } = await render(undefined, LIMITS, [LUCIA], 'vin999');
+    expect(el.querySelector<HTMLInputElement>('#thirdTarget')!.value).toBe('VIN999');
+  });
+
+  it('offers to save a new recipient after transferring', async () => {
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({
+      afterClosed: () => of({ ...LUCIA, accountNumber: 'VIN777', alias: 'Nuevo' }),
+    } as ReturnType<MatDialog['open']>);
+    const { fixture, el } = await render(undefined, LIMITS, [LUCIA]);
+    typeInto(el, '#thirdTarget', 'VIN777');
+    typeInto(el, '#amount', '10');
+    await click(fixture, 'Continuar');
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting.expectOne('/api/transfers').flush({ ...RECEIPT, targetAccountNumber: 'VIN777' });
+    await fixture.whenStable();
+
+    await click(fixture, 'Guardar en mi agenda');
+    expect(open.mock.calls[0][1]?.data).toEqual({ accountNumber: 'VIN777' });
+    httpTesting.expectOne('/api/clients/current/contacts').flush([LUCIA]);
+  });
+
+  it('does not offer to save a recipient that is already saved', async () => {
+    const { fixture, el } = await render(undefined, LIMITS, [LUCIA]);
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '10');
+    await click(fixture, 'Continuar');
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting.expectOne('/api/transfers').flush(RECEIPT);
+    await fixture.whenStable();
+    expect(el.textContent).not.toContain('Guardar en mi agenda');
   });
 
   it('checks the daily limit only for transfers to other people', async () => {

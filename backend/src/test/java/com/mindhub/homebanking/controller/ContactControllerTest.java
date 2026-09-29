@@ -34,10 +34,10 @@ class ContactControllerTest extends IntegrationTest {
     void addsListsRenamesAndDeletesRecipients() throws Exception {
         String melba = accessToken(TestData.CLIENT_EMAIL);
 
-        MvcResult created = add(melba, " vin999 ", "  Otro   cliente ")
+        MvcResult created = add(melba, " vin999 ", "  Otro   cliente (trabajo) ")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accountNumber").value("VIN999"))
-                .andExpect(jsonPath("$.alias").value("Otro cliente"))
+                .andExpect(jsonPath("$.alias").value("Otro cliente (trabajo)"))
                 .andExpect(jsonPath("$.holderDisplay").value("Other C."))
                 .andReturn();
         long id = body(created).get("id").asLong();
@@ -45,7 +45,7 @@ class ContactControllerTest extends IntegrationTest {
         mvc.perform(get(URL).header(HttpHeaders.AUTHORIZATION, bearer(melba)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].alias").value("Otro cliente"));
+                .andExpect(jsonPath("$[0].alias").value("Otro cliente (trabajo)"));
 
         mvc.perform(patch(URL + "/" + id).header(HttpHeaders.AUTHORIZATION, bearer(melba))
                         .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("alias", "Alquiler"))))

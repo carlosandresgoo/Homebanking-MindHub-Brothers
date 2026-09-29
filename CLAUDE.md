@@ -28,13 +28,13 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 ## Estructura
 - Raíz: `settings.gradle` (`include 'backend'`), `gradlew*`, `gradle/libs.versions.toml`, `docker-compose.yml`, `.env.example`
 - `backend/src/main/java/com/mindhub/homebanking/`
-  - `controller/` (Auth, Client, Account, Transfer, Card, Loan), `service/`, `repository/`, `domain/`, `dto/` (records), `mapper/`
+  - `controller/` (Auth, Client, Account, Transfer, Card, Loan, Contact, TwoFactor, Audit), `service/`, `repository/`, `domain/`, `dto/` (records), `mapper/`
   - `security/` (`SecurityConfig`, `JwtConfig`, `AccessTokenService`, `RefreshTokenService`, `LoginRateLimiter`)
   - `exception/` (`GlobalExceptionHandler` → ProblemDetail), `config/` (`SecurityProperties`, `DevDataSeeder`)
 - `backend/src/main/resources/application.yml` (perfiles `dev`/`prod`), `db/migration/` (Flyway)
 - `backend/src/test/.../support/IntegrationTest` + `TestData`: base de los tests MockMvc (perfil `test`)
 - `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards], `interceptors`, `utils`, `i18n`)
-- `frontend/src/app/features/{home,login,register,accounts,account-detail,transfers,cards,loans,manager}`
+- `frontend/src/app/features/{home,login,register,password,profile,accounts,account-detail,transfers,contacts,cards,loans,manager,audit}`
 - `frontend/src/app/layout/shell` (toolbar + menú de usuario del área privada), `shared/` (`brand`, `bank-card`, `confirm-dialog`, `initials`), `testing/` (providers y fixtures)
 
 ## Stack

@@ -92,8 +92,34 @@
   flex: 1;
 }
 
+// Icons only when the labels no longer fit; the label stays for screen readers.
+@media (max-width: 1000px) {
+  .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .nav-link mat-icon {
+    margin: 0;
+  }
+}
+
 @media (max-width: 600px) {
-  .nav-label,
+  .nav {
+    gap: 0;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .nav-link {
+    min-width: 0;
+    padding: 0 10px;
+  }
+
   .user-name,
   .user-button .chevron {
     display: none;

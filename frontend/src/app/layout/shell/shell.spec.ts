@@ -48,7 +48,7 @@ describe('Shell', () => {
   it('shows "Mis cuentas" and "Tarjetas" to clients', async () => {
     const { el } = await renderAs('CLIENT');
     const links = Array.from(el.querySelectorAll('.nav a')).map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/accounts', '/transfers', '/cards', '/loans']);
+    expect(links).toEqual(['/accounts', '/transfers', '/contacts', '/cards', '/loans']);
   });
 
   it('shows "Clientes" to admins only', async () => {
