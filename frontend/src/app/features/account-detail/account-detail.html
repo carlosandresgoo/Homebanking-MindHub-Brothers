@@ -48,6 +48,16 @@
       <h2>Movimientos</h2>
       @if (isClient()) {
         <div class="close-area">
+          <a
+            mat-flat-button
+            class="transfer-button"
+            routerLink="/transfers"
+            [queryParams]="{ from: account.id }"
+            [class.hidden-when-empty]="account.balance === 0"
+          >
+            <mat-icon>swap_horiz</mat-icon>
+            Transferir
+          </a>
           <button
             mat-stroked-button
             class="close-button"

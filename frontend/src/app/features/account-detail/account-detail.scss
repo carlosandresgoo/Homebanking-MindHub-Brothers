@@ -78,8 +78,14 @@ mat-progress-bar {
 
 .close-area {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+}
+
+// Nothing to send from an empty account.
+.transfer-button.hidden-when-empty {
+  display: none;
 }
 
 .close-button:not(:disabled) {

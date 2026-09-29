@@ -1,0 +1,262 @@
+@let s = accountsState();
+
+@if (s.status === 'loading' || submitting()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando" />
+}
+
+<div class="hb-page narrow">
+  <header class="hb-page-header">
+    <div>
+      <h1>Transferir</h1>
+      <p>Enviá dinero a tus cuentas o a la de otra persona.</p>
+    </div>
+  </header>
+
+  @if (s.status === 'error') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon error">cloud_off</mat-icon>
+      <h2>No pudimos cargar tus cuentas</h2>
+      <p>Revisá tu conexión e intentá de nuevo.</p>
+    </div>
+  } @else if (s.status === 'loaded' && accounts().length === 0) {
+    <div class="state-card">
+      <mat-icon class="state-icon">account_balance_wallet</mat-icon>
+      <h2>Necesitás una cuenta para transferir</h2>
+      <a mat-flat-button routerLink="/accounts">Ir a Mis cuentas</a>
+    </div>
+  } @else {
+    <ol class="steps" aria-label="Pasos">
+      <li [class.current]="step() === 'form'" [class.done]="step() !== 'form'">
+        <span>1</span> Datos
+      </li>
+      <li [class.current]="step() === 'confirm'" [class.done]="step() === 'done'">
+        <span>2</span> Confirmación
+      </li>
+      <li [class.current]="step() === 'done'"><span>3</span> Listo</li>
+    </ol>
+
+    @switch (step()) {
+      @case ('form') {
+        <form class="panel" [formGroup]="form" (ngSubmit)="review()" novalidate>
+          @if (error(); as message) {
+            <div class="error-banner" role="alert">
+              <mat-icon>error</mat-icon>
+              <span>{{ message }}</span>
+            </div>
+          }
+
+          <mat-form-field>
+            <mat-label>Desde</mat-label>
+            <mat-icon matPrefix>account_balance_wallet</mat-icon>
+            <mat-select formControlName="source" id="source">
+              @for (account of accounts(); track account.id) {
+                <mat-option [value]="account.number">
+                  {{ account.number }} · {{ account.balance | currency }}
+                </mat-option>
+              }
+            </mat-select>
+            @if (sourceAccount(); as source) {
+              <mat-hint>Disponible: {{ source.balance | currency }}</mat-hint>
+            }
+            <mat-error>Elegí la cuenta de origen.</mat-error>
+          </mat-form-field>
+
+          <div class="destination">
+            <span class="label" id="destination-label">Hacia</span>
+            <mat-button-toggle-group
+              [value]="form.controls.destination.value"
+              (change)="setDestination($event.value)"
+              aria-labelledby="destination-label"
+            >
+              <mat-button-toggle value="third">
+                <mat-icon>person</mat-icon> Otra persona
+              </mat-button-toggle>
+              <mat-button-toggle value="own" [disabled]="ownTargets().length === 0">
+                <mat-icon>swap_horiz</mat-icon> Mis cuentas
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          @if (form.controls.destination.value === 'own') {
+            <mat-form-field>
+              <mat-label>Cuenta destino</mat-label>
+              <mat-icon matPrefix>savings</mat-icon>
+              <mat-select formControlName="ownTarget" id="ownTarget">
+                @for (account of ownTargets(); track account.id) {
+                  <mat-option [value]="account.number">
+                    {{ account.number }} · {{ account.balance | currency }}
+                  </mat-option>
+                }
+              </mat-select>
+              <mat-error>Elegí la cuenta destino.</mat-error>
+            </mat-form-field>
+          } @else {
+            <mat-form-field>
+              <mat-label>Número de cuenta destino</mat-label>
+              <mat-icon matPrefix>tag</mat-icon>
+              <input
+                matInput
+                id="thirdTarget"
+                formControlName="thirdTarget"
+                placeholder="VIN-12345678"
+                autocomplete="off"
+                class="uppercase"
+              />
+              @if (form.controls.thirdTarget.hasError('required')) {
+                <mat-error>Ingresá el número de cuenta.</mat-error>
+              } @else if (form.controls.thirdTarget.hasError('same')) {
+                <mat-error>No podés transferir a la misma cuenta.</mat-error>
+              }
+            </mat-form-field>
+          }
+
+          <mat-form-field>
+            <mat-label>Importe</mat-label>
+            <span matTextPrefix>$&nbsp;</span>
+            <input
+              matInput
+              id="amount"
+              type="number"
+              inputmode="decimal"
+              step="0.01"
+              min="0.01"
+              formControlName="amount"
+              class="hb-tabular"
+            />
+            <button
+              mat-button
+              matSuffix
+              type="button"
+              class="all"
+              (click)="useWholeBalance()"
+              [disabled]="!sourceAccount()?.balance"
+            >
+              Todo
+            </button>
+            @if (form.controls.amount.hasError('required')) {
+              <mat-error>Ingresá un importe.</mat-error>
+            } @else if (form.controls.amount.hasError('min')) {
+              <mat-error>El importe mínimo es {{ 0.01 | currency }}.</mat-error>
+            } @else if (form.controls.amount.hasError('decimals')) {
+              <mat-error>Usá como máximo 2 decimales.</mat-error>
+            } @else if (form.controls.amount.hasError('funds')) {
+              <mat-error>Supera tu saldo disponible.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Descripción (opcional)</mat-label>
+            <mat-icon matPrefix>notes</mat-icon>
+            <input matInput id="description" formControlName="description" maxlength="100" />
+            <mat-hint align="end">{{ form.controls.description.value.length }}/100</mat-hint>
+          </mat-form-field>
+
+          <div class="actions">
+            <button mat-flat-button type="submit" class="primary-action">
+              Continuar
+              <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      }
+
+      @case ('confirm') {
+        <section class="panel" aria-label="Confirmación">
+          <p class="lead">Revisá los datos antes de confirmar.</p>
+          <div class="amount-big hb-tabular">{{ form.controls.amount.value | currency }}</div>
+          <dl class="summary">
+            <div>
+              <dt>Desde</dt>
+              <dd class="hb-tabular">{{ form.controls.source.value }}</dd>
+            </div>
+            <div>
+              <dt>Hacia</dt>
+              <dd class="hb-tabular">
+                {{ targetNumber() }}
+                @if (form.controls.destination.value === 'own') {
+                  <span class="tag">Cuenta propia</span>
+                }
+              </dd>
+            </div>
+            @if (form.controls.description.value.trim()) {
+              <div>
+                <dt>Descripción</dt>
+                <dd>{{ form.controls.description.value.trim() }}</dd>
+              </div>
+            }
+            <div>
+              <dt>Saldo después</dt>
+              <dd class="hb-tabular">
+                {{ (sourceAccount()?.balance ?? 0) - (form.controls.amount.value ?? 0) | currency }}
+              </dd>
+            </div>
+          </dl>
+          <div class="actions">
+            <button mat-button type="button" (click)="back()" [disabled]="submitting()">
+              <mat-icon>arrow_back</mat-icon>
+              Volver
+            </button>
+            <button
+              mat-flat-button
+              type="button"
+              class="primary-action"
+              (click)="confirm()"
+              [disabled]="submitting()"
+            >
+              @if (submitting()) {
+                <mat-spinner diameter="20" aria-label="Transfiriendo" />
+              } @else {
+                Confirmar transferencia
+              }
+            </button>
+          </div>
+        </section>
+      }
+
+      @case ('done') {
+        @if (receipt(); as r) {
+          <section class="panel receipt" aria-label="Comprobante" role="status">
+            <mat-icon class="success-icon">check_circle</mat-icon>
+            <h2>¡Transferencia realizada!</h2>
+            <div class="amount-big hb-tabular">{{ r.amount | currency }}</div>
+            <dl class="summary">
+              <div>
+                <dt>Desde</dt>
+                <dd class="hb-tabular">{{ r.sourceAccountNumber }}</dd>
+              </div>
+              <div>
+                <dt>Hacia</dt>
+                <dd class="hb-tabular">{{ r.targetAccountNumber }}</dd>
+              </div>
+              <div>
+                <dt>Concepto</dt>
+                <dd>{{ r.description }}</dd>
+              </div>
+              <div>
+                <dt>Fecha</dt>
+                <dd>{{ r.date | date: "d 'de' MMMM y, HH:mm" }}</dd>
+              </div>
+              <div>
+                <dt>Nuevo saldo</dt>
+                <dd class="hb-tabular strong">{{ r.sourceBalanceAfter | currency }}</dd>
+              </div>
+              <div>
+                <dt>N.º de operación</dt>
+                <dd class="hb-tabular">{{ r.transactionId }}</dd>
+              </div>
+            </dl>
+            <div class="actions">
+              <a mat-button [routerLink]="['/accounts', r.sourceAccountId]">
+                <mat-icon>receipt_long</mat-icon>
+                Ver movimientos
+              </a>
+              <button mat-flat-button type="button" class="primary-action" (click)="newTransfer()">
+                Nueva transferencia
+              </button>
+            </div>
+          </section>
+        }
+      }
+    }
+  }
+</div>
