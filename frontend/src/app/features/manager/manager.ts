@@ -20,17 +20,19 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
-import { BehaviorSubject, switchMap } from 'rxjs';
+import { BehaviorSubject, filter, switchMap } from 'rxjs';
 
 import { ClientService } from '../../core/api/client.service';
 import { SpanishPaginatorIntl } from '../../core/i18n/paginator-intl';
 import { Client } from '../../core/models/client.model';
 import { toLoadState } from '../../core/utils/load-state';
+import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { initials } from '../../shared/initials';
 import { NewClientDialog } from './new-client-dialog/new-client-dialog';
 
 /** Table row: the client plus derived, sortable columns. */
 export interface ClientRow extends Client {
+  status: 'active' | 'locked' | 'blocked';
   fullName: string;
   initials: string;
   accountCount: number;
@@ -68,6 +70,7 @@ export class Manager {
   protected readonly columns = [
     'client',
     'role',
+    'status',
     'accountCount',
     'totalBalance',
     'expand',
@@ -123,6 +126,44 @@ export class Manager {
     this.reload$.next();
   }
 
+  /** Block or unblock a client after confirmation. */
+  protected setStatus(row: ClientRow, event: Event): void {
+    event.stopPropagation();
+    const block = row.status !== 'blocked';
+    const data: ConfirmDialogData = block
+      ? {
+          title: `Bloquear a ${row.fullName}`,
+          message:
+            'No va a poder ingresar y cerramos todas sus sesiones. Podés desbloquearlo cuando quieras.',
+          confirmLabel: 'Bloquear',
+          icon: 'block',
+          danger: true,
+        }
+      : {
+          title: `Desbloquear a ${row.fullName}`,
+          message: 'Va a poder volver a ingresar a su banca online.',
+          confirmLabel: 'Desbloquear',
+          icon: 'lock_open',
+        };
+    this.dialog
+      .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data, width: '440px' })
+      .afterClosed()
+      .pipe(
+        filter(Boolean),
+        switchMap(() => this.clientService.setStatus(row.id, !block)),
+      )
+      .subscribe({
+        next: () => {
+          this.snackBar.open(
+            `${row.fullName} ${block ? 'fue bloqueado' : 'fue desbloqueado'}.`,
+            'OK',
+          );
+          this.reload$.next();
+        },
+        error: () => this.snackBar.open('No pudimos cambiar el estado. Intentá de nuevo.', 'OK'),
+      });
+  }
+
   protected openNewClient(): void {
     this.dialog
       .open<NewClientDialog, void, Client>(NewClientDialog, { width: '520px', maxWidth: '95vw' })
@@ -139,6 +180,7 @@ export class Manager {
 function toRow(client: Client): ClientRow {
   return {
     ...client,
+    status: client.enabled === false ? 'blocked' : client.locked ? 'locked' : 'active',
     fullName: `${client.name} ${client.lastName}`,
     initials: initials(client.name, client.lastName),
     accountCount: client.accounts.length,

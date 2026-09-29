@@ -25,6 +25,11 @@ export class ClientService {
     return this.http.get<Client>(`${this.baseUrl}/current`);
   }
 
+  /** ADMIN only: `false` blocks the client (ends its sessions), `true` unblocks it. */
+  setStatus(id: number, enabled: boolean): Observable<Client> {
+    return this.http.patch<Client>(`${this.baseUrl}/${id}/status`, { enabled });
+  }
+
   /** ADMIN only. */
   createClient(request: CreateClientRequest): Observable<Client> {
     return this.http.post<Client>(this.baseUrl, request);

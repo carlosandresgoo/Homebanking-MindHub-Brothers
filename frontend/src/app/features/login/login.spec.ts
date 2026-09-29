@@ -104,6 +104,32 @@ describe('Login', () => {
     expect(el.querySelector<HTMLInputElement>('#password')!.value).toBe('');
   });
 
+  it('explains a temporary lock with the time it ends, and an admin block', async () => {
+    const { fixture, el, fill, submit } = render();
+    fill('melba@gmail.com', 'secret');
+    submit();
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush(
+        { reason: 'LOCKED', lockedUntil: '2026-09-29T15:30:00Z' },
+        { status: 423, statusText: 'Locked' },
+      );
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'bloqueamos tu usuario tras varios intentos fallidos. Probá de nuevo a las',
+    );
+
+    fill('melba@gmail.com', 'secret');
+    submit();
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush({ reason: 'BLOCKED' }, { status: 423, statusText: 'Locked' });
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'Tu usuario está bloqueado. Comunicate con el banco',
+    );
+  });
+
   it('explains rate limiting on 429', async () => {
     const { fixture, el, fill, submit } = render();
     fill('melba@gmail.com', 'wrong');

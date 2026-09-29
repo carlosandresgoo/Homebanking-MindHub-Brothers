@@ -90,6 +90,40 @@
             </td>
           </ng-container>
 
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="status-cell">
+                <span class="status" [class]="'status ' + row.status">
+                  @switch (row.status) {
+                    @case ('blocked') {
+                      Bloqueado
+                    }
+                    @case ('locked') {
+                      Bloqueo temporal
+                    }
+                    @default {
+                      Activo
+                    }
+                  }
+                </span>
+                @if (row.role === 'CLIENT') {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="status-action"
+                    (click)="setStatus(row, $event)"
+                    [attr.aria-label]="
+                      (row.status === 'blocked' ? 'Desbloquear a ' : 'Bloquear a ') + row.fullName
+                    "
+                  >
+                    <mat-icon>{{ row.status === 'blocked' ? 'lock_open' : 'block' }}</mat-icon>
+                  </button>
+                }
+              </div>
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="accountCount">
             <th
               mat-header-cell

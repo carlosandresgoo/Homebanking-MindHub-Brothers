@@ -158,6 +158,39 @@ table {
   }
 }
 
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+
+  &.active {
+    background: color-mix(in srgb, var(--hb-positive) 14%, transparent);
+    color: var(--hb-positive);
+  }
+
+  &.locked {
+    background: var(--hb-warning-container);
+    color: var(--hb-on-warning-container);
+  }
+
+  &.blocked {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+}
+
+.status-action {
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .expand-cell {
   width: 56px;
   text-align: right;
@@ -254,6 +287,7 @@ table {
 // Small screens: keep client + balance, hide secondary columns.
 @media (max-width: 600px) {
   .mat-column-role,
+  .mat-column-status,
   .mat-column-accountCount {
     display: none;
   }

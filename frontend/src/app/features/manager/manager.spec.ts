@@ -116,6 +116,26 @@ describe('Manager', () => {
     expect(el.querySelectorAll('tr.client-row')).toHaveLength(3);
   });
 
+  it('shows each status and blocks a client after confirmation', async () => {
+    const { fixture, el } = await renderLoaded();
+    expect(el.querySelector('tr.client-row .status')?.textContent?.trim()).toBe('Activo');
+    // Admins have no block button.
+    expect(el.querySelectorAll('.status-action')).toHaveLength(1);
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+
+    el.querySelector<HTMLButtonElement>('button[aria-label="Bloquear a Melba Morel"]')!.click();
+
+    const req = httpTesting.expectOne('/api/clients/1/status');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ enabled: false });
+    req.flush({ ...CLIENTS[0], enabled: false });
+    httpTesting.expectOne('/api/clients').flush([{ ...CLIENTS[0], enabled: false }, CLIENTS[1]]);
+    await fixture.whenStable();
+
+    expect(el.querySelector('tr.client-row .status')?.textContent?.trim()).toBe('Bloqueado');
+    expect(el.querySelector('button[aria-label="Desbloquear a Melba Morel"]')).not.toBeNull();
+  });
+
   it('labels the paginator in Spanish', async () => {
     const { el } = await renderLoaded();
     expect(el.querySelector('mat-paginator')?.textContent).toContain('Filas por página');

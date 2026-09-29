@@ -8,6 +8,10 @@ export interface Client {
   lastName: string;
   email: string;
   role: Role;
+  /** false when blocked by an administrator. */
+  enabled?: boolean;
+  /** true while temporarily locked after too many failed logins. */
+  locked?: boolean;
   accounts: Account[];
 }
 

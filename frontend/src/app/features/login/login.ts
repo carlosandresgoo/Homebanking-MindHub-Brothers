@@ -75,6 +75,20 @@ function messageFor(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
     if (err.status === 401) return 'El email o la contraseña no son correctos.';
     if (err.status === 429) return 'Demasiados intentos. Esperá un minuto y volvé a probar.';
+    if (err.status === 423) return lockedMessage(err.error);
   }
   return 'No pudimos iniciar sesión. Intentá de nuevo más tarde.';
+}
+
+function lockedMessage(problem: { reason?: string; lockedUntil?: string } | null): string {
+  if (problem?.reason === 'BLOCKED') {
+    return 'Tu usuario está bloqueado. Comunicate con el banco para habilitarlo.';
+  }
+  const until = problem?.lockedUntil ? new Date(problem.lockedUntil) : null;
+  const time = until
+    ? until.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+    : null;
+  return time
+    ? `Por seguridad bloqueamos tu usuario tras varios intentos fallidos. Probá de nuevo a las ${time}.`
+    : 'Por seguridad bloqueamos tu usuario tras varios intentos fallidos. Probá de nuevo más tarde.';
 }
