@@ -1,57 +1,104 @@
-<main class="index-home d-flex">
-  <div class="col-md-6 box-img d-flex justify-content-center align-items-center">
-    <img class="logo" src="assets/logo.png" alt="MindHub brother´s logo" />
+<header class="topbar">
+  <div class="container topbar-inner">
+    <app-brand [inverse]="true" />
+    <nav class="topbar-nav" aria-label="Secciones">
+      <a class="topbar-link" href="#servicios">Servicios</a>
+      <a class="topbar-link" href="#nosotros">Nosotros</a>
+      <a mat-flat-button class="cta-light" [routerLink]="bankingLink()">
+        <mat-icon>{{ isAuthenticated() ? 'dashboard' : 'login' }}</mat-icon>
+        {{ isAuthenticated() ? 'Ir a mi banca' : 'Ingresar' }}
+      </a>
+    </nav>
   </div>
-  <div class="col-md-6 h-100 p-0 navbar d-flex justify-content-center">
-    <nav class="navbar navbar-expand-lg d-flex justify-content-evelyn">
-      <div class="container-fluid d-flex justify-content-between">
-        <a class="navbar-brand" href="#"><img class="icon-nav" src="assets/icon.png" alt="icon-nav" /></a>
-        <button
-          class="navbar-toggler"
-          type="button"
-          aria-controls="navbarSupportedContent"
-          [attr.aria-expanded]="menuOpen()"
-          aria-label="Toggle navigation"
-          (click)="toggleMenu()"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" [class.show]="menuOpen()" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="#">HOME</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">ABOUT US</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">SERVICES</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">CONTACT</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">CONTACT</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" routerLink="/login">SING ON</a>
-            </li>
-          </ul>
+</header>
+
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow">Banca online</span>
+      <h1>La banca que te acompaña, <span>estés donde estés</span>.</h1>
+      <p>
+        En MindHub Brothers combinamos la cercanía de un banco familiar con la simplicidad de lo
+        digital. Tus cuentas, claras y seguras, en un solo lugar.
+      </p>
+      <div class="hero-actions">
+        <a mat-flat-button class="cta-light" [routerLink]="bankingLink()">
+          {{ isAuthenticated() ? 'Ir a mi banca' : 'Ingresar a mi cuenta' }}
+          <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+        </a>
+        <a mat-stroked-button class="cta-outline" href="#nosotros">Conocenos</a>
+      </div>
+    </div>
+
+    <!-- Decorative card illustration (pure CSS). -->
+    <div class="hero-visual" aria-hidden="true">
+      <div class="bank-card">
+        <div class="bank-card-top">
+          <img src="assets/icon.png" alt="" width="36" height="36" />
+          <span class="chip"></span>
+        </div>
+        <span class="bank-card-number">•••• •••• •••• 2026</span>
+        <div class="bank-card-bottom">
+          <span>MINDHUB BROTHERS</span>
+          <mat-icon>contactless</mat-icon>
         </div>
       </div>
-    </nav>
-    <div class="col-8">
-      <h2 class="text-white">ABOUT US</h2>
-      <p class="text-white">
-        At MindHub Brothers, we are a family-owned bank that values innovation, trust, and community. We strive to
-        provide our customers with personalized financial solutions that meet their unique needs and goals. Whether
-        you're looking for a simple savings account or a complex commercial loan, our team of experienced banking
-        professionals is here to help. We are committed to building long-term relationships with our customers, and we
-        believe that our success is directly tied to yours. At MindHub Brothers, we are dedicated to empowering
-        individuals and businesses to achieve their financial aspirations and create a better future for themselves and
-        their communities.
-      </p>
+      <div class="balance-pill">
+        <mat-icon>trending_up</mat-icon>
+        <div>
+          <small>Saldo disponible</small>
+          <strong>Siempre actualizado</strong>
+        </div>
+      </div>
     </div>
   </div>
+</section>
+
+<main>
+  <section id="servicios" class="section container">
+    <h2 class="section-title">Pensado para tu día a día</h2>
+    <p class="section-lead">Todo lo que necesitás para manejar tu dinero con tranquilidad.</p>
+    <div class="features">
+      @for (feature of features; track feature.title) {
+        <article class="feature">
+          <span class="feature-icon"
+            ><mat-icon>{{ feature.icon }}</mat-icon></span
+          >
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.text }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section id="nosotros" class="section about">
+    <div class="container about-inner">
+      <img
+        class="about-logo"
+        src="assets/logo.png"
+        alt="MindHub Brothers — Safe prosperity guaranteed"
+      />
+      <div>
+        <h2 class="section-title">Sobre nosotros</h2>
+        <p>
+          En MindHub Brothers somos un banco familiar que valora la innovación, la confianza y la
+          comunidad. Ofrecemos soluciones financieras personalizadas para las necesidades y los
+          objetivos de cada cliente: desde una simple caja de ahorro hasta un préstamo comercial,
+          nuestro equipo de profesionales está para ayudarte.
+        </p>
+        <p>
+          Creemos en las relaciones a largo plazo, porque nuestro éxito está directamente ligado al
+          tuyo. Nuestro compromiso es impulsar a personas y empresas a alcanzar sus metas y
+          construir un futuro mejor para ellas y sus comunidades.
+        </p>
+      </div>
+    </div>
+  </section>
 </main>
-<footer></footer>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <app-brand />
+    <span>© {{ year }} MindHub Brothers. Todos los derechos reservados.</span>
+  </div>
+</footer>

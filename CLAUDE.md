@@ -33,11 +33,12 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - `backend/src/main/resources/application.yml` (perfiles `dev`/`prod`), `db/migration/` (Flyway)
 - `backend/src/test/.../support/IntegrationTest` + `TestData`: base de los tests MockMvc (perfil `test`)
 - `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards], `interceptors`, `utils`); `features/{home,login,accounts,manager}`
+- `frontend/src/app/layout/shell` (toolbar + menú de usuario del área privada), `shared/` (`brand`, `initials`), `testing/`
 
 ## Stack
 - Java 21, Spring Boot 3.5.16, Gradle 8.14.5, Spring Security 6 + oauth2-resource-server (JWT HS256), Flyway, Bucket4j
 - H2 (dev/test) y PostgreSQL (prod)
-- Angular 21 (zoneless, esbuild), Bootstrap 5.3, Vitest
+- Angular 21 (zoneless, esbuild), Angular Material 21 (Material 3), Inter + Material Symbols self-hosted (npm), Vitest
 
 ## Convenciones backend
 - Nunca exponer entidades JPA: DTOs (records) mapeados en `mapper/`
@@ -55,6 +56,12 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - El access token solo en memoria (`AuthService`); nunca en localStorage/sessionStorage
 - Rutas protegidas con `authGuard` / `roleGuard` (UX; la autorización real está en el backend)
 - URLs relativas vía `environment.apiUrl`; TypeScript estricto sin `any`; cada pieza con su `.spec.ts`
+- UI con Angular Material; colores, tipografía y formas solo con tokens `--mat-sys-*` (tema en `src/styles.scss`,
+  soporta modo oscuro automático). Nada de Bootstrap ni colores hardcodeados salvo sobre el degradado de marca
+- Textos de la interfaz en español (voseo rioplatense); `LOCALE_ID` es-AR y moneda ARS (`| currency`, `| date`)
+- Iconos con `<mat-icon>` (fuente Material Symbols Rounded por defecto); fuentes/iconos nunca desde CDN (CSP)
+- Páginas privadas como hijas del `Shell` (`layout/shell`) en `app.routes.ts`
+- Tests: `provideTestDefaults()` y `typeInto()` de `src/app/testing/providers.ts`
 
 ## Seguridad (reglas fijas)
 - Nunca commitear secretos: variables de entorno / `.env` (git-ignored)

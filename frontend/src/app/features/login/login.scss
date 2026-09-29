@@ -1,0 +1,137 @@
+:host {
+  display: block;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 5fr) 7fr;
+  min-height: 100vh;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 48px;
+  color: #fff;
+  background: var(--hb-hero-gradient);
+
+  small {
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+}
+
+.brand-copy {
+  h2 {
+    margin: 0 0 12px;
+    font: var(--mat-sys-headline-large);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin: 0 0 32px;
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  ul {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font: var(--mat-sys-body-large);
+  }
+
+  mat-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.16);
+  }
+}
+
+.form-panel {
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.form-card {
+  width: 100%;
+  max-width: 420px;
+
+  h1 {
+    margin: 0 0 8px;
+    font: var(--mat-sys-headline-medium);
+    font-weight: 700;
+  }
+}
+
+.mobile-brand {
+  display: none;
+  margin-bottom: 32px;
+
+  @media (max-width: 900px) {
+    display: block;
+  }
+}
+
+.subtitle {
+  margin: 0 0 28px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+form {
+  display: grid;
+  gap: 16px;
+}
+
+mat-icon[matPrefix] {
+  margin: 0 4px 0 12px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-medium);
+}
+
+.submit {
+  height: 52px;
+  margin-top: 8px;
+  font: var(--mat-sys-title-small);
+
+  mat-spinner {
+    --mat-progress-spinner-active-indicator-color: currentColor;
+    margin: 0 auto;
+  }
+}
+
+.back {
+  margin-top: 24px;
+}

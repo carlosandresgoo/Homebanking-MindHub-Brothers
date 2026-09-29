@@ -1,43 +1,47 @@
+import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 
+import { AuthService } from '../../core/auth/auth.service';
+import { provideTestDefaults } from '../../testing/providers';
 import { Home } from './home';
 
 describe('Home', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Home],
-      providers: [provideRouter([])],
+      providers: provideTestDefaults(),
     }).compileComponents();
   });
 
-  it('links SING ON to the login page', () => {
+  function render() {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    const link = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find(
-      (a) => a.textContent?.trim() === 'SING ON',
-    );
-    expect(link?.getAttribute('href')).toBe('/login');
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('renders the hero, features and about sections', () => {
+    const el = render();
+    expect(el.querySelector('h1')?.textContent).toContain('La banca que te acompaña');
+    expect(el.querySelectorAll('.feature')).toHaveLength(3);
+    expect(el.querySelector('#nosotros')?.textContent).toContain('Sobre nosotros');
   });
 
-  it('renders the logo and the about-us text', () => {
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('img.logo')?.getAttribute('src')).toBe('assets/logo.png');
-    expect(el.textContent).toContain('ABOUT US');
+  it('sends anonymous visitors to the login page', () => {
+    const el = render();
+    const cta = el.querySelector('.hero-actions a');
+    expect(cta?.getAttribute('href')).toBe('/login');
+    expect(cta?.textContent).toContain('Ingresar a mi cuenta');
   });
 
-  it('toggles the collapsed navbar', async () => {
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    const el = fixture.nativeElement as HTMLElement;
-    const menu = el.querySelector('#navbarSupportedContent')!;
-    expect(menu.classList).not.toContain('show');
+  it('sends logged-in clients straight to their accounts', async () => {
+    TestBed.inject(AuthService).login({ email: 'melba@gmail.com', password: 'x' }).subscribe();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/auth/login')
+      .flush({ accessToken: 'jwt', tokenType: 'Bearer', expiresIn: 900, role: 'CLIENT' });
 
-    el.querySelector<HTMLButtonElement>('.navbar-toggler')!.click();
-    await fixture.whenStable();
-
-    expect(menu.classList).toContain('show');
+    const el = render();
+    const cta = el.querySelector('.hero-actions a');
+    expect(cta?.getAttribute('href')).toBe('/accounts');
+    expect(cta?.textContent).toContain('Ir a mi banca');
   });
 });

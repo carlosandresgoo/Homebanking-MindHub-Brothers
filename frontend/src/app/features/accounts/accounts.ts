@@ -1,29 +1,46 @@
-import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { CurrencyPipe, DatePipe, UpperCasePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { BehaviorSubject, switchMap } from 'rxjs';
 
 import { ClientService } from '../../core/api/client.service';
-import { AuthService } from '../../core/auth/auth.service';
 import { toLoadState } from '../../core/utils/load-state';
 
 @Component({
   selector: 'app-accounts',
-  imports: [DatePipe],
+  imports: [
+    CurrencyPipe,
+    DatePipe,
+    UpperCasePipe,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+  ],
   templateUrl: './accounts.html',
+  styleUrl: './accounts.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Accounts {
   private readonly clientService = inject(ClientService);
-  private readonly auth = inject(AuthService);
+  private readonly reload$ = new BehaviorSubject<void>(undefined);
 
-  /** The logged-in client's own accounts (the API no longer lists other clients to a CLIENT). */
+  /** The logged-in client's own data (the API never lists other clients to a CLIENT). */
   protected readonly state = toSignal(
-    toLoadState(this.clientService.getCurrentClient().pipe(map((client) => [client]))),
+    this.reload$.pipe(switchMap(() => toLoadState(this.clientService.getCurrentClient()))),
     { requireSync: true },
   );
 
-  protected logout(): void {
-    this.auth.logout().subscribe();
+  protected readonly totalBalance = computed(() => {
+    const s = this.state();
+    return s.status === 'loaded'
+      ? s.data.accounts.reduce((sum, account) => sum + account.balance, 0)
+      : 0;
+  });
+
+  protected retry(): void {
+    this.reload$.next();
   }
 }

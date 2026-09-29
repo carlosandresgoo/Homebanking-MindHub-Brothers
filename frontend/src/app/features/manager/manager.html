@@ -1,111 +1,204 @@
-<header>
-  <a routerLink="/accounts">account</a>&ngsp;<a routerLink="/">home</a>&ngsp;<button
-    type="button"
-    class="btn btn-link p-0 align-baseline"
-    (click)="logout()"
-  >
-    logout
-  </button>
-</header>
+@let s = state();
 
-<main>
-  <div class="container d-flex justify-content-center p-5">
-    <div id="form-1" class="d-flex justify-content-center">
-      <form [formGroup]="form" (ngSubmit)="addClient()" novalidate>
-        <h2 class="text-center">Client Manager</h2>
-        @if (feedback(); as f) {
-          <div class="alert" [class.alert-success]="f.kind === 'success'" [class.alert-danger]="f.kind === 'danger'" role="status">
-            {{ f.text }}
-          </div>
-        }
-        <div class="mb-3">
-          <div class="mb-3">
-            <label for="name" class="form-label m-2">Name</label>
-            <input
-              type="text"
-              class="form-control"
-              id="name"
-              formControlName="name"
-              [class.is-invalid]="form.controls.name.touched && form.controls.name.invalid"
-            />
-            <div class="invalid-feedback">Letters only (a-z, A-Z).</div>
-          </div>
-          <div class="mb-3">
-            <label for="lastName" class="form-label">lastName</label>
-            <input
-              type="text"
-              class="form-control"
-              id="lastName"
-              formControlName="lastName"
-              [class.is-invalid]="form.controls.lastName.touched && form.controls.lastName.invalid"
-            />
-            <div class="invalid-feedback">Letters only (a-z, A-Z).</div>
-          </div>
-          <label for="email" class="form-label">Email address</label>
-          <input
-            type="email"
-            class="form-control"
-            id="email"
-            aria-describedby="emailHelp"
-            formControlName="email"
-            [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid"
-          />
-          <div class="invalid-feedback">Enter a valid email address.</div>
-          <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
-        </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Initial password</label>
-          <input
-            type="password"
-            class="form-control"
-            id="password"
-            autocomplete="new-password"
-            formControlName="password"
-            [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid"
-          />
-          <div class="invalid-feedback">Between 12 and 72 characters.</div>
-        </div>
-        <button type="submit" class="btn btn-success" [disabled]="submitting()">Add Clients</button>
-      </form>
+@if (s.status === 'loading') {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando clientes" />
+}
+
+<div class="hb-page">
+  <header class="hb-page-header">
+    <div>
+      <h1>Clientes</h1>
+      <p>Gestioná los clientes del banco y consultá sus cuentas.</p>
     </div>
-    <!-- Whitespace inside <pre> is significant: it reproduces the spacing of the original page. -->
-    <pre id="pre-1">
-                <h2 class="text-center">Client REST response</h2>
-                <p class="request">{{ clientsJson() | json }}</p>
-            </pre>
-  </div>
+    <button mat-flat-button class="new-client" (click)="openNewClient()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo cliente
+    </button>
+  </header>
 
-  <div class="container d-flex flex-column justify-content-center align-item-center col-8">
-    <h2 class="text-center">Client list</h2>
-    @let s = state();
-    @if (s.status === 'error') {
-      <p class="text-center text-danger" role="alert">Could not load the clients. Please try again later.</p>
-    }
-    <table class="tabla col-8">
-      <thead class="text-center">
-        <tr>
-          <th>Name</th>
-          <th>lastName</th>
-          <th>Email</th>
-          <th>Search</th>
-        </tr>
-      </thead>
-      <tbody class="text-center">
-        @if (s.status === 'loaded') {
-          @for (client of s.data; track client.id) {
-            <tr>
-              <td>{{ client.name }}</td>
-              <td>{{ client.lastName }}</td>
-              <td>{{ client.email }}</td>
-              <td>
-                <a routerLink="/accounts"><img src="assets/search.jpg" class="search-img" alt="search" /></a>
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-  </div>
-</main>
+  @if (s.status === 'error') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon error">cloud_off</mat-icon>
+      <h2>No pudimos cargar los clientes</h2>
+      <p>Revisá tu conexión e intentá de nuevo.</p>
+      <button mat-flat-button (click)="retry()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    <section class="stats" aria-label="Resumen">
+      <div class="stat">
+        <span class="stat-icon"><mat-icon>group</mat-icon></span>
+        <div>
+          <span class="stat-label">Clientes</span>
+          <strong class="hb-tabular">{{ stats().clients }}</strong>
+        </div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon"><mat-icon>account_balance</mat-icon></span>
+        <div>
+          <span class="stat-label">Cuentas</span>
+          <strong class="hb-tabular">{{ stats().accounts }}</strong>
+        </div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon"><mat-icon>payments</mat-icon></span>
+        <div>
+          <span class="stat-label">Saldo total gestionado</span>
+          <strong class="hb-tabular">{{ stats().balance | currency }}</strong>
+        </div>
+      </div>
+    </section>
 
-<footer></footer>
+    <section class="table-card">
+      <div class="table-toolbar">
+        <mat-form-field class="search">
+          <mat-icon matPrefix>search</mat-icon>
+          <mat-label>Buscar por nombre o email</mat-label>
+          <input matInput #search (input)="applyFilter(search.value)" />
+        </mat-form-field>
+      </div>
+
+      <div class="table-scroll">
+        <table
+          mat-table
+          [dataSource]="dataSource"
+          matSort
+          multiTemplateDataRows
+          aria-label="Clientes"
+        >
+          <ng-container matColumnDef="client">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="fullName">Cliente</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="client-cell">
+                <span class="avatar" aria-hidden="true">{{ row.initials }}</span>
+                <div>
+                  <span class="client-name">{{ row.fullName }}</span>
+                  <span class="client-email">{{ row.email }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Rol</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="role" [class.admin]="row.role === 'ADMIN'">
+                {{ row.role === 'ADMIN' ? 'Administrador' : 'Cliente' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="accountCount">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              arrowPosition="before"
+              class="num"
+            >
+              Cuentas
+            </th>
+            <td mat-cell *matCellDef="let row" class="num hb-tabular">{{ row.accountCount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="totalBalance">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              arrowPosition="before"
+              class="num"
+            >
+              Saldo total
+            </th>
+            <td mat-cell *matCellDef="let row" class="num hb-tabular strong">
+              {{ row.totalBalance | currency }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expand">
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="hb-visually-hidden">Detalle</span>
+            </th>
+            <td mat-cell *matCellDef="let row" class="expand-cell">
+              <button
+                mat-icon-button
+                type="button"
+                (click)="toggle(row); $event.stopPropagation()"
+                [attr.aria-expanded]="expandedId() === row.id"
+                [attr.aria-label]="'Ver cuentas de ' + row.fullName"
+              >
+                <mat-icon class="chevron" [class.open]="expandedId() === row.id"
+                  >expand_more</mat-icon
+                >
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Expanded detail: the client's accounts. -->
+          <ng-container matColumnDef="detail">
+            <td mat-cell *matCellDef="let row" [attr.colspan]="columns.length" class="detail-cell">
+              @if (expandedId() === row.id) {
+                <div class="detail">
+                  @if (row.accounts.length === 0) {
+                    <p class="muted">Este cliente todavía no tiene cuentas.</p>
+                  } @else {
+                    <ul class="account-list" role="list">
+                      @for (account of row.accounts; track account.id) {
+                        <li>
+                          <mat-icon>account_balance_wallet</mat-icon>
+                          <span class="hb-tabular account-number">{{
+                            account.number | uppercase
+                          }}</span>
+                          <span class="muted"
+                            >Abierta el {{ account.creationDate | date: 'mediumDate' }}</span
+                          >
+                          <strong class="hb-tabular">{{ account.balance | currency }}</strong>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: columns"
+            class="client-row"
+            [class.expanded]="expandedId() === row.id"
+            (click)="toggle(row)"
+          ></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: ['detail']"
+            class="detail-row"
+            [class.open]="expandedId() === row.id"
+          ></tr>
+
+          <tr class="mat-mdc-row" *matNoDataRow>
+            <td class="mat-mdc-cell empty" [attr.colspan]="columns.length">
+              @if (s.status === 'loading') {
+                Cargando…
+              } @else if (search.value) {
+                No hay clientes que coincidan con “{{ search.value }}”.
+              } @else {
+                Todavía no hay clientes.
+              }
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [pageSizeOptions]="[5, 10, 25]"
+        [pageSize]="10"
+        aria-label="Paginación de clientes"
+      />
+    </section>
+  }
+</div>

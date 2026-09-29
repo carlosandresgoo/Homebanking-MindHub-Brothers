@@ -1,42 +1,75 @@
-<header>
-  <button type="button" class="btn btn-link p-0" (click)="logout()">logout</button>
-</header>
-<main>
-  <div class="container d-flex flex-column justify-content-center align-item-center col-8">
-    <h2 class="text-center">Accounts</h2>
-    @let s = state();
-    @if (s.status === 'loading') {
-      <p class="text-center">Loading…</p>
-    } @else if (s.status === 'error') {
-      <p class="text-center text-danger" role="alert">Could not load the accounts. Please try again later.</p>
+@let s = state();
+
+@if (s.status === 'loading') {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando tus cuentas" />
+}
+
+<div class="hb-page">
+  @if (s.status === 'loading') {
+    <div class="skeleton summary-skeleton"></div>
+    <div class="grid">
+      <div class="skeleton card-skeleton"></div>
+      <div class="skeleton card-skeleton"></div>
+    </div>
+  } @else if (s.status === 'error') {
+    <div class="state-card" role="alert">
+      <mat-icon class="state-icon error">cloud_off</mat-icon>
+      <h2>No pudimos cargar tus cuentas</h2>
+      <p>Revisá tu conexión e intentá de nuevo.</p>
+      <button mat-flat-button (click)="retry()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    <header class="hb-page-header">
+      <div>
+        <h1>Hola, {{ s.data.name }}</h1>
+        <p>Este es el resumen de tus cuentas.</p>
+      </div>
+    </header>
+
+    <section class="summary" aria-label="Resumen">
+      <div>
+        <span class="summary-label">Saldo total</span>
+        <strong class="summary-amount hb-tabular">{{ totalBalance() | currency }}</strong>
+      </div>
+      <div class="summary-meta">
+        <mat-icon>account_balance</mat-icon>
+        {{ s.data.accounts.length }} {{ s.data.accounts.length === 1 ? 'cuenta' : 'cuentas' }}
+      </div>
+    </section>
+
+    <h2 class="section-title">Tus cuentas</h2>
+
+    @if (s.data.accounts.length === 0) {
+      <div class="state-card">
+        <mat-icon class="state-icon">savings</mat-icon>
+        <h2>Todavía no tenés cuentas</h2>
+        <p>Cuando el banco abra una cuenta a tu nombre, la vas a ver acá.</p>
+      </div>
     } @else {
-      <table class="tabla col-8">
-        <thead class="text-center">
-          <tr>
-            <th>Number</th>
-            <th>Date Creation</th>
-            <th>Balance</th>
-          </tr>
-        </thead>
-        <tbody class="text-center">
-          @for (client of s.data; track client.id) {
-            <tr class="client-row">
-              <th colspan="3" scope="rowgroup">Name : {{ client.name }}</th>
-            </tr>
-            @for (account of client.accounts; track account.id) {
-              <tr>
-                <td>{{ account.number }}</td>
-                <td>
-                  {{ account.creationDate | date: 'yyyy-MM-dd' }} at
-                  {{ account.creationDate | date: 'HH:mm' }}
-                </td>
-                <td>$ {{ account.balance }}</td>
-              </tr>
-            }
-          }
-        </tbody>
-      </table>
+      <ul class="grid" role="list">
+        @for (account of s.data.accounts; track account.id) {
+          <li class="account-card">
+            <div class="account-top">
+              <span class="account-icon"><mat-icon>account_balance_wallet</mat-icon></span>
+              <div>
+                <span class="account-type">Cuenta</span>
+                <span class="account-number hb-tabular">{{ account.number | uppercase }}</span>
+              </div>
+            </div>
+            <div class="account-balance">
+              <span>Saldo disponible</span>
+              <strong class="hb-tabular">{{ account.balance | currency }}</strong>
+            </div>
+            <div class="account-footer">
+              <mat-icon>event</mat-icon>
+              Abierta el {{ account.creationDate | date: 'longDate' }}
+            </div>
+          </li>
+        }
+      </ul>
     }
-  </div>
-</main>
-<footer></footer>
+  }
+</div>

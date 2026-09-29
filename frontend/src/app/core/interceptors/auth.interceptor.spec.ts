@@ -60,7 +60,9 @@ describe('authInterceptor', () => {
     let body: unknown;
     http.get('/api/clients/current').subscribe((b) => (body = b));
 
-    httpTesting.expectOne('/api/clients/current').flush(null, { status: 401, statusText: 'Unauthorized' });
+    httpTesting
+      .expectOne('/api/clients/current')
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
     httpTesting.expectOne('/api/auth/refresh').flush(token('fresh'));
     const retry = httpTesting.expectOne('/api/clients/current');
     expect(retry.request.headers.get('Authorization')).toBe('Bearer fresh');
@@ -73,10 +75,16 @@ describe('authInterceptor', () => {
     logIn('expired');
     const expire = vi.spyOn(auth, 'expireSession').mockImplementation(() => undefined);
     let failedWith: number | undefined;
-    http.get('/api/clients/current').subscribe({ error: (e: { status: number }) => (failedWith = e.status) });
+    http
+      .get('/api/clients/current')
+      .subscribe({ error: (e: { status: number }) => (failedWith = e.status) });
 
-    httpTesting.expectOne('/api/clients/current').flush(null, { status: 401, statusText: 'Unauthorized' });
-    httpTesting.expectOne('/api/auth/refresh').flush(null, { status: 401, statusText: 'Unauthorized' });
+    httpTesting
+      .expectOne('/api/clients/current')
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
+    httpTesting
+      .expectOne('/api/auth/refresh')
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(expire).toHaveBeenCalled();
     expect(failedWith).toBe(401);
@@ -85,7 +93,9 @@ describe('authInterceptor', () => {
   it('does not try to refresh on 403', () => {
     logIn('jwt-1');
     let failedWith: number | undefined;
-    http.get('/api/clients').subscribe({ error: (e: { status: number }) => (failedWith = e.status) });
+    http
+      .get('/api/clients')
+      .subscribe({ error: (e: { status: number }) => (failedWith = e.status) });
 
     httpTesting.expectOne('/api/clients').flush(null, { status: 403, statusText: 'Forbidden' });
 

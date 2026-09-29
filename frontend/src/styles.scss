@@ -1,0 +1,127 @@
+@use '@angular/material' as mat;
+
+// Inter and Material Symbols (rounded) are self-hosted from npm via angular.json "styles"
+// (the nginx CSP only allows fonts from 'self').
+
+// ---------------------------------------------------------------------------
+// Theme: Material 3, azure primary + cyan tertiary (matches the teal logo).
+// color-scheme light dark => follows the OS preference automatically.
+// ---------------------------------------------------------------------------
+html {
+  color-scheme: light dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$cyan-palette,
+      ),
+      typography: (
+        plain-family: 'Inter Variable, Roboto, sans-serif',
+        brand-family: 'Inter Variable, Roboto, sans-serif',
+        bold-weight: 700,
+        medium-weight: 600,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+
+  // Rounder, softer surfaces for a friendlier banking look.
+  @include mat.card-overrides(
+    (
+      elevated-container-shape: 20px,
+      outlined-container-shape: 20px,
+    )
+  );
+  @include mat.button-overrides(
+    (
+      filled-container-shape: 12px,
+      outlined-container-shape: 12px,
+      text-container-shape: 12px,
+      protected-container-shape: 12px,
+    )
+  );
+  @include mat.dialog-overrides(
+    (
+      container-shape: 24px,
+    )
+  );
+
+  // App-level tokens derived from the Material system tokens.
+  --hb-page-max-width: 1120px;
+  --hb-radius: 20px;
+  --hb-hero-gradient: linear-gradient(
+    135deg,
+    var(--mat-sys-primary) 0%,
+    color-mix(in srgb, var(--mat-sys-primary) 55%, var(--mat-sys-tertiary)) 55%,
+    var(--mat-sys-tertiary) 100%
+  );
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-large);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--mat-sys-primary);
+}
+
+// Numbers (balances, account numbers) line up in tables and cards.
+.hb-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+// Shared page container for the authenticated area.
+.hb-page {
+  max-width: var(--hb-page-max-width);
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+
+  @media (max-width: 600px) {
+    padding: 20px 16px 32px;
+  }
+}
+
+.hb-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font: var(--mat-sys-headline-medium);
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-medium);
+  }
+}
+
+// Screen-reader-only text.
+.hb-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

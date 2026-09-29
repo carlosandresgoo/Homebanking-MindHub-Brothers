@@ -2,6 +2,8 @@
 
 Aplicación de homebanking: API REST Spring Boot (`/backend`) y SPA Angular 21 (`/frontend`), desplegadas por separado (nginx sirve el front y hace de proxy de `/api`).
 
+La interfaz usa **Angular Material 3** (tema azul/cian, tipografía Inter, modo oscuro automático según el sistema) y está en español con formato es-AR.
+
 ## Requisitos
 - JDK 21 (`JAVA_HOME` apuntando a él)
 - Node 24 LTS (Angular 21 soporta ^20.19, ^22.12 y ^24)
@@ -32,8 +34,8 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 |---|---|
 | `/` | pública |
 | `/login` | pública |
-| `/accounts` | usuario logueado (sus propias cuentas) |
-| `/manager` | ADMIN (listado y alta de clientes) |
+| `/accounts` | usuario logueado: "Mis cuentas" (saldo total y tarjetas por cuenta) |
+| `/manager` | ADMIN: "Clientes" (métricas, tabla con búsqueda/orden/paginación, alta en diálogo) |
 
 ## API
 | Método | Ruta | Acceso |
@@ -91,7 +93,9 @@ backend/
   Dockerfile, gradle.lockfile, dependency-check-suppressions.xml
 frontend/
   src/app/core/      models, api, auth (servicio + guards), interceptors, utils
-  src/app/features/  home, login, accounts, manager
+  src/app/features/  home, login, accounts, manager (+ new-client-dialog)
+  src/app/layout/    shell del área privada (toolbar + menú de usuario)
+  src/styles.scss    tema Material 3 y estilos globales
   Dockerfile, nginx.conf, security-headers.conf, proxy.conf.json
 gradle/libs.versions.toml   versiones centralizadas
 docker-compose.yml          db + backend + frontend

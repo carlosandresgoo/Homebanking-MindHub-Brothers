@@ -1,15 +1,31 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { Role } from '../../core/models/auth.model';
+import { Brand } from '../../shared/brand/brand';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    Brand,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './login.html',
+  styleUrl: './login.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Login {
@@ -21,6 +37,7 @@ export class Login {
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly showPassword = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: ['', [Validators.required, Validators.email]],
@@ -56,8 +73,8 @@ export class Login {
 
 function messageFor(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
-    if (err.status === 401) return 'Invalid email or password.';
-    if (err.status === 429) return 'Too many attempts. Please wait a minute and try again.';
+    if (err.status === 401) return 'El email o la contraseña no son correctos.';
+    if (err.status === 429) return 'Demasiados intentos. Esperá un minuto y volvé a probar.';
   }
-  return 'Could not sign in. Please try again later.';
+  return 'No pudimos iniciar sesión. Intentá de nuevo más tarde.';
 }

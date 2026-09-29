@@ -1,0 +1,54 @@
+<mat-toolbar class="toolbar">
+  <div class="toolbar-inner">
+    <app-brand />
+
+    <nav class="nav" aria-label="Principal">
+      @for (item of nav(); track item.path) {
+        <a
+          mat-button
+          class="nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <button
+      mat-button
+      class="user-button"
+      [matMenuTriggerFor]="userMenu"
+      aria-label="Menú de usuario"
+    >
+      <span class="avatar" aria-hidden="true">
+        @if (initials()) {
+          {{ initials() }}
+        } @else {
+          <mat-icon>person</mat-icon>
+        }
+      </span>
+      <span class="user-name">{{ user()?.name }}</span>
+      <mat-icon class="chevron">expand_more</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu" xPosition="before">
+      <div class="menu-header">
+        <strong>{{ user()?.name }} {{ user()?.lastName }}</strong>
+        <span>{{ user()?.email }}</span>
+        <span class="role">{{ roleLabel() }}</span>
+      </div>
+      <mat-divider />
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Cerrar sesión</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+
+<main class="content">
+  <router-outlet />
+</main>

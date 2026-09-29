@@ -1,9 +1,7 @@
 import { Observable, catchError, map, of, startWith } from 'rxjs';
 
 export type LoadState<T> =
-  | { status: 'loading' }
-  | { status: 'loaded'; data: T }
-  | { status: 'error' };
+  { status: 'loading' } | { status: 'loaded'; data: T } | { status: 'error' };
 
 /** Wraps a one-shot request so templates can branch on loading / loaded / error. */
 export function toLoadState<T>(source: Observable<T>): Observable<LoadState<T>> {

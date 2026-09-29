@@ -21,7 +21,14 @@ describe('ClientService', () => {
 
   it('getClients() requests GET /api/clients', () => {
     const clients: Client[] = [
-      { id: 1, name: 'Melba', lastName: 'Morel', email: 'melba@gmail.com', role: 'CLIENT', accounts: [] },
+      {
+        id: 1,
+        name: 'Melba',
+        lastName: 'Morel',
+        email: 'melba@gmail.com',
+        role: 'CLIENT',
+        accounts: [],
+      },
     ];
     let result: Client[] | undefined;
 

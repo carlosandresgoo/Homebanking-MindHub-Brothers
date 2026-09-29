@@ -1,8 +1,8 @@
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router } from '@angular/router';
 
+import { provideTestDefaults, typeInto } from '../../testing/providers';
 import { Login } from './login';
 
 describe('Login', () => {
@@ -12,7 +12,7 @@ describe('Login', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Login],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: provideTestDefaults(),
     }).compileComponents();
     httpTesting = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -25,70 +25,94 @@ describe('Login', () => {
     if (returnUrl) fixture.componentRef.setInput('returnUrl', returnUrl);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    const type = (selector: string, value: string) => {
-      const input = el.querySelector<HTMLInputElement>(selector)!;
-      input.value = value;
-      input.dispatchEvent(new Event('input'));
+    const fill = (email: string, password: string) => {
+      typeInto(el, '#email', email);
+      typeInto(el, '#password', password);
     };
     const submit = () => el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
-    return { fixture, el, type, submit };
+    return { fixture, el, fill, submit };
   }
 
-  const ok = (role: 'CLIENT' | 'ADMIN') => ({ accessToken: 'jwt', tokenType: 'Bearer', expiresIn: 900, role });
+  const ok = (role: 'CLIENT' | 'ADMIN') => ({
+    accessToken: 'jwt',
+    tokenType: 'Bearer',
+    expiresIn: 900,
+    role,
+  });
 
-  it('does not call the API when the form is invalid', async () => {
+  it('shows field errors and does not call the API when the form is invalid', async () => {
     const { fixture, el, submit } = render();
     submit();
     await fixture.whenStable();
-    expect(el.querySelector('#email')!.classList).toContain('is-invalid');
+
+    expect(el.textContent).toContain('Ingresá tu email.');
+    expect(el.textContent).toContain('Ingresá tu contraseña.');
     httpTesting.expectNone('/api/auth/login');
   });
 
+  it('toggles password visibility', async () => {
+    const { fixture, el } = render();
+    const input = el.querySelector<HTMLInputElement>('#password')!;
+    expect(input.type).toBe('password');
+
+    el.querySelector<HTMLButtonElement>('button[aria-label="Mostrar contraseña"]')!.click();
+    await fixture.whenStable();
+
+    expect(input.type).toBe('text');
+  });
+
   it('sends clients to /accounts and admins to /manager', () => {
-    const { type, submit } = render();
-    type('#email', 'melba@gmail.com');
-    type('#password', 'secret');
-    submit();
+    const client = render();
+    client.fill('melba@gmail.com', 'secret');
+    client.submit();
+    httpTesting.expectOne('/api/auth/login').flush(ok('CLIENT'));
+    expect(navigate).toHaveBeenLastCalledWith('/accounts');
+
+    const admin = render();
+    admin.fill('admin@mindhub.com', 'secret');
+    admin.submit();
     httpTesting.expectOne('/api/auth/login').flush(ok('ADMIN'));
-    expect(navigate).toHaveBeenCalledWith('/manager');
+    expect(navigate).toHaveBeenLastCalledWith('/manager');
   });
 
   it('honours an internal returnUrl but ignores external ones', () => {
     const internal = render('/accounts');
-    internal.type('#email', 'melba@gmail.com');
-    internal.type('#password', 'secret');
+    internal.fill('melba@gmail.com', 'secret');
     internal.submit();
-    httpTesting.expectOne('/api/auth/login').flush(ok('CLIENT'));
+    httpTesting.expectOne('/api/auth/login').flush(ok('ADMIN'));
     expect(navigate).toHaveBeenLastCalledWith('/accounts');
 
     const external = render('//evil.example/phish');
-    external.type('#email', 'melba@gmail.com');
-    external.type('#password', 'secret');
+    external.fill('melba@gmail.com', 'secret');
     external.submit();
     httpTesting.expectOne('/api/auth/login').flush(ok('ADMIN'));
     expect(navigate).toHaveBeenLastCalledWith('/manager');
   });
 
   it('shows a generic message and clears the password on 401', async () => {
-    const { fixture, el, type, submit } = render();
-    type('#email', 'melba@gmail.com');
-    type('#password', 'wrong');
+    const { fixture, el, fill, submit } = render();
+    fill('melba@gmail.com', 'wrong');
     submit();
-    httpTesting.expectOne('/api/auth/login').flush(null, { status: 401, statusText: 'Unauthorized' });
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
     await fixture.whenStable();
 
-    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Invalid email or password');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'El email o la contraseña no son correctos',
+    );
     expect(el.querySelector<HTMLInputElement>('#password')!.value).toBe('');
   });
 
   it('explains rate limiting on 429', async () => {
-    const { fixture, el, type, submit } = render();
-    type('#email', 'melba@gmail.com');
-    type('#password', 'wrong');
+    const { fixture, el, fill, submit } = render();
+    fill('melba@gmail.com', 'wrong');
     submit();
-    httpTesting.expectOne('/api/auth/login').flush(null, { status: 429, statusText: 'Too Many Requests' });
+    httpTesting
+      .expectOne('/api/auth/login')
+      .flush(null, { status: 429, statusText: 'Too Many Requests' });
     await fixture.whenStable();
 
-    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Too many attempts');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Demasiados intentos');
   });
 });
