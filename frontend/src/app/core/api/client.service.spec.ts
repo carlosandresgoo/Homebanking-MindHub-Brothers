@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { Client } from '../models/client.model';
+import { Client, CreateClientRequest } from '../models/client.model';
 import { ClientService } from './client.service';
 
 describe('ClientService', () => {
@@ -21,7 +21,7 @@ describe('ClientService', () => {
 
   it('getClients() requests GET /api/clients', () => {
     const clients: Client[] = [
-      { id: 1, name: 'Melba', lastName: 'Morel', email: 'melba@gmail.com', accounts: [] },
+      { id: 1, name: 'Melba', lastName: 'Morel', email: 'melba@gmail.com', role: 'CLIENT', accounts: [] },
     ];
     let result: Client[] | undefined;
 
@@ -35,9 +35,25 @@ describe('ClientService', () => {
 
   it('getClient(id) requests GET /api/clients/{id}', () => {
     service.getClient(7).subscribe();
+    expect(httpTesting.expectOne('/api/clients/7').request.method).toBe('GET');
+  });
 
-    const req = httpTesting.expectOne('/api/clients/7');
-    expect(req.request.method).toBe('GET');
-    req.flush({});
+  it('getCurrentClient() requests GET /api/clients/current', () => {
+    service.getCurrentClient().subscribe();
+    expect(httpTesting.expectOne('/api/clients/current').request.method).toBe('GET');
+  });
+
+  it('createClient() posts the request body to /api/clients', () => {
+    const body: CreateClientRequest = {
+      name: 'Chloe',
+      lastName: 'Obrian',
+      email: 'chloe@test.com',
+      password: 'a-long-enough-password',
+    };
+    service.createClient(body).subscribe();
+
+    const req = httpTesting.expectOne('/api/clients');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
   });
 });

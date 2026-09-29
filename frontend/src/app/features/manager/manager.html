@@ -1,5 +1,11 @@
 <header>
-  <a routerLink="/accounts">account</a>&ngsp;<a routerLink="/">home</a>
+  <a routerLink="/accounts">account</a>&ngsp;<a routerLink="/">home</a>&ngsp;<button
+    type="button"
+    class="btn btn-link p-0 align-baseline"
+    (click)="logout()"
+  >
+    logout
+  </button>
 </header>
 
 <main>
@@ -7,6 +13,11 @@
     <div id="form-1" class="d-flex justify-content-center">
       <form [formGroup]="form" (ngSubmit)="addClient()" novalidate>
         <h2 class="text-center">Client Manager</h2>
+        @if (feedback(); as f) {
+          <div class="alert" [class.alert-success]="f.kind === 'success'" [class.alert-danger]="f.kind === 'danger'" role="status">
+            {{ f.text }}
+          </div>
+        }
         <div class="mb-3">
           <div class="mb-3">
             <label for="name" class="form-label m-2">Name</label>
@@ -42,7 +53,19 @@
           <div class="invalid-feedback">Enter a valid email address.</div>
           <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
         </div>
-        <button type="submit" class="btn btn-success">Add Clients</button>
+        <div class="mb-3">
+          <label for="password" class="form-label">Initial password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            autocomplete="new-password"
+            formControlName="password"
+            [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid"
+          />
+          <div class="invalid-feedback">Between 12 and 72 characters.</div>
+        </div>
+        <button type="submit" class="btn btn-success" [disabled]="submitting()">Add Clients</button>
       </form>
     </div>
     <!-- Whitespace inside <pre> is significant: it reproduces the spacing of the original page. -->

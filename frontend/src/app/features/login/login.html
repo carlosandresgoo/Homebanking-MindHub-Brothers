@@ -1,0 +1,43 @@
+<header>
+  <a routerLink="/">home</a>
+</header>
+
+<main>
+  <div class="container d-flex justify-content-center p-5">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <h2 class="text-center">Sign on</h2>
+      @if (error(); as message) {
+        <div class="alert alert-danger" role="alert">{{ message }}</div>
+      }
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input
+          type="email"
+          class="form-control"
+          id="email"
+          autocomplete="username"
+          formControlName="email"
+          [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid"
+        />
+        <div class="invalid-feedback">Enter a valid email address.</div>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="password"
+          autocomplete="current-password"
+          formControlName="password"
+          [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid"
+        />
+        <div class="invalid-feedback">Enter your password.</div>
+      </div>
+      <button type="submit" class="btn btn-success" [disabled]="submitting()">
+        {{ submitting() ? 'Signing on…' : 'Sign on' }}
+      </button>
+    </form>
+  </div>
+</main>
+
+<footer></footer>
