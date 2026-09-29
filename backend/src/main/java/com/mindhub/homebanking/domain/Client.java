@@ -1,4 +1,4 @@
-package com.mindhub.homebanking.models;
+package com.mindhub.homebanking.domain;
 
 import org.hibernate.annotations.GenericGenerator;
 

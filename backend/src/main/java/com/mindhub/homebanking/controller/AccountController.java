@@ -1,7 +1,7 @@
-package com.mindhub.homebanking.Controllers;
+package com.mindhub.homebanking.controller;
 
-import com.mindhub.homebanking.models.Account;
-import com.mindhub.homebanking.repositories.AccountRepository;
+import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -1,7 +1,7 @@
 package com.mindhub.homebanking.dto;
 
-import com.mindhub.homebanking.models.Account;
-import com.mindhub.homebanking.models.Client;
+import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.domain.Client;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.GeneratedValue;
