@@ -8,6 +8,7 @@ import com.mindhub.homebanking.repository.AuditEventRepository;
 import com.mindhub.homebanking.repository.CardRepository;
 import com.mindhub.homebanking.repository.ClientLoanRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.repository.IdempotencyRecordRepository;
 import com.mindhub.homebanking.repository.PasswordResetTokenRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
@@ -38,14 +39,17 @@ public class TestData {
     private final RefreshTokenRepository refreshTokens;
     private final PasswordResetTokenRepository resetTokens;
     private final AuditEventRepository auditEvents;
+    private final IdempotencyRecordRepository idempotencyRecords;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter loginRateLimiter;
 
     public TestData(ClientRepository clients, AccountRepository accounts, TransactionRepository transactions,
                     CardRepository cards, ClientLoanRepository clientLoans, RefreshTokenRepository refreshTokens,
                     PasswordResetTokenRepository resetTokens, AuditEventRepository auditEvents,
-                    PasswordEncoder passwordEncoder, LoginRateLimiter loginRateLimiter) {
+                    IdempotencyRecordRepository idempotencyRecords, PasswordEncoder passwordEncoder,
+                    LoginRateLimiter loginRateLimiter) {
         this.auditEvents = auditEvents;
+        this.idempotencyRecords = idempotencyRecords;
         this.clientLoans = clientLoans;
         this.resetTokens = resetTokens;
         this.clients = clients;
@@ -63,6 +67,7 @@ public class TestData {
         refreshTokens.deleteAllInBatch();
         resetTokens.deleteAllInBatch();
         auditEvents.deleteAllInBatch();
+        idempotencyRecords.deleteAllInBatch();
         cards.deleteAllInBatch();
         clientLoans.deleteAllInBatch();
         transactions.deleteAllInBatch();

@@ -16,6 +16,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -38,6 +44,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         fieldError -> fieldError.getField(),
                         fieldError -> String.valueOf(fieldError.getDefaultMessage()),
                         (first, second) -> first));
+        problem.setProperty("errors", errors);
+        return ResponseEntity.badRequest().body(problem);
+    }
+
+    /**
+     * Raised instead of MethodArgumentNotValidException when a handler also validates other parameters
+     * (e.g. an {@code Idempotency-Key} header pattern). Same {@code errors} shape as body validation.
+     */
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            @NonNull HandlerMethodValidationException ex, @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        for (ParameterValidationResult result : ex.getParameterValidationResults()) {
+            if (result instanceof ParameterErrors parameterErrors) {
+                parameterErrors.getFieldErrors().forEach(fieldError ->
+                        errors.putIfAbsent(fieldError.getField(), String.valueOf(fieldError.getDefaultMessage())));
+            } else {
+                RequestHeader header = result.getMethodParameter().getParameterAnnotation(RequestHeader.class);
+                String name = header != null && !header.name().isBlank()
+                        ? header.name() : result.getMethodParameter().getParameterName();
+                result.getResolvableErrors().forEach(error ->
+                        errors.putIfAbsent(name, String.valueOf(error.getDefaultMessage())));
+            }
+        }
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
         problem.setProperty("errors", errors);
         return ResponseEntity.badRequest().body(problem);
     }

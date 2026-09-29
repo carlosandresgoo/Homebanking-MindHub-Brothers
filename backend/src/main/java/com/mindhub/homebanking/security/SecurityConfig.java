@@ -101,7 +101,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        config.setExposedHeaders(List.of("Idempotent-Replayed"));
         config.setAllowCredentials(true);
         config.setMaxAge(Duration.ofHours(1));
         source.registerCorsConfiguration("/api/**", config);

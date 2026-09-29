@@ -3,7 +3,11 @@ package com.mindhub.homebanking.controller;
 import com.mindhub.homebanking.dto.AccountDTO;
 import com.mindhub.homebanking.dto.AccountDetailDTO;
 import com.mindhub.homebanking.service.AccountService;
+import com.mindhub.homebanking.service.IdempotencyService;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,9 +24,11 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+    private final IdempotencyService idempotency;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, IdempotencyService idempotency) {
         this.accountService = accountService;
+        this.idempotency = idempotency;
     }
 
     @GetMapping("/api/clients/current/accounts")
@@ -33,11 +39,20 @@ public class AccountController {
 
     @PostMapping("/api/clients/current/accounts")
     @PreAuthorize("hasRole('CLIENT')")
-    public ResponseEntity<AccountDTO> openAccount(Authentication authentication) {
-        AccountDTO created = accountService.open(authentication.getName());
+    public ResponseEntity<AccountDTO> openAccount(
+            @RequestHeader(name = Idempotency.HEADER, required = false)
+            @Pattern(regexp = Idempotency.KEY_PATTERN) String idempotencyKey,
+            Authentication authentication) {
+        String email = authentication.getName();
+        IdempotencyService.Result<AccountDTO> result = idempotency.execute(email, idempotencyKey, "ACCOUNT_OPEN",
+                "", HttpStatus.CREATED.value(), AccountDTO.class, () -> accountService.open(email));
         URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/api/accounts/{id}").buildAndExpand(created.id()).toUri();
-        return ResponseEntity.created(location).body(created);
+                .path("/api/accounts/{id}").buildAndExpand(result.body().id()).toUri();
+        ResponseEntity.BodyBuilder response = ResponseEntity.created(location);
+        if (result.replayed()) {
+            response.header(Idempotency.REPLAYED_HEADER, "true");
+        }
+        return response.body(result.body());
     }
 
     /** Owner or ADMIN; anyone else gets 404. */
