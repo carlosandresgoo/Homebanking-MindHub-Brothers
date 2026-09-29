@@ -1,6 +1,7 @@
 package com.mindhub.homebanking.controller;
 
 import com.mindhub.homebanking.config.SecurityProperties;
+import com.mindhub.homebanking.dto.CreateClientRequest;
 import com.mindhub.homebanking.dto.LoginRequest;
 import com.mindhub.homebanking.dto.TokenResponse;
 import com.mindhub.homebanking.exception.InvalidRefreshTokenException;
@@ -9,6 +10,7 @@ import com.mindhub.homebanking.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -43,6 +45,19 @@ public class AuthController {
         loginRateLimiter.consume(http.getRemoteAddr());
         AuthService.Session session = authService.login(request.email(), request.password());
         return withRefreshCookie(session);
+    }
+
+    /** Public sign-up (CLIENT role only), rate-limited per IP; logs the new client in (201 + refresh cookie). */
+    @PostMapping("/register")
+    public ResponseEntity<TokenResponse> register(@Valid @RequestBody CreateClientRequest request,
+                                                  HttpServletRequest http) {
+        loginRateLimiter.consume("register:" + http.getRemoteAddr());
+        AuthService.Session session = authService.register(request);
+        ResponseCookie cookie = refreshCookie(session.refreshToken(), properties.refreshToken().ttl());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(session.token());
     }
 
     @PostMapping("/refresh")

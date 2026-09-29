@@ -5,6 +5,7 @@ import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * Sample data for local development only. Both users share one password taken from
@@ -35,13 +37,16 @@ class DevDataSeeder implements ApplicationRunner {
 
     private final ClientRepository clientRepository;
     private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
     private final PasswordEncoder passwordEncoder;
     private final String configuredPassword;
 
     DevDataSeeder(ClientRepository clientRepository, AccountRepository accountRepository,
-                  PasswordEncoder passwordEncoder, @Value("${DEV_SEED_PASSWORD:}") String configuredPassword) {
+                  TransactionRepository transactionRepository, PasswordEncoder passwordEncoder,
+                  @Value("${DEV_SEED_PASSWORD:}") String configuredPassword) {
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
         this.passwordEncoder = passwordEncoder;
         this.configuredPassword = configuredPassword;
     }
@@ -56,12 +61,22 @@ class DevDataSeeder implements ApplicationRunner {
         String hash = passwordEncoder.encode(password);
 
         Client melba = clientRepository.save(new Client("Melba", "Morel", CLIENT_EMAIL, hash, Role.CLIENT));
-        Account vin001 = new Account("vin001", LocalDateTime.now(), new BigDecimal("5000.00"));
-        Account vin002 = new Account("vin002", LocalDateTime.now().plusDays(1), new BigDecimal("7500.00"));
+        LocalDateTime now = LocalDateTime.now();
+        Account vin001 = new Account("VIN001", now.minusDays(30), BigDecimal.ZERO);
+        Account vin002 = new Account("VIN002", now.minusDays(29), BigDecimal.ZERO);
         melba.addAccount(vin001);
         melba.addAccount(vin002);
         accountRepository.save(vin001);
         accountRepository.save(vin002);
+
+        // Balances come from movements so the history adds up: VIN001 = 5000, VIN002 = 7500.
+        transactionRepository.saveAll(List.of(
+                vin001.credit(new BigDecimal("4000.00"), "Depósito inicial", now.minusDays(30)),
+                vin001.credit(new BigDecimal("2500.00"), "Sueldo septiembre", now.minusDays(10)),
+                vin001.debit(new BigDecimal("1200.00"), "Alquiler", now.minusDays(8)),
+                vin001.debit(new BigDecimal("300.00"), "Supermercado", now.minusDays(2)),
+                vin002.credit(new BigDecimal("7000.00"), "Depósito inicial", now.minusDays(29)),
+                vin002.credit(new BigDecimal("500.00"), "Intereses plazo fijo", now.minusDays(5))));
 
         clientRepository.save(new Client("Admin", "Mindhub", ADMIN_EMAIL, hash, Role.ADMIN));
 

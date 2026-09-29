@@ -1,6 +1,7 @@
 package com.mindhub.homebanking.service;
 
 import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.dto.CreateClientRequest;
 import com.mindhub.homebanking.dto.TokenResponse;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.security.AccessTokenService;
@@ -19,13 +20,16 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final ClientRepository clientRepository;
+    private final ClientService clientService;
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
 
     public AuthService(AuthenticationManager authenticationManager, ClientRepository clientRepository,
-                       AccessTokenService accessTokenService, RefreshTokenService refreshTokenService) {
+                       ClientService clientService, AccessTokenService accessTokenService,
+                       RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.clientRepository = clientRepository;
+        this.clientService = clientService;
         this.accessTokenService = accessTokenService;
         this.refreshTokenService = refreshTokenService;
     }
@@ -35,6 +39,12 @@ public class AuthService {
         authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, password));
         Client client = clientRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
+        return new Session(accessToken(client), refreshTokenService.issue(client));
+    }
+
+    /** Public sign-up: creates a CLIENT with an initial account and starts a session right away. */
+    public Session register(CreateClientRequest request) {
+        Client client = clientService.register(request);
         return new Session(accessToken(client), refreshTokenService.issue(client));
     }
 

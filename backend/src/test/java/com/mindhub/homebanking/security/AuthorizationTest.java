@@ -54,7 +54,7 @@ class AuthorizationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(TestData.CLIENT_EMAIL))
                 .andExpect(jsonPath("$.accounts", hasSize(1)))
-                .andExpect(jsonPath("$.accounts[0].number").value("vin001"))
+                .andExpect(jsonPath("$.accounts[0].number").value("VIN001"))
                 .andExpect(jsonPath("$.accounts[0].balance").value(5000.00))
                 .andExpect(jsonPath("$.password").doesNotExist());
     }

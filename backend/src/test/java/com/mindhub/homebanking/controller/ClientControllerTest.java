@@ -25,7 +25,7 @@ class ClientControllerTest extends IntegrationTest {
             "password", "a-long-enough-password");
 
     @Test
-    void adminCreatesClientWithClientRoleAndNoAccounts() throws Exception {
+    void adminCreatesClientWithClientRoleAndAnEmptyAccount() throws Exception {
         String admin = accessToken(TestData.ADMIN_EMAIL);
 
         mvc.perform(post("/api/clients").header(HttpHeaders.AUTHORIZATION, bearer(admin))
@@ -34,7 +34,9 @@ class ClientControllerTest extends IntegrationTest {
                 .andExpect(header().string(HttpHeaders.LOCATION, startsWith("http://localhost/api/clients/")))
                 .andExpect(jsonPath("$.email").value("chloe@test.com"))
                 .andExpect(jsonPath("$.role").value("CLIENT"))
-                .andExpect(jsonPath("$.accounts").isEmpty())
+                .andExpect(jsonPath("$.accounts.length()").value(1))
+                .andExpect(jsonPath("$.accounts[0].number").value(org.hamcrest.Matchers.matchesPattern("VIN-\\d{8}")))
+                .andExpect(jsonPath("$.accounts[0].balance").value(0))
                 .andExpect(jsonPath("$.password").doesNotExist());
 
         // The new client can log in with the password (stored hashed).
@@ -55,7 +57,10 @@ class ClientControllerTest extends IntegrationTest {
                 .andReturn();
 
         assertThat(body(result).get("role").asText()).isEqualTo("CLIENT");
-        assertThat(body(result).get("accounts")).isEmpty();
+        // Only the server-created empty account: the injected one (with a million) is ignored.
+        assertThat(body(result).get("accounts")).hasSize(1);
+        assertThat(body(result).get("accounts").get(0).get("number").asText()).isNotEqualTo("vin777");
+        assertThat(body(result).get("accounts").get(0).get("balance").decimalValue()).isZero();
         assertThat(body(result).get("id").asLong()).isNotEqualTo(1L);
     }
 
