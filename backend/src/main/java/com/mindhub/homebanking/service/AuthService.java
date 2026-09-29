@@ -1,6 +1,10 @@
 package com.mindhub.homebanking.service;
 
+import com.mindhub.homebanking.domain.AuditAction;
+import com.mindhub.homebanking.domain.AuditEvent;
 import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.exception.AccountLockedException;
+import org.springframework.security.core.AuthenticationException;
 import com.mindhub.homebanking.dto.CreateClientRequest;
 import com.mindhub.homebanking.dto.TokenResponse;
 import com.mindhub.homebanking.repository.ClientRepository;
@@ -24,11 +28,14 @@ public class AuthService {
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final LoginAttemptService loginAttempts;
+    private final AuditService audit;
 
     public AuthService(AuthenticationManager authenticationManager, ClientRepository clientRepository,
                        ClientService clientService, AccessTokenService accessTokenService,
-                       RefreshTokenService refreshTokenService, LoginAttemptService loginAttempts) {
+                       RefreshTokenService refreshTokenService, LoginAttemptService loginAttempts,
+                       AuditService audit) {
         this.loginAttempts = loginAttempts;
+        this.audit = audit;
         this.authenticationManager = authenticationManager;
         this.clientRepository = clientRepository;
         this.clientService = clientService;
@@ -41,22 +48,33 @@ public class AuthService {
      * @throws com.mindhub.homebanking.exception.AccountLockedException when blocked or temporarily locked
      */
     public Session login(String email, String password) {
-        loginAttempts.checkAllowed(email);
+        try {
+            loginAttempts.checkAllowed(email);
+        } catch (AccountLockedException e) {
+            audit.record(email, null, AuditAction.LOGIN_LOCKED, null, AuditEvent.Outcome.FAILURE, e.getReason().name());
+            throw e;
+        }
         try {
             authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, password));
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             loginAttempts.recordFailure(email);
+            audit.record(email, null, AuditAction.LOGIN, null, AuditEvent.Outcome.FAILURE, "bad credentials");
             throw e;
         }
         loginAttempts.recordSuccess(email);
         Client client = clientRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
+        audit.record(client.getEmail(), client.getRole().name(), AuditAction.LOGIN, null,
+                AuditEvent.Outcome.SUCCESS, null);
         return new Session(accessToken(client), refreshTokenService.issue(client));
     }
 
     /** Public sign-up: creates a CLIENT with an initial account and starts a session right away. */
     public Session register(CreateClientRequest request) {
-        return startSession(clientService.register(request));
+        Client client = clientService.register(request);
+        audit.record(client.getEmail(), client.getRole().name(), AuditAction.REGISTER, client.getEmail(),
+                AuditEvent.Outcome.SUCCESS, null);
+        return startSession(client);
     }
 
     /** New access + refresh tokens for an already authenticated client (e.g. after a password change). */
@@ -71,7 +89,8 @@ public class AuthService {
 
     public void logout(String rawRefreshToken) {
         if (rawRefreshToken != null && !rawRefreshToken.isBlank()) {
-            refreshTokenService.revoke(rawRefreshToken);
+            refreshTokenService.revoke(rawRefreshToken).ifPresent(client -> audit.record(client.getEmail(),
+                    client.getRole().name(), AuditAction.LOGOUT, null, AuditEvent.Outcome.SUCCESS, null));
         }
     }
 

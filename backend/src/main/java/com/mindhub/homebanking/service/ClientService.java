@@ -1,6 +1,7 @@
 package com.mindhub.homebanking.service;
 
 import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Role;
 import com.mindhub.homebanking.dto.ClientDTO;
@@ -32,13 +33,15 @@ public class ClientService {
     private final ClientMapper clientMapper;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AuditService audit;
     private final Clock clock;
 
     public ClientService(ClientRepository clientRepository, AccountRepository accountRepository,
                          AccountNumberGenerator accountNumbers, ClientMapper clientMapper,
                          PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository,
-                         Clock clock) {
+                         AuditService audit, Clock clock) {
         this.refreshTokenRepository = refreshTokenRepository;
+        this.audit = audit;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
         this.accountNumbers = accountNumbers;
@@ -81,13 +84,16 @@ public class ClientService {
             client.block();
             refreshTokenRepository.revokeAllByClient(client);
         }
+        audit.success(enabled ? AuditAction.CLIENT_UNBLOCKED : AuditAction.CLIENT_BLOCKED, client.getEmail(), null);
         return clientMapper.toDto(client);
     }
 
     /** Admin creation (POST /api/clients). */
     @Transactional
     public ClientDTO create(CreateClientRequest request) {
-        return clientMapper.toDto(register(request));
+        Client client = register(request);
+        audit.success(AuditAction.CLIENT_CREATED, client.getEmail(), null);
+        return clientMapper.toDto(client);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.mindhub.homebanking.service;
 
+import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Card;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.dto.CardDTO;
@@ -26,10 +27,12 @@ public class CardService {
     private final CardRepository cardRepository;
     private final ClientRepository clientRepository;
     private final CardNumberGenerator generator;
+    private final AuditService audit;
     private final Clock clock;
 
     public CardService(CardRepository cardRepository, ClientRepository clientRepository,
-                       CardNumberGenerator generator, Clock clock) {
+                       CardNumberGenerator generator, AuditService audit, Clock clock) {
+        this.audit = audit;
         this.cardRepository = cardRepository;
         this.clientRepository = clientRepository;
         this.generator = generator;
@@ -59,6 +62,7 @@ public class CardService {
         Card card = cardRepository.save(new Card(
                 client, request.type(), request.color(), number.substring(number.length() - 4),
                 CardNumberGenerator.hash(number), today, today.plusYears(VALIDITY_YEARS)));
+        audit.success(AuditAction.CARD_ISSUED, describe(card), null);
         return new IssuedCardDTO(toDto(card, today), number, generator.cvv());
     }
 
@@ -70,6 +74,12 @@ public class CardService {
                 .filter(c -> c.getClient().getEmail().equalsIgnoreCase(email))
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
         card.deactivate();
+        audit.success(AuditAction.CARD_DEACTIVATED, describe(card), null);
+    }
+
+    /** Masked description for the audit trail (never the full number). */
+    private static String describe(Card card) {
+        return card.getType() + " " + card.getColor() + " ****" + card.getLast4();
     }
 
     private static CardDTO toDto(Card card, LocalDate today) {

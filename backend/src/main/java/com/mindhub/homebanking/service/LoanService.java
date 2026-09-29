@@ -1,6 +1,7 @@
 package com.mindhub.homebanking.service;
 
 import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.ClientLoan;
 import com.mindhub.homebanking.domain.Loan;
@@ -37,11 +38,13 @@ public class LoanService {
     private final ClientRepository clientRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final AuditService audit;
     private final Clock clock;
 
     public LoanService(LoanRepository loanRepository, ClientLoanRepository clientLoanRepository,
                        ClientRepository clientRepository, AccountRepository accountRepository,
-                       TransactionRepository transactionRepository, Clock clock) {
+                       TransactionRepository transactionRepository, AuditService audit, Clock clock) {
+        this.audit = audit;
         this.loanRepository = loanRepository;
         this.clientLoanRepository = clientLoanRepository;
         this.clientRepository = clientRepository;
@@ -85,6 +88,8 @@ public class LoanService {
                 new ClientLoan(client, loan, request.amount(), request.payments(), now));
         transactionRepository.save(account.credit(request.amount(),
                 "Préstamo " + loan.getName() + " acreditado", now));
+        audit.success(AuditAction.LOAN_APPROVED, loan.getName() + " -> " + account.getNumber(),
+                "amount=" + request.amount().toPlainString() + " payments=" + request.payments());
         return toDto(clientLoan);
     }
 
@@ -108,6 +113,8 @@ public class LoanService {
         transactionRepository.save(account.debit(installment,
                 "Cuota " + number + "/" + clientLoan.getPayments() + " préstamo " + clientLoan.getLoan().getName(),
                 LocalDateTime.now(clock)));
+        audit.success(AuditAction.LOAN_INSTALLMENT_PAID, clientLoan.getLoan().getName() + " #" + clientLoan.getId(),
+                "installment=" + number + "/" + clientLoan.getPayments() + " amount=" + installment.toPlainString());
         return toDto(clientLoan);
     }
 

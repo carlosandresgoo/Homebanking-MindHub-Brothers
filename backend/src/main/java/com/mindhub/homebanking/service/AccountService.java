@@ -1,6 +1,7 @@
 package com.mindhub.homebanking.service;
 
 import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.dto.AccountDTO;
 import com.mindhub.homebanking.dto.AccountDetailDTO;
@@ -31,10 +32,13 @@ public class AccountService {
     private final ClientRepository clientRepository;
     private final AccountNumberGenerator accountNumbers;
     private final ClientMapper mapper;
+    private final AuditService audit;
     private final Clock clock;
 
     public AccountService(AccountRepository accountRepository, ClientRepository clientRepository,
-                          AccountNumberGenerator accountNumbers, ClientMapper mapper, Clock clock) {
+                          AccountNumberGenerator accountNumbers, ClientMapper mapper, AuditService audit,
+                          Clock clock) {
+        this.audit = audit;
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
         this.accountNumbers = accountNumbers;
@@ -65,7 +69,9 @@ public class AccountService {
         }
         Account account = new Account(accountNumbers.next(), LocalDateTime.now(clock), BigDecimal.ZERO);
         client.addAccount(account);
-        return mapper.toDto(accountRepository.save(account));
+        Account saved = accountRepository.save(account);
+        audit.success(AuditAction.ACCOUNT_OPENED, saved.getNumber(), null);
+        return mapper.toDto(saved);
     }
 
     /** Soft close: only the owner, and only with a zero balance (money is never lost). */
@@ -79,6 +85,7 @@ public class AccountService {
             throw new ConflictException("The account must have a zero balance to be closed");
         }
         account.close();
+        audit.success(AuditAction.ACCOUNT_CLOSED, account.getNumber(), null);
     }
 
     private static boolean isOwner(Account account, String email) {

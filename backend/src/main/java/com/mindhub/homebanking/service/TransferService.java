@@ -1,6 +1,7 @@
 package com.mindhub.homebanking.service;
 
 import com.mindhub.homebanking.domain.Account;
+import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.Transaction;
 import com.mindhub.homebanking.dto.TransferReceiptDTO;
 import com.mindhub.homebanking.dto.TransferRequest;
@@ -25,10 +26,12 @@ public class TransferService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final AuditService audit;
     private final Clock clock;
 
     public TransferService(AccountRepository accountRepository, TransactionRepository transactionRepository,
-                           Clock clock) {
+                           AuditService audit, Clock clock) {
+        this.audit = audit;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.clock = clock;
@@ -68,6 +71,8 @@ public class TransferService {
         Transaction credit = target.credit(request.amount(), "Transferencia de " + source.getNumber() + note, now);
         transactionRepository.save(debit);
         transactionRepository.save(credit);
+        audit.success(AuditAction.TRANSFER, source.getNumber() + " -> " + target.getNumber(),
+                "amount=" + request.amount().toPlainString());
 
         return new TransferReceiptDTO(debit.getId(), source.getId(), source.getNumber(), target.getNumber(),
                 request.amount(), debit.getDescription(), now, source.getBalance());

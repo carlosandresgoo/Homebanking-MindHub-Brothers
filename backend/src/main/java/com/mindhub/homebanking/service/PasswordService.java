@@ -1,5 +1,7 @@
 package com.mindhub.homebanking.service;
 
+import com.mindhub.homebanking.domain.AuditAction;
+import com.mindhub.homebanking.domain.AuditEvent;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.PasswordResetToken;
 import com.mindhub.homebanking.exception.BusinessRuleException;
@@ -38,13 +40,16 @@ public class PasswordService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final Mailer mailer;
+    private final AuditService audit;
     private final Clock clock;
     private final String frontendUrl;
     private final SecureRandom random = new SecureRandom();
 
     public PasswordService(ClientRepository clientRepository, PasswordResetTokenRepository resetTokenRepository,
                            RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder,
-                           Mailer mailer, Clock clock, @Value("${app.frontend-url}") String frontendUrl) {
+                           Mailer mailer, AuditService audit, Clock clock,
+                           @Value("${app.frontend-url}") String frontendUrl) {
+        this.audit = audit;
         this.clientRepository = clientRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -67,6 +72,7 @@ public class PasswordService {
         }
         client.changePassword(passwordEncoder.encode(newPassword));
         refreshTokenRepository.revokeAllByClient(client);
+        audit.success(AuditAction.PASSWORD_CHANGED, client.getEmail(), null);
         return client;
     }
 
@@ -76,6 +82,7 @@ public class PasswordService {
      */
     @Transactional
     public void requestReset(String email) {
+        audit.record(email, null, AuditAction.PASSWORD_RESET_REQUESTED, email, AuditEvent.Outcome.SUCCESS, null);
         clientRepository.findByEmailIgnoreCase(email).ifPresent(client -> {
             Instant now = clock.instant();
             resetTokenRepository.invalidateAll(client, now);
@@ -105,6 +112,8 @@ public class PasswordService {
         client.changePassword(passwordEncoder.encode(newPassword));
         resetToken.markUsed(now);
         refreshTokenRepository.revokeAllByClient(client);
+        audit.record(client.getEmail(), client.getRole().name(), AuditAction.PASSWORD_RESET, client.getEmail(),
+                AuditEvent.Outcome.SUCCESS, null);
     }
 
     static String hash(String token) {

@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Optional;
 
 /**
  * Opaque, rotating refresh tokens. Each use revokes the presented token and issues a new one;
@@ -77,9 +78,13 @@ public class RefreshTokenService {
         return new Rotation(client, issue(client));
     }
 
+    /** @return the owner of the revoked token, if the token was known */
     @Transactional
-    public void revoke(String raw) {
-        repository.findByTokenHash(hash(raw)).ifPresent(RefreshToken::revoke);
+    public Optional<Client> revoke(String raw) {
+        return repository.findByTokenHash(hash(raw)).map(token -> {
+            token.revoke();
+            return token.getClient();
+        });
     }
 
     @Transactional
