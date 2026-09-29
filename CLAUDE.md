@@ -5,7 +5,7 @@ Estado actual: migración en curso (Vue → Angular 21, Spring Boot 2.7 → 3.5,
 
 ## Comandos
 
-En Windows usar `.\gradlew.bat`. Requiere JDK 17 mientras el wrapper sea Gradle 7.6.1 (no corre sobre Java 20+).
+En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Java\jdk-21.0.12` en esta máquina).
 
 ### Backend
 - Compilar y testear: `./gradlew clean build`
@@ -31,7 +31,7 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 17 mientras el wrapper sea Gradle 
 - `docs/` -> documentación adicional
 
 ## Stack
-- Java 11 (compilado con JDK 17), Spring Boot 2.7.10, Gradle 7.6.1 (wrapper)
+- Java 21 (toolchain), Spring Boot 3.5.16 (Jakarta EE, Hibernate 6), Gradle 8.14.5 (wrapper)
 - Spring Web, Spring Data JPA, Spring Data REST, H2 (en memoria, se pierde al reiniciar)
 - Front: Vue 3 (Options API, `createApp`) y Axios cargados desde CDN
 

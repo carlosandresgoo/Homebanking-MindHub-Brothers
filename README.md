@@ -4,7 +4,8 @@ Aplicación de homebanking: API Spring Boot (`/backend`) y frontend web.
 Migración en curso a Angular 21 + Spring Boot 3.5 — ver [MIGRATION_PLAN.md](MIGRATION_PLAN.md).
 
 ## Requisitos
-- JDK 17 (mientras el wrapper sea Gradle 7.6.1)
+- JDK 21 (`JAVA_HOME` apuntando a él)
+- Stack: Spring Boot 3.5.16, Gradle 8.14.5 (wrapper)
 
 ## Ejecución
 ```powershell
