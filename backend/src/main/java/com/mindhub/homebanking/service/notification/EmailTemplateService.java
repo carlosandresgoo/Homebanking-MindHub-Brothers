@@ -1,6 +1,6 @@
 package com.mindhub.homebanking.service.notification;
 
-import com.mindhub.homebanking.config.SecurityProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -24,9 +24,9 @@ public class EmailTemplateService {
 	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy", ES_AR);
 	private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", ES_AR);
 
-	public EmailTemplateService(TemplateEngine templateEngine, SecurityProperties properties) {
+	public EmailTemplateService(TemplateEngine templateEngine, @Value("${app.frontend-url}") String frontendUrl) {
 		this.templateEngine = templateEngine;
-		this.frontendUrl = properties.frontendUrl();
+		this.frontendUrl = frontendUrl;
 	}
 
 	/** Recuperación de contraseña: link con token válido 24 horas. */
