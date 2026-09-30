@@ -49,6 +49,7 @@ Decisiones:
 - 2FA: TOTP en authenticator app, secreto cifrado con AES, required para transferencias > `second-factor-threshold`.
 - Plazo fijo: payout a las 00:05 banco timezone, con reinversión automática si está habilitada, dentro de la misma `TransactionTemplate` para evitar doble pago.
 - Idempotencia: `Idempotency-Key` opcional en transferencias, cuentas, plazos fijos y préstamos, para no repetir la operación si se reintenta la solicitud.
+- Alertas: los débitos se detectan con un evento de dominio (`MovementRecorded`) que Spring Data publica al guardar cada `Transaction`, dentro de la misma transacción: cubre todo origen de débito y un rollback no deja alertas.
 - CBU y alias: entidad ficticia `999` (no imita a un banco real); para transferir se envía el número de cuenta ya resuelto por la consulta, así un cambio de alias entre la consulta y la confirmación no desvía el dinero.
 - E-mails transaccionales: se arman dentro de la transacción y se entregan después del commit; un fallo del SMTP nunca revierte la operación.
 
@@ -67,6 +68,7 @@ Decisiones:
 - **OWASP dependency-check** configurado pero sin ejecutar: la NVD rechaza la descarga sin `NVD_API_KEY`. Para ejecutar: `$env:NVD_API_KEY='...'; .\gradlew.bat :backend:dependencyCheckAnalyze`.
 - **Docker** (`docker compose up --build`): no verificado en esta máquina (Docker no está instalado). Requiere `.env` con `DB_PASSWORD`, `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`.
 - **Transferencias a otros bancos:** se aceptan CBU de otras entidades como válidos pero se rechazan (`OTHER_BANK`): haría falta integrarse con una cámara compensadora. Tampoco hay CVU: lo emiten las billeteras virtuales, no los bancos.
+- **Notificaciones:** la campanita consulta el contador cada 60 s (sin push/WebSocket) y no hay limpieza de notificaciones viejas; convendría un job que borre las leídas de más de N meses.
 - **Rate limit en memoria:** con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
 - **Validación de nombres:** solo aceptan letras sin tildes (regla heredada). Con la UI en español se podría admitir `ñ`, tildes, espacios y guiones.
 - **Credencial filtrada:** las ramas `origin/task10` y `origin/task11` contienen `spring.datasource.password=homebankingapp`. Hay que rotar esa contraseña donde se use.

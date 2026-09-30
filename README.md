@@ -47,7 +47,8 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | `/cards` | CLIENT: tarjetas de crédito y débito (pedir, desactivar, tipos y colores) |
 | `/investments` | CLIENT: plazo fijo (catálogo de plazos, simular, crear, renovación automática) |
 | `/loans` | CLIENT: préstamos (catálogo, solicitar, pagar por cuotas) |
-| `/profile` | autenticado: datos personales, cambiar contraseña, 2FA (setup/enable/disable) |
+| `/profile` | autenticado: datos personales, cambiar contraseña, 2FA (setup/enable/disable) y, para clientes, alertas |
+| (barra superior) | autenticado: campanita con las notificaciones y el contador de no leídas |
 | `/audit` | ADMIN: registro de auditoría (filtros por actor, acción, fecha, paginación) |
 | `/manager` | ADMIN: gestión de clientes (métricas, tabla con búsqueda/orden/paginación, alta de clientes) |
 
@@ -137,6 +138,19 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | POST | `/api/clients/current/2fa/enable` | CLIENT | Step 2: verificar código de la app |
 | POST | `/api/clients/current/2fa/disable` | CLIENT | Requiere contraseña actual + código válido |
 | DELETE | `/api/clients/{id}/2fa` | ADMIN | Reset para un cliente (si perdió el teléfono) |
+
+### Notificaciones y alertas
+| Método | Ruta | Acceso | Notas |
+|---|---|---|---|
+| GET | `/api/clients/current/notifications` | autenticado | Bandeja (campanita), más nuevas primero; `page`, `size` ≤ 50 |
+| GET | `/api/clients/current/notifications/unread-count` | autenticado | `{ count }` |
+| POST | `/api/clients/current/notifications/{id}/read`, `/read-all` | dueño | 204; 404 si no es propia |
+| GET / PUT | `/api/clients/current/alerts` | CLIENT | Umbral de saldo bajo, umbral de débitos grandes (ARS, `null` = apagada), avisos de ingreso y copia por e-mail |
+
+Alertas: **saldo bajo** (una vez, cuando un débito deja la cuenta por debajo del umbral), **débitos grandes** (cualquier
+débito ≥ umbral: transferencias, plazos fijos, cuotas…) e **ingresos** (dispositivo e IP; activados por defecto). Van a la
+campanita y, con la copia por e-mail activada, también por mail. A la campanita llegan además las transferencias recibidas,
+los plazos fijos acreditados y los cambios de seguridad; estos últimos se envían por e-mail siempre.
 
 ### Auditoría
 | Método | Ruta | Acceso | Notas |

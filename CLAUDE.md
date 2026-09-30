@@ -59,7 +59,7 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - Dinero siempre `BigDecimal` (2 decimales); los saldos solo cambian con `Account.credit/debit` (generan el movimiento)
 - Operaciones que mueven dinero: `@Transactional` + `findByIdForUpdate` (bloqueo de filas en orden ascendente de id)
 - Nunca guardar ni loguear PAN completo ni CVV (solo `last4` + hash)
-- E-mails solo vía `NotificationService` (plantillas en `templates/mail/`, voseo, formato es-AR); se entregan tras el commit y nunca deben romper la operación
+- Avisos al cliente solo vía `NotificationService` (campanita + e-mail; plantillas en `templates/mail/`, voseo, formato es-AR); los e-mails se entregan tras el commit y nunca deben romper la operación. Alertas de movimientos: `MovementAlerts` (escucha `MovementRecorded`), no llamarlas desde cada servicio
 - Cambios de esquema solo con una nueva migración Flyway `V{n}__*.sql` (`ddl-auto=validate`); datos de referencia también por Flyway
 - Tests de seguridad con MockMvc extendiendo `IntegrationTest` (401/403/400 para cada endpoint nuevo)
 - Versiones en `gradle/libs.versions.toml`, nunca en `build.gradle`; regenerar `gradle.lockfile`
