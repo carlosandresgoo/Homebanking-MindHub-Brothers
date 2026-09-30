@@ -30,11 +30,13 @@ import {
   passwordsMatch,
 } from '../../core/validation/password';
 import { initials } from '../../shared/initials';
+import { AlertsCard } from './alerts-card/alerts-card';
 import { TwoFactorCard } from './two-factor-card/two-factor-card';
 
 @Component({
   selector: 'app-profile',
   imports: [
+    AlertsCard,
     TwoFactorCard,
     MatButtonModule,
     MatFormFieldModule,

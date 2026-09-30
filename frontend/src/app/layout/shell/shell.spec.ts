@@ -35,6 +35,7 @@ describe('Shell', () => {
       role,
       accounts: [],
     });
+    httpTesting.expectOne('/api/clients/current/notifications/unread-count').flush({ count: 0 });
     await fixture.whenStable();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }

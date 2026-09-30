@@ -13,6 +13,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { Role } from '../../core/models/auth.model';
 import { Brand } from '../../shared/brand/brand';
 import { initials } from '../../shared/initials';
+import { NotificationBell } from './notification-bell/notification-bell';
 
 interface NavItem {
   path: string;
@@ -41,6 +42,7 @@ const NAV: readonly NavItem[] = [
     MatIconModule,
     MatMenuModule,
     MatToolbarModule,
+    NotificationBell,
     RouterLink,
     RouterLinkActive,
     RouterOutlet,

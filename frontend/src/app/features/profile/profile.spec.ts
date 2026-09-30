@@ -31,6 +31,15 @@ describe('Profile', () => {
     fixture.detectChanges();
     httpTesting.expectOne('/api/clients/current').flush(client);
     await fixture.whenStable();
+    if ((client as { role?: string }).role === 'CLIENT') {
+      httpTesting.expectOne('/api/clients/current/alerts').flush({
+        lowBalanceThreshold: null,
+        largeMovementThreshold: null,
+        loginAlerts: true,
+        emailAlerts: true,
+      });
+      await fixture.whenStable();
+    }
     const el = fixture.nativeElement as HTMLElement;
     const fill = (current: string, next: string, confirm: string) => {
       typeInto(el, '#currentPassword', current);

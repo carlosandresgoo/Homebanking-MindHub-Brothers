@@ -101,4 +101,8 @@
       </div>
     </form>
   </section>
+
+  @if (s.status === 'loaded' && s.data.role === 'CLIENT') {
+    <app-alerts-card />
+  }
 </div>

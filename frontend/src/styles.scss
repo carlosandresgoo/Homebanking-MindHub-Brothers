@@ -136,3 +136,10 @@ a {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+// Notifications menu (layout/shell/notification-bell): wider than the default 280px menu.
+.hb-notifications-panel.mat-mdc-menu-panel {
+  width: min(380px, 92vw);
+  max-width: min(380px, 92vw);
+  max-height: min(520px, 80vh);
+}
