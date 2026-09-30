@@ -28,7 +28,7 @@ cd frontend; npm start
 ```
 
 Usuarios de prueba (solo `dev`):
-- `melba@gmail.com` (CLIENT): cuentas VIN001 y VIN002 con movimientos, tarjetas Gold débito y Titanium crédito, y un préstamo Personal con 2 cuotas pagas.
+- `melba@gmail.com` (CLIENT): cuentas VIN001 (alias `melba.ahorros`) y VIN002 (`melba.gastos`) con movimientos, tarjetas Gold débito y Titanium crédito, y un préstamo Personal con 2 cuotas pagas.
 - `admin@mindhub.com` (ADMIN).
 
 Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log al arrancar. También podés crear tu propio usuario en `/register`.
@@ -40,9 +40,9 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | `/register` | pública: alta de clientes (crea CLIENT con cuenta inicial) |
 | `/forgot-password`, `/reset-password` | pública: recuperar contraseña |
 | `/accounts` | autenticado: "Mis cuentas" (saldo total, abrir y cerrar cuentas, gráficos) |
-| `/accounts/:id` | dueño o ADMIN: movimientos (filtros, paginación, CSV, comprobante) |
+| `/accounts/:id` | dueño o ADMIN: datos para recibir dinero (CBU, alias, compartir; el dueño cambia el alias) y movimientos (filtros, paginación, CSV, comprobante) |
 | `/movements/:id` | autenticado: comprobante imprimible de un movimiento |
-| `/transfers` | CLIENT: transferencias (propias, a terceros, con límites diarios y 2FA) |
+| `/transfers` | CLIENT: transferencias a cuentas propias o de terceros por número, CBU o alias (muestra el titular antes de confirmar), con límites diarios y 2FA |
 | `/contacts` | CLIENT: destinatarios guardados (crear, renombrar, eliminar) |
 | `/cards` | CLIENT: tarjetas de crédito y débito (pedir, desactivar, tipos y colores) |
 | `/investments` | CLIENT: plazo fijo (catálogo de plazos, simular, crear, renovación automática) |
@@ -76,7 +76,9 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | Método | Ruta | Acceso |
 |---|---|---|
 | GET / POST | `/api/clients/current/accounts` | autenticado / CLIENT (máx. 3 activas) |
-| GET | `/api/accounts/{id}` | dueño o ADMIN |
+| GET | `/api/accounts/{id}` | dueño o ADMIN (incluye `cbu` y `alias`) |
+| GET | `/api/accounts/lookup?key=` | CLIENT (máx. 5/min): titular enmascarado de un número, CBU o alias; 404 si no existe, 422 `INVALID_CBU` / `OTHER_BANK` |
+| PATCH | `/api/accounts/{id}/alias` | dueño; 6–20 letras sin tildes, números, `.` o `-`; 409 si está tomado, 422 `ALIAS_RESERVED` si parece un número de cuenta |
 | DELETE | `/api/accounts/{id}` | dueño (solo con saldo 0) |
 
 ### Movimientos y comprobantes
@@ -90,13 +92,13 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | Método | Ruta | Acceso | Notas |
 |---|---|---|---|
 | GET | `/api/transfers/limits` | CLIENT | Límite diario, usado hoy, disponible, 2FA requerido, umbrales |
-| POST | `/api/transfers` | CLIENT | Origen propio; atómica con bloqueo de filas; límite diario + 2FA; admite `Idempotency-Key` |
+| POST | `/api/transfers` | CLIENT | Origen: número de cuenta propio. Destino: número, CBU (con o sin espacios) o alias. Atómica con bloqueo de filas; límite diario + 2FA; admite `Idempotency-Key`. Solo cuentas de este banco (`OTHER_BANK` para otros) |
 
 ### Contactos (destinatarios)
 | Método | Ruta | Acceso | Notas |
 |---|---|---|---|
 | GET | `/api/clients/current/contacts` | CLIENT | Agenda de receptores |
-| POST | `/api/clients/current/contacts` | CLIENT | 201; 404 si no existe; 409 duplicado; max. 50 contactos |
+| POST | `/api/clients/current/contacts` | CLIENT | 201; la cuenta se indica por número, CBU o alias (se guarda el número); 404 si no existe; 409 duplicado; máx. 50 contactos |
 | PATCH | `/api/clients/current/contacts/{id}` | CLIENT | Renombrar alias |
 | DELETE | `/api/clients/current/contacts/{id}` | CLIENT | 204 |
 
@@ -146,6 +148,8 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 |---|---|---|
 | GET | `/actuator/health` | pública; nunca muestra detalles |
 | GET | `/actuator/info` | ADMIN |
+
+**CBU y alias:** cada cuenta tiene un CBU de 22 dígitos con los dígitos verificadores estándar (entidad `999`, ficticia, y sucursal `0001`) y un alias en minúsculas (al abrirla, tres palabras al azar como `sol.rio.mate`). Las cuentas que existían antes de V12 recibieron un CBU derivado de su id y el alias `cuenta.<id>`, que el dueño puede cambiar.
 
 ---
 
