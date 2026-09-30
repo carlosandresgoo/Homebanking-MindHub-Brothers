@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #f0f0f0; padding: 20px; text-align: center; border-bottom: 3px solid #28a745; }
+        .amount { font-size: 32px; color: #28a745; font-weight: bold; margin: 20px 0; }
+        .details { background: #f9f9f9; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .footer { text-align: center; color: #999; font-size: 12px; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📥 Transferencia recibida</h2>
+        </div>
+        <div style="padding: 20px;">
+            <p>Hola <strong th:text="${clientName}">Cliente</strong>,</p>
+
+            <p>Recibiste una transferencia.</p>
+
+            <div class="amount" th:text="${amount}">+$1.234,56</div>
+
+            <div class="details">
+                <p><strong>Origen:</strong> Cuenta <span th:text="${sourceAccount}">VIN...01</span></p>
+                <p th:if="${description}" style="margin-top: 10px;"><strong>Concepto:</strong> <span th:text="${description}">Descripción</span></p>
+                <p style="margin-top: 10px; margin-bottom: 0;"><strong>Hora:</strong> <span th:text="${timestamp}">Fecha y hora</span></p>
+            </div>
+
+            <p style="margin-top: 20px;">El monto fue acreditado a tu cuenta.</p>
+
+            <p style="text-align: center;">
+                <a th:href="${accountsUrl}" style="display: inline-block; background: #28a745; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px;">
+                    Ver cuenta
+                </a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>MindHub Brothers | Banca Digital Argentina</p>
+        </div>
+    </div>
+</body>
+</html>

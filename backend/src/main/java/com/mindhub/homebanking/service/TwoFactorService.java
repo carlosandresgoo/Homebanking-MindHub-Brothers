@@ -14,6 +14,8 @@ import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.security.LoginRateLimiter;
 import com.mindhub.homebanking.security.SecretCipher;
 import com.mindhub.homebanking.security.Totp;
+import com.mindhub.homebanking.service.notification.EmailTemplateService;
+import com.mindhub.homebanking.service.notification.Mailer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,18 +36,23 @@ public class TwoFactorService {
     private final SecretCipher cipher;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter rateLimiter;
+    private final EmailTemplateService emailTemplate;
+    private final Mailer mailer;
     private final AuditService audit;
     private final Clock clock;
     private final String issuer;
 
     public TwoFactorService(ClientRepository clientRepository, ClientMapper mapper, SecretCipher cipher,
-                            PasswordEncoder passwordEncoder, LoginRateLimiter rateLimiter, AuditService audit,
+                            PasswordEncoder passwordEncoder, LoginRateLimiter rateLimiter,
+                            EmailTemplateService emailTemplate, Mailer mailer, AuditService audit,
                             Clock clock, SecurityProperties properties) {
         this.clientRepository = clientRepository;
         this.mapper = mapper;
         this.cipher = cipher;
         this.passwordEncoder = passwordEncoder;
         this.rateLimiter = rateLimiter;
+        this.emailTemplate = emailTemplate;
+        this.mailer = mailer;
         this.audit = audit;
         this.clock = clock;
         this.issuer = properties.twoFactor().issuer();
@@ -75,6 +82,11 @@ public class TwoFactorService {
         }
         client.enableTwoFactor(check(client, code));
         audit.success(AuditAction.TWO_FACTOR_ENABLED, client.getEmail(), null);
+
+        // Notificar por email
+        String body = emailTemplate.twoFactorEnabled(client.getName());
+        mailer.send(client.getEmail(), "Autenticación de 2 factores habilitada", body);
+
         return mapper.toDto(client);
     }
 
@@ -92,6 +104,11 @@ public class TwoFactorService {
         check(client, code);
         client.disableTwoFactor();
         audit.success(AuditAction.TWO_FACTOR_DISABLED, client.getEmail(), null);
+
+        // Notificar por email
+        String body = emailTemplate.twoFactorDisabled(client.getName());
+        mailer.send(client.getEmail(), "Autenticación de 2 factores deshabilitada", body);
+
         return mapper.toDto(client);
     }
 

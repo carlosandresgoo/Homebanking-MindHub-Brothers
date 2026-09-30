@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #ff9800; color: white; padding: 20px; text-align: center; }
+        .alert { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0; }
+        .footer { text-align: center; color: #999; font-size: 12px; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Autenticación de 2 factores deshabilitada</h2>
+        </div>
+        <div style="padding: 20px;">
+            <p>Hola <strong th:text="${clientName}">Cliente</strong>,</p>
+
+            <div class="alert">
+                <strong>Tu 2FA fue desactivada.</strong><br>
+                <small th:text="${timestamp}">Fecha y hora</small>
+            </div>
+
+            <p><strong>¿Vos realizaste esta acción?</strong></p>
+            <p>Si sí, podés ignorar este email. Si no fuiste vos, es posible que tu cuenta haya sido comprometida.</p>
+
+            <p><strong>Acciones recomendadas:</strong></p>
+            <ul>
+                <li>Si no sabés por qué se deshabilitó, cambià tu contraseña inmediatamente</li>
+                <li>Revisá la actividad reciente de tu cuenta</li>
+                <li>Considera habilitar nuevamente 2FA para mayor seguridad</li>
+                <li>Contactá al soporte si sospechás actividad sospechosa</li>
+            </ul>
+
+            <p style="text-align: center;">
+                <a th:href="${securityUrl}" style="display: inline-block; background: #ff9800; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px;">
+                    Ir a seguridad
+                </a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>MindHub Brothers | Banca Digital Argentina</p>
+        </div>
+    </div>
+</body>
+</html>

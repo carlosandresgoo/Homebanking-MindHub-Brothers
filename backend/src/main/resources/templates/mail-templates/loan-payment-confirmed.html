@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #28a745; color: white; padding: 20px; text-align: center; }
+        .box { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .footer { text-align: center; color: #999; font-size: 12px; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>✓ Cuota de préstamo pagada</h2>
+        </div>
+        <div style="padding: 20px;">
+            <p>Hola <strong th:text="${clientName}">Cliente</strong>,</p>
+
+            <p>Tu cuota de préstamo fue pagada correctamente.</p>
+
+            <div class="box">
+                <p><strong>Préstamo:</strong> <span th:text="${loanType}">Personal</span></p>
+                <p><strong>Monto pagado:</strong> <span th:text="${amount}">$1.000,00</span></p>
+                <p><strong>Cuotas restantes:</strong> <span th:text="${remainingInstallments}">12</span></p>
+                <p style="margin-bottom: 0;"><strong>Hora:</strong> <span th:text="${timestamp}">Fecha y hora</span></p>
+            </div>
+
+            <p>Seguís al día con tus pagos. Próxima cuota el mes que viene.</p>
+
+            <p style="text-align: center;">
+                <a th:href="${loansUrl}" style="display: inline-block; background: #28a745; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px;">
+                    Ver préstamos
+                </a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>MindHub Brothers | Banca Digital Argentina</p>
+        </div>
+    </div>
+</body>
+</html>
