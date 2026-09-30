@@ -6,6 +6,8 @@ import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.AuditEvent;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Transaction;
+import com.mindhub.homebanking.service.notification.EmailTemplateService;
+import com.mindhub.homebanking.service.notification.Mailer;
 import com.mindhub.homebanking.domain.TransactionCategory;
 import com.mindhub.homebanking.dto.TransferLimitsDTO;
 import com.mindhub.homebanking.dto.TransferReceiptDTO;
@@ -39,17 +41,22 @@ public class TransferService {
     private final ClientRepository clientRepository;
     private final TransactionRepository transactionRepository;
     private final TwoFactorService twoFactor;
+    private final EmailTemplateService emailTemplate;
+    private final Mailer mailer;
     private final AuditService audit;
     private final BankingProperties.Transfers limits;
     private final Clock clock;
 
     public TransferService(AccountRepository accountRepository, ClientRepository clientRepository,
                            TransactionRepository transactionRepository, TwoFactorService twoFactor,
+                           EmailTemplateService emailTemplate, Mailer mailer,
                            AuditService audit, BankingProperties properties, Clock clock) {
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
         this.transactionRepository = transactionRepository;
         this.twoFactor = twoFactor;
+        this.emailTemplate = emailTemplate;
+        this.mailer = mailer;
         this.audit = audit;
         this.limits = properties.transfers();
         this.clock = clock;
@@ -98,6 +105,9 @@ public class TransferService {
         audit.success(AuditAction.TRANSFER, source.getNumber() + " -> " + target.getNumber(),
                 "amount=" + request.amount().toPlainString());
 
+        // Notificar por email
+        sendTransferNotifications(client, source, target, request.amount(), request.description());
+
         return new TransferReceiptDTO(debit.getId(), source.getId(), source.getNumber(), target.getNumber(),
                 request.amount(), debit.getDescription(), now, source.getBalance());
     }
@@ -142,6 +152,16 @@ public class TransferService {
 
     private Account lock(Long id) {
         return accountRepository.findByIdForUpdate(id).orElseThrow(TransferService::sourceNotFound);
+    }
+
+    private void sendTransferNotifications(Client sender, Account source, Account target, BigDecimal amount, String description) {
+        // Email al que envía
+        String bodySent = emailTemplate.transferSent(sender.getName(), target.getNumber(), amount, description);
+        mailer.send(sender.getEmail(), "Transferencia enviada", bodySent);
+
+        // Email al que recibe
+        String bodyReceived = emailTemplate.transferReceived(target.getClient().getName(), source.getNumber(), amount, description);
+        mailer.send(target.getClient().getEmail(), "Transferencia recibida", bodyReceived);
     }
 
     private static String normalize(String accountNumber) {
