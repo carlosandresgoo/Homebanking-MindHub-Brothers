@@ -40,10 +40,11 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | `/register` | pública: alta de clientes (crea CLIENT con cuenta inicial) |
 | `/forgot-password`, `/reset-password` | pública: recuperar contraseña |
 | `/accounts` | autenticado: "Mis cuentas" (saldo total, abrir y cerrar cuentas, gráficos) |
-| `/accounts/:id` | dueño o ADMIN: datos para recibir dinero (CBU, alias, compartir; el dueño cambia el alias) y movimientos (filtros, paginación, CSV, comprobante) |
+| `/accounts/:id` | dueño o ADMIN: datos para recibir dinero (CBU, alias, compartir; el dueño cambia el alias), movimientos (filtros, paginación, comprobante) y descargas: resumen en PDF, Excel y CSV |
 | `/movements/:id` | autenticado: comprobante imprimible de un movimiento |
 | `/transfers` | CLIENT: transferencias a cuentas propias o de terceros por número, CBU o alias (muestra el titular antes de confirmar), con límites diarios y 2FA |
-| `/contacts` | CLIENT: destinatarios guardados (crear, renombrar, eliminar) |
+| `/transfers/scheduled` | CLIENT: transferencias programadas (una vez, semanal o mensual; pausar, reanudar, cancelar) |
+| `/contacts` | CLIENT: destinatarios guardados (crear por número, CBU o alias; renombrar; eliminar; marcar de confianza con código 2FA) |
 | `/cards` | CLIENT: tarjetas de crédito y débito (pedir, desactivar, tipos y colores) |
 | `/investments` | CLIENT: plazo fijo (catálogo de plazos, simular, crear, renovación automática) |
 | `/loans` | CLIENT: préstamos (catálogo, solicitar, pagar por cuotas) |
@@ -86,7 +87,8 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | Método | Ruta | Acceso | Notas |
 |---|---|---|---|
 | GET | `/api/accounts/{id}/transactions` | dueño o ADMIN | Filtros: `from`/`to` (yyyy-MM-dd), `type`, `category`, `q` (descripción); paginación; newest first |
-| GET | `/api/accounts/{id}/transactions/export` | dueño o ADMIN | CSV UTF-8 con BOM; mismo filtro que list |
+| GET | `/api/accounts/{id}/transactions/export` | dueño o ADMIN | Mismos filtros que el listado; `format=csv` (defecto, UTF-8 con BOM) o `format=xlsx` (Excel con fechas y números reales) |
+| GET | `/api/accounts/{id}/statement` | dueño o ADMIN | Resumen de cuenta en PDF de `from`..`to` (defecto: mes en curso; hasta 366 días): datos de la cuenta, saldo inicial, movimientos con saldo, totales y saldo final |
 | GET | `/api/transactions/{id}` | dueño o ADMIN | Comprobante de un movimiento (printable) |
 
 ### Transferencias
@@ -102,6 +104,18 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | POST | `/api/clients/current/contacts` | CLIENT | 201; la cuenta se indica por número, CBU o alias (se guarda el número); 404 si no existe; 409 duplicado; máx. 50 contactos |
 | PATCH | `/api/clients/current/contacts/{id}` | CLIENT | Renombrar alias |
 | DELETE | `/api/clients/current/contacts/{id}` | CLIENT | 204 |
+| POST / DELETE | `/api/clients/current/contacts/{id}/trust` | CLIENT | Marcar de confianza (requiere un código 2FA vigente; 422 `TWO_FACTOR_REQUIRED` sin 2FA) / quitar la confianza |
+
+Con 2FA activado, las transferencias desde el umbral a un destinatario **de confianza** no piden código (el límite diario sigue); desactivar el 2FA quita la confianza a todos.
+
+### Transferencias programadas
+| Método | Ruta | Acceso | Notas |
+|---|---|---|---|
+| GET / POST | `/api/clients/current/scheduled-transfers` | CLIENT | Listar / programar (`ONCE`, `WEEKLY`, `MONTHLY`; primera fecha desde mañana; `maxRuns` opcional; máx. 20 abiertas; admite `Idempotency-Key`) |
+| POST | `/api/clients/current/scheduled-transfers/{id}/pause`, `/resume` | dueño | Solo recurrentes; al reanudar se saltean las fechas que pasaron |
+| DELETE | `/api/clients/current/scheduled-transfers/{id}` | dueño | Cancela (queda en el historial) |
+
+Programar una transferencia a otro cliente pide, en ese momento, el código 2FA que necesitaría ese importe; cada ejecución revisa fondos, límite diario y cuentas. Corren a las 06:00 (hora del banco) y al arrancar; cada una en su transacción y con bloqueo de fila. Si una falla, se registra el motivo, se avisa (campanita y e-mail) y queda la próxima fecha.
 
 ### Tarjetas
 | Método | Ruta | Acceso | Notas |

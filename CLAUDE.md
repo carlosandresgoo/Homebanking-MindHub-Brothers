@@ -55,6 +55,8 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - Cada endpoint con `@PreAuthorize`; rutas fuera de `/api/**` deben añadirse a `SecurityConfig` (deny-by-default)
 - Propiedad en el servicio: un recurso de otro cliente responde 404 (`ResourceNotFoundException`), nunca 403
 - Cuentas destino (número, CBU o alias) solo con `RecipientResolver`; CBU con `domain/Cbu`, alias con `domain/AccountAlias`
+- Transferencias (manuales y programadas) solo por `TransferService` (mismas reglas; la programada ya trae el 2FA)
+- Fechas que valida la API se calculan en la zona del banco (`app.banking.zone`; en el frontend `core/utils/bank-date`)
 - Errores de negocio con `BusinessRuleException` (422); duplicados con `ConflictException` (409)
 - Dinero siempre `BigDecimal` (2 decimales); los saldos solo cambian con `Account.credit/debit` (generan el movimiento)
 - Operaciones que mueven dinero: `@Transactional` + `findByIdForUpdate` (bloqueo de filas en orden ascendente de id)

@@ -49,6 +49,9 @@ Decisiones:
 - 2FA: TOTP en authenticator app, secreto cifrado con AES, required para transferencias > `second-factor-threshold`.
 - Plazo fijo: payout a las 00:05 banco timezone, con reinversión automática si está habilitada, dentro de la misma `TransactionTemplate` para evitar doble pago.
 - Idempotencia: `Idempotency-Key` opcional en transferencias, cuentas, plazos fijos y préstamos, para no repetir la operación si se reintenta la solicitud.
+- Destinatarios de confianza: exención del código 2FA para transferencias grandes (como la de PSD2), confirmada con un código y anulada al desactivar el 2FA; el límite diario no cambia.
+- Transferencias programadas: autorizadas (2FA) al programarlas; cada ejecución en su propia transacción; las fechas se calculan desde la de inicio (sin deriva mensual) y en la zona horaria del banco, también en el frontend.
+- Exportación: Excel con fastexcel (en vez de Apache POI, mucho más pesado) y PDF con OpenPDF.
 - Alertas: los débitos se detectan con un evento de dominio (`MovementRecorded`) que Spring Data publica al guardar cada `Transaction`, dentro de la misma transacción: cubre todo origen de débito y un rollback no deja alertas.
 - CBU y alias: entidad ficticia `999` (no imita a un banco real); para transferir se envía el número de cuenta ya resuelto por la consulta, así un cambio de alias entre la consulta y la confirmación no desvía el dinero.
 - E-mails transaccionales: se arman dentro de la transacción y se entregan después del commit; un fallo del SMTP nunca revierte la operación.
@@ -68,6 +71,8 @@ Decisiones:
 - **OWASP dependency-check** configurado pero sin ejecutar: la NVD rechaza la descarga sin `NVD_API_KEY`. Para ejecutar: `$env:NVD_API_KEY='...'; .\gradlew.bat :backend:dependencyCheckAnalyze`.
 - **Docker** (`docker compose up --build`): no verificado en esta máquina (Docker no está instalado). Requiere `.env` con `DB_PASSWORD`, `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`.
 - **Transferencias a otros bancos:** se aceptan CBU de otras entidades como válidos pero se rechazan (`OTHER_BANK`): haría falta integrarse con una cámara compensadora. Tampoco hay CVU: lo emiten las billeteras virtuales, no los bancos.
+- **Transferencias programadas:** una ejecución que el servidor no llegó a hacer por estar caído varios días se recupera de a una por corrida del job (una por día); no hay reintentos el mismo día tras un fallo de negocio.
+- **Exportación:** el resumen PDF está limitado a 366 días y 10.000 movimientos; no está firmado digitalmente.
 - **Notificaciones:** la campanita consulta el contador cada 60 s (sin push/WebSocket) y no hay limpieza de notificaciones viejas; convendría un job que borre las leídas de más de N meses.
 - **Rate limit en memoria:** con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
 - **Validación de nombres:** solo aceptan letras sin tildes (regla heredada). Con la UI en español se podría admitir `ñ`, tildes, espacios y guiones.
