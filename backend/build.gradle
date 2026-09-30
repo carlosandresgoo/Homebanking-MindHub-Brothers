@@ -36,6 +36,8 @@ dependencies {
 	implementation libs.flyway.core
 	implementation libs.flyway.database.postgresql
 	implementation libs.bucket4j.core
+	implementation libs.fastexcel
+	implementation libs.openpdf
 	runtimeOnly libs.h2
 	runtimeOnly libs.postgresql
 	testImplementation libs.spring.boot.starter.test

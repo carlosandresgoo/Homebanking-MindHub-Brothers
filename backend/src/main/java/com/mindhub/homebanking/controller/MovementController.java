@@ -8,6 +8,8 @@ import com.mindhub.homebanking.service.MovementService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -21,10 +23,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+
 /** Movements of an account (owner or ADMIN; 404 otherwise). */
 @RestController
 @PreAuthorize("isAuthenticated()")
 public class MovementController {
+
+    private static final MediaType XLSX =
+            MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     private final MovementService movementService;
 
@@ -41,14 +49,34 @@ public class MovementController {
         return movementService.page(id, authentication.getName(), isAdmin(authentication), filter, page, size);
     }
 
-    /** Same filters as the list, as a CSV attachment (semicolon-separated, UTF-8 with BOM). */
+    /**
+     * Same filters as the list, as an attachment: {@code format=csv} (default; semicolon-separated,
+     * UTF-8 with BOM) or {@code format=xlsx} (Excel).
+     */
     @GetMapping("/api/accounts/{id}/transactions/export")
     public ResponseEntity<byte[]> export(@PathVariable Long id, @Valid @ModelAttribute MovementFilter filter,
+                                         @RequestParam(defaultValue = "csv") @Pattern(regexp = "csv|xlsx") String format,
                                          Authentication authentication) {
-        MovementService.CsvExport export = movementService.exportCsv(id, authentication.getName(),
-                isAdmin(authentication), filter);
+        boolean xlsx = format.equals("xlsx");
+        MovementService.FileExport export = xlsx
+                ? movementService.exportXlsx(id, authentication.getName(), isAdmin(authentication), filter)
+                : movementService.exportCsv(id, authentication.getName(), isAdmin(authentication), filter);
+        return attachment(export, xlsx ? XLSX : new MediaType("text", "csv", StandardCharsets.UTF_8));
+    }
+
+    /** PDF statement for {@code from}..{@code to} (yyyy-MM-dd, inclusive; default: this month so far). */
+    @GetMapping("/api/accounts/{id}/statement")
+    public ResponseEntity<byte[]> statement(@PathVariable Long id,
+                                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                            Authentication authentication) {
+        return attachment(movementService.statement(id, authentication.getName(), isAdmin(authentication), from, to),
+                MediaType.APPLICATION_PDF);
+    }
+
+    private static ResponseEntity<byte[]> attachment(MovementService.FileExport export, MediaType type) {
         return ResponseEntity.ok()
-                .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(export.filename()).build().toString())
                 .cacheControl(CacheControl.noStore())

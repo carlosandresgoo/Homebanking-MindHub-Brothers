@@ -36,4 +36,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
     /** A movement with its account and owner, for the receipt. */
     @EntityGraph(attributePaths = {"account", "account.client"})
     Optional<Transaction> findWithAccountById(Long id);
+
+    /** The last movement before {@code before}: its balance is the opening balance of a statement. */
+    java.util.Optional<Transaction> findFirstByAccountAndDateBeforeOrderByDateDescIdDesc(
+            com.mindhub.homebanking.domain.Account account, java.time.LocalDateTime before);
 }
