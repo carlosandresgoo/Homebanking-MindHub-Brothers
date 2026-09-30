@@ -94,7 +94,9 @@
             <mat-form-field>
               <mat-label>
                 {{
-                  contacts().length ? 'Destinatario o número de cuenta' : 'Número de cuenta destino'
+                  contacts().length
+                    ? 'Destinatario, CBU, alias o cuenta'
+                    : 'CBU, alias o número de cuenta'
                 }}
               </mat-label>
               <mat-icon matPrefix>{{ matchedContact() ? 'person' : 'tag' }}</mat-icon>
@@ -102,9 +104,9 @@
                 matInput
                 id="thirdTarget"
                 formControlName="thirdTarget"
-                placeholder="VIN-12345678"
+                placeholder="CBU de 22 dígitos, alias o VIN-12345678"
                 autocomplete="off"
-                class="uppercase"
+                maxlength="24"
                 [matAutocomplete]="recipients"
               />
               <mat-autocomplete #recipients="matAutocomplete" class="recipient-panel">
@@ -119,13 +121,15 @@
               </mat-autocomplete>
               @if (matchedContact(); as c) {
                 <mat-hint>{{ c.alias }} · {{ c.holderDisplay }}</mat-hint>
+              } @else if (recipient(); as r) {
+                <mat-hint>{{ r.holderDisplay }} · {{ r.accountNumber }}</mat-hint>
               } @else if (!contacts().length) {
                 <mat-hint>
-                  <a routerLink="/contacts">Guardá destinatarios</a> para elegirlos por su alias.
+                  <a routerLink="/contacts">Guardá destinatarios</a> para elegirlos por su nombre.
                 </mat-hint>
               }
               @if (form.controls.thirdTarget.hasError('required')) {
-                <mat-error>Ingresá el número de cuenta.</mat-error>
+                <mat-error>Ingresá el CBU, alias o número de cuenta.</mat-error>
               } @else if (form.controls.thirdTarget.hasError('same')) {
                 <mat-error>No podés transferir a la misma cuenta.</mat-error>
               }
@@ -191,9 +195,15 @@
           </mat-form-field>
 
           <div class="actions">
-            <button mat-flat-button type="submit" class="primary-action">
-              Continuar
-              <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+            <button mat-flat-button type="submit" class="primary-action" [disabled]="lookingUp()">
+              @if (lookingUp()) {
+                <mat-spinner diameter="20" aria-label="Verificando la cuenta destino" />
+              } @else {
+                Continuar
+              }
+              @if (!lookingUp()) {
+                <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+              }
             </button>
           </div>
         </form>
@@ -212,13 +222,25 @@
               <dt>Hacia</dt>
               <dd class="hb-tabular">
                 {{ targetNumber() }}
-                @if (form.controls.destination.value === 'own') {
+                @if (form.controls.destination.value === 'own' || recipient()?.own) {
                   <span class="tag">Cuenta propia</span>
                 } @else if (matchedContact(); as c) {
                   <span class="tag">{{ c.alias }}</span>
                 }
               </dd>
             </div>
+            @if (recipient(); as r) {
+              @if (!r.own) {
+                <div>
+                  <dt>Titular</dt>
+                  <dd class="holder">{{ r.holderDisplay }}</dd>
+                </div>
+              }
+              <div>
+                <dt>Alias</dt>
+                <dd>{{ r.alias }} · {{ r.bank }}</dd>
+              </div>
+            }
             @if (form.controls.description.value.trim()) {
               <div>
                 <dt>Descripción</dt>

@@ -14,6 +14,7 @@ export type AuditAction =
   | 'CLIENT_UNBLOCKED'
   | 'ACCOUNT_OPENED'
   | 'ACCOUNT_CLOSED'
+  | 'ACCOUNT_ALIAS_CHANGED'
   | 'TRANSFER'
   | 'CARD_ISSUED'
   | 'CARD_DEACTIVATED'
@@ -36,6 +37,7 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   CLIENT_UNBLOCKED: 'Cliente desbloqueado',
   ACCOUNT_OPENED: 'Apertura de cuenta',
   ACCOUNT_CLOSED: 'Cierre de cuenta',
+  ACCOUNT_ALIAS_CHANGED: 'Cambio de alias',
   TRANSFER: 'Transferencia',
   CARD_ISSUED: 'Emisión de tarjeta',
   CARD_DEACTIVATED: 'Baja de tarjeta',

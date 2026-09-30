@@ -44,6 +44,8 @@
       </div>
     </section>
 
+    <app-receive-card [account]="account" [editable]="isClient()" (aliasChanged)="retry()" />
+
     <div class="movements-header">
       <h2>Movimientos</h2>
       @if (isClient()) {

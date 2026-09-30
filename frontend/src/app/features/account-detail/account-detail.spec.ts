@@ -15,6 +15,8 @@ import { AccountDetailPage } from './account-detail';
 const ACCOUNT: AccountDetail = {
   id: 7,
   number: 'VIN001',
+  cbu: '9990001800000000000017',
+  alias: 'vin001.test',
   creationDate: '2026-08-30T10:00:00',
   balance: 5000,
 };

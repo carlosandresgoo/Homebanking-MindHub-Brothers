@@ -8,16 +8,37 @@ import { MatAutocompleteHarness } from '@angular/material/autocomplete/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 
-import { Account } from '../../core/models/account.model';
+import { Account, Recipient } from '../../core/models/account.model';
 import { Contact } from '../../core/models/contact.model';
 import { TransferLimits, TransferReceipt } from '../../core/models/transfer.model';
 import { provideTestDefaults, typeInto } from '../../testing/providers';
 import { Transfers } from './transfers';
 
 const ACCOUNTS: Account[] = [
-  { id: 10, number: 'VIN-EMPTY', creationDate: '2026-09-01T00:00:00', balance: 0 },
-  { id: 11, number: 'VIN001', creationDate: '2026-08-30T00:00:00', balance: 5000 },
-  { id: 12, number: 'VIN002', creationDate: '2026-08-31T00:00:00', balance: 7500 },
+  {
+    id: 10,
+    number: 'VIN-EMPTY',
+    cbu: '9990001800000000000017',
+    alias: 'vin-empty.test',
+    creationDate: '2026-09-01T00:00:00',
+    balance: 0,
+  },
+  {
+    id: 11,
+    number: 'VIN001',
+    cbu: '9990001800000000000017',
+    alias: 'vin001.test',
+    creationDate: '2026-08-30T00:00:00',
+    balance: 5000,
+  },
+  {
+    id: 12,
+    number: 'VIN002',
+    cbu: '9990001800000000000017',
+    alias: 'vin002.test',
+    creationDate: '2026-08-31T00:00:00',
+    balance: 7500,
+  },
 ];
 
 const RECEIPT: TransferReceipt = {
@@ -37,6 +58,16 @@ const LUCIA: Contact = {
   accountNumber: 'VIN999',
   holderDisplay: 'Lucía P.',
   createdAt: '2026-09-01T10:00:00',
+};
+
+/** What the API answers when the destination is looked up (someone else's account). */
+const OTHER: Recipient = {
+  accountNumber: 'VIN999',
+  cbu: '9990001800000000009991',
+  alias: 'lucia.mar.sol',
+  holderDisplay: 'Lucía P.',
+  bank: 'MindHub Brothers',
+  own: false,
 };
 
 const LIMITS: TransferLimits = {
@@ -86,6 +117,16 @@ describe('Transfers', () => {
     await fixture.whenStable();
   }
 
+  /** "Continuar" to someone who is not in the agenda: the destination is looked up first. */
+  async function continueWithLookup(
+    fixture: ComponentFixture<Transfers>,
+    recipient: Recipient = OTHER,
+  ) {
+    await click(fixture, 'Continuar');
+    httpTesting.expectOne((r) => r.url === '/api/accounts/lookup').flush(recipient);
+    await fixture.whenStable();
+  }
+
   it('preselects the first account with money and shows what is available', async () => {
     const { fixture, el } = await render();
     const loader = TestbedHarnessEnvironment.loader(fixture);
@@ -116,7 +157,7 @@ describe('Transfers', () => {
     const { fixture, el } = await render();
     typeInto(el, '#amount', '10');
     await click(fixture, 'Continuar');
-    expect(el.textContent).toContain('Ingresá el número de cuenta.');
+    expect(el.textContent).toContain('Ingresá el CBU, alias o número de cuenta.');
 
     typeInto(el, '#thirdTarget', 'vin001');
     await click(fixture, 'Continuar');
@@ -128,10 +169,11 @@ describe('Transfers', () => {
     typeInto(el, '#thirdTarget', 'vin999');
     typeInto(el, '#amount', '100');
     typeInto(el, '#description', 'Cena');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture);
 
     const summary = el.querySelector('[aria-label="Confirmación"]')!;
     expect(summary.textContent).toContain('VIN999');
+    expect(summary.textContent).toMatch(/Titular\s*Lucía P\./);
     expect(summary.textContent).toMatch(/\$\s*100,00/);
     expect(summary.textContent).toMatch(/Saldo después\s*\$\s*4\.900,00/);
 
@@ -180,7 +222,7 @@ describe('Transfers', () => {
     const { fixture, el } = await render();
     typeInto(el, '#thirdTarget', 'VIN-00000000');
     typeInto(el, '#amount', '10');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture, { ...OTHER, accountNumber: 'VIN-00000000' });
     await click(fixture, 'Confirmar transferencia');
     httpTesting.expectOne('/api/transfers').flush(null, { status: 404, statusText: 'Not Found' });
     await fixture.whenStable();
@@ -195,7 +237,7 @@ describe('Transfers', () => {
     const { fixture, el } = await render();
     typeInto(el, '#thirdTarget', 'VIN999');
     typeInto(el, '#amount', '100');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture);
     await click(fixture, 'Confirmar transferencia');
     const first = httpTesting.expectOne('/api/transfers');
     const key = first.request.headers.get('Idempotency-Key');
@@ -242,7 +284,7 @@ describe('Transfers', () => {
     const { fixture, el } = await render(undefined, LIMITS, [LUCIA]);
     typeInto(el, '#thirdTarget', 'VIN777');
     typeInto(el, '#amount', '10');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture, { ...OTHER, accountNumber: 'VIN777' });
     await click(fixture, 'Confirmar transferencia');
     httpTesting.expectOne('/api/transfers').flush({ ...RECEIPT, targetAccountNumber: 'VIN777' });
     await fixture.whenStable();
@@ -294,7 +336,7 @@ describe('Transfers', () => {
     });
     typeInto(el, '#thirdTarget', 'VIN999');
     typeInto(el, '#amount', '1000');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture);
 
     expect(el.querySelector('#secondFactorCode')).not.toBeNull();
     await click(fixture, 'Confirmar transferencia');
@@ -312,7 +354,7 @@ describe('Transfers', () => {
     const { fixture, el } = await render();
     typeInto(el, '#thirdTarget', 'VIN999');
     typeInto(el, '#amount', '100');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture);
     expect(el.querySelector('#secondFactorCode')).toBeNull();
 
     await click(fixture, 'Confirmar transferencia');
@@ -337,7 +379,7 @@ describe('Transfers', () => {
     const { fixture, el } = await render();
     typeInto(el, '#thirdTarget', 'VIN999');
     typeInto(el, '#amount', '100');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture);
     await click(fixture, 'Confirmar transferencia');
     httpTesting
       .expectOne('/api/transfers')
@@ -358,18 +400,78 @@ describe('Transfers', () => {
     const { fixture, el } = await render();
     typeInto(el, '#thirdTarget', 'VIN999');
     typeInto(el, '#amount', '10');
-    await click(fixture, 'Continuar');
+    await continueWithLookup(fixture);
     await click(fixture, 'Confirmar transferencia');
     const first = httpTesting.expectOne('/api/transfers');
     first.flush(null, { status: 404, statusText: 'Not Found' });
     await fixture.whenStable();
 
-    await click(fixture, 'Continuar');
+    await click(fixture, 'Continuar'); // same destination: no second lookup
     await click(fixture, 'Confirmar transferencia');
     const second = httpTesting.expectOne('/api/transfers');
     expect(second.request.headers.get('Idempotency-Key')).not.toBe(
       first.request.headers.get('Idempotency-Key'),
     );
     second.flush(RECEIPT);
+  });
+
+  it('transfers to an alias or CBU after showing who receives it', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', ' Lucia.Mar.Sol ');
+    typeInto(el, '#amount', '100');
+    await click(fixture, 'Continuar');
+    const lookup = httpTesting.expectOne((r) => r.url === '/api/accounts/lookup');
+    expect(lookup.request.params.get('key')).toBe('Lucia.Mar.Sol');
+    lookup.flush(OTHER);
+    await fixture.whenStable();
+
+    const summary = el.querySelector('[aria-label="Confirmación"]')!;
+    expect(summary.textContent).toContain('VIN999');
+    expect(summary.textContent).toContain('Lucía P.');
+    expect(summary.textContent).toContain('lucia.mar.sol');
+
+    await click(fixture, 'Confirmar transferencia');
+    // The resolved account number is sent, so a later alias change cannot redirect the money.
+    const req = httpTesting.expectOne('/api/transfers');
+    expect(req.request.body.targetAccountNumber).toBe('VIN999');
+    req.flush(RECEIPT);
+  });
+
+  it('explains an invalid CBU or another bank and stays on the form', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', '9990001800000000009990');
+    typeInto(el, '#amount', '10');
+    await click(fixture, 'Continuar');
+    httpTesting
+      .expectOne((r) => r.url === '/api/accounts/lookup')
+      .flush({ code: 'INVALID_CBU' }, { status: 422, statusText: 'Unprocessable Entity' });
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('El CBU no es válido');
+    expect(el.querySelector('[aria-label="Confirmación"]')).toBeNull();
+
+    typeInto(el, '#thirdTarget', '2850590940090418135201');
+    await click(fixture, 'Continuar');
+    httpTesting
+      .expectOne((r) => r.url === '/api/accounts/lookup')
+      .flush({ code: 'OTHER_BANK' }, { status: 422, statusText: 'Unprocessable Entity' });
+    await fixture.whenStable();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'solo podés transferir a cuentas de MindHub Brothers',
+    );
+  });
+
+  it('treats an alias of one of my accounts as an own transfer', async () => {
+    const { fixture, el } = await render();
+    typeInto(el, '#thirdTarget', 'vin002.test');
+    typeInto(el, '#amount', '50');
+    await continueWithLookup(fixture, { ...OTHER, accountNumber: 'VIN002', own: true });
+
+    const summary = el.querySelector('[aria-label="Confirmación"]')!;
+    expect(summary.textContent).toContain('Cuenta propia');
+    expect(summary.textContent).not.toContain('Titular');
+    await click(fixture, 'Confirmar transferencia');
+    httpTesting.expectOne('/api/transfers').flush({ ...RECEIPT, targetAccountNumber: 'VIN002' });
+    await fixture.whenStable();
+    expect(el.textContent).not.toContain('Guardar en mi agenda');
   });
 });

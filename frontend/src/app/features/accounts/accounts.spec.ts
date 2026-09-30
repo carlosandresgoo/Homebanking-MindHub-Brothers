@@ -13,8 +13,22 @@ const MELBA: Client = {
   email: 'melba@gmail.com',
   role: 'CLIENT',
   accounts: [
-    { id: 1, number: 'vin001', creationDate: '2026-09-29T10:24:55.635622', balance: 5000 },
-    { id: 2, number: 'vin002', creationDate: '2026-09-30T10:24:55.643164', balance: 7500 },
+    {
+      id: 1,
+      number: 'vin001',
+      cbu: '9990001800000000000017',
+      alias: 'vin001.test',
+      creationDate: '2026-09-29T10:24:55.635622',
+      balance: 5000,
+    },
+    {
+      id: 2,
+      number: 'vin002',
+      cbu: '9990001800000000000017',
+      alias: 'vin002.test',
+      creationDate: '2026-09-30T10:24:55.643164',
+      balance: 7500,
+    },
   ],
 };
 
@@ -102,13 +116,27 @@ describe('Accounts', () => {
 
     el.querySelector<HTMLButtonElement>('.open-button')!.click();
     const req = httpTesting.expectOne({ method: 'POST', url: '/api/clients/current/accounts' });
-    req.flush({ id: 3, number: 'VIN-12345678', creationDate: '2026-10-01T10:00:00', balance: 0 });
+    req.flush({
+      id: 3,
+      number: 'VIN-12345678',
+      cbu: '9990001800000000000017',
+      alias: 'vin-12345678.test',
+      creationDate: '2026-10-01T10:00:00',
+      balance: 0,
+    });
 
     const withNew: Client = {
       ...MELBA,
       accounts: [
         ...MELBA.accounts,
-        { id: 3, number: 'VIN-12345678', creationDate: '2026-10-01T10:00:00', balance: 0 },
+        {
+          id: 3,
+          number: 'VIN-12345678',
+          cbu: '9990001800000000000017',
+          alias: 'vin-12345678.test',
+          creationDate: '2026-10-01T10:00:00',
+          balance: 0,
+        },
       ],
     };
     httpTesting.expectOne('/api/clients/current').flush(withNew);
@@ -123,7 +151,14 @@ describe('Accounts', () => {
       ...MELBA,
       accounts: [
         ...MELBA.accounts,
-        { id: 3, number: 'VIN-3', creationDate: '2026-10-01T10:00:00', balance: 0 },
+        {
+          id: 3,
+          number: 'VIN-3',
+          cbu: '9990001800000000000017',
+          alias: 'vin-3.test',
+          creationDate: '2026-10-01T10:00:00',
+          balance: 0,
+        },
       ],
     };
     httpTesting.expectOne('/api/clients/current').flush(full);

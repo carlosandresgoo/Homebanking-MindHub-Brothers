@@ -41,6 +41,7 @@ import { Page } from '../../core/models/page.model';
 import { saveDownload } from '../../core/utils/download';
 import { LoadState, toLoadState } from '../../core/utils/load-state';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
+import { ReceiveCard } from './receive-card/receive-card';
 
 type DetailState =
   | { status: 'loading' }
@@ -63,6 +64,7 @@ type DetailState =
     MatProgressSpinnerModule,
     MatSelectModule,
     ReactiveFormsModule,
+    ReceiveCard,
     RouterLink,
   ],
   // Provided here (not app-wide) so the paginator stays in this lazy chunk.

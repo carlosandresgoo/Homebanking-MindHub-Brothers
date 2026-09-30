@@ -40,13 +40,13 @@ describe('ContactDialog', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('adds a recipient with a normalized account number', async () => {
-    const { el, submit } = await render({ accountNumber: 'vin-27905812' });
+  it('adds a recipient by account number, CBU or alias as typed (the API ignores case)', async () => {
+    const { el, submit } = await render({ accountNumber: ' sol.rio.mate ' });
     typeInto(el, '#contactAlias', ' Lucía ');
     submit();
     const req = httpTesting.expectOne(URL);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ accountNumber: 'VIN-27905812', alias: 'Lucía' });
+    expect(req.request.body).toEqual({ accountNumber: 'sol.rio.mate', alias: 'Lucía' });
     req.flush(LUCIA);
     expect(dialogRef.close).toHaveBeenCalledWith(LUCIA);
   });
@@ -68,7 +68,9 @@ describe('ContactDialog', () => {
     submit();
     httpTesting.expectOne(URL).flush(null, { status: 404, statusText: 'Not Found' });
     await fixture.whenStable();
-    expect(el.querySelector('[role="alert"]')?.textContent).toContain('No encontramos esa cuenta');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'No encontramos una cuenta con ese CBU, alias o número',
+    );
 
     submit();
     httpTesting

@@ -16,8 +16,22 @@ const DATA: FixedTermDialogData = {
     { termDays: 90, annualRate: 0.37 },
   ],
   accounts: [
-    { id: 1, number: 'VIN001', creationDate: '2026-09-01T00:00:00', balance: 5000 },
-    { id: 2, number: 'VIN002', creationDate: '2026-09-01T00:00:00', balance: 21500 },
+    {
+      id: 1,
+      number: 'VIN001',
+      cbu: '9990001800000000000017',
+      alias: 'vin001.test',
+      creationDate: '2026-09-01T00:00:00',
+      balance: 5000,
+    },
+    {
+      id: 2,
+      number: 'VIN002',
+      cbu: '9990001800000000000017',
+      alias: 'vin002.test',
+      creationDate: '2026-09-01T00:00:00',
+      balance: 21500,
+    },
   ],
 };
 

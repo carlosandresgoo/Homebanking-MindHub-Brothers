@@ -29,8 +29,22 @@ export const CATALOG: Loan[] = [
 ];
 
 export const ACCOUNTS: Account[] = [
-  { id: 11, number: 'VIN001', creationDate: '2026-08-30T00:00:00', balance: 5000 },
-  { id: 12, number: 'VIN002', creationDate: '2026-08-31T00:00:00', balance: 1000 },
+  {
+    id: 11,
+    number: 'VIN001',
+    cbu: '9990001800000000000017',
+    alias: 'vin001.test',
+    creationDate: '2026-08-30T00:00:00',
+    balance: 5000,
+  },
+  {
+    id: 12,
+    number: 'VIN002',
+    cbu: '9990001800000000000017',
+    alias: 'vin002.test',
+    creationDate: '2026-08-31T00:00:00',
+    balance: 1000,
+  },
 ];
 
 export const PERSONAL_LOAN: ClientLoan = {

@@ -15,8 +15,22 @@ const CLIENTS: Client[] = [
     email: 'melba@gmail.com',
     role: 'CLIENT',
     accounts: [
-      { id: 1, number: 'vin001', creationDate: '2026-09-29T10:00:00', balance: 5000 },
-      { id: 2, number: 'vin002', creationDate: '2026-09-30T10:00:00', balance: 7500 },
+      {
+        id: 1,
+        number: 'vin001',
+        cbu: '9990001800000000000017',
+        alias: 'vin001.test',
+        creationDate: '2026-09-29T10:00:00',
+        balance: 5000,
+      },
+      {
+        id: 2,
+        number: 'vin002',
+        cbu: '9990001800000000000017',
+        alias: 'vin002.test',
+        creationDate: '2026-09-30T10:00:00',
+        balance: 7500,
+      },
     ],
   },
   {

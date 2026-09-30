@@ -55,17 +55,17 @@ export interface ContactDialogData {
           </p>
         } @else {
           <mat-form-field>
-            <mat-label>Número de cuenta</mat-label>
+            <mat-label>CBU, alias o número de cuenta</mat-label>
             <mat-icon matPrefix>tag</mat-icon>
             <input
               matInput
               id="contactAccount"
               formControlName="accountNumber"
-              placeholder="VIN-12345678"
+              placeholder="CBU, alias o VIN-12345678"
               autocomplete="off"
-              class="uppercase"
+              maxlength="24"
             />
-            <mat-error>Ingresá el número de cuenta.</mat-error>
+            <mat-error>Ingresá el CBU, alias o número de cuenta.</mat-error>
           </mat-form-field>
         }
         <mat-form-field>
@@ -124,9 +124,6 @@ export interface ContactDialogData {
     .who strong {
       color: var(--mat-sys-on-surface);
     }
-    .uppercase {
-      text-transform: uppercase;
-    }
     mat-icon[matPrefix] {
       margin: 0 4px 0 12px;
       color: var(--mat-sys-on-surface-variant);
@@ -167,7 +164,7 @@ export class ContactDialog {
   protected readonly form = inject(NonNullableFormBuilder).group({
     accountNumber: [
       { value: this.data.accountNumber ?? '', disabled: this.editing },
-      [Validators.required, Validators.maxLength(20)],
+      [Validators.required, Validators.maxLength(24)],
     ],
     alias: [
       this.data.contact?.alias ?? '',
@@ -187,7 +184,7 @@ export class ContactDialog {
     const { accountNumber, alias } = this.form.getRawValue();
     const request: Observable<Contact> = this.editing
       ? this.contacts.rename(this.data.contact!.id, alias.trim())
-      : this.contacts.add(accountNumber.trim().toUpperCase(), alias.trim());
+      : this.contacts.add(accountNumber.trim(), alias.trim());
     this.saving.set(true);
     this.error.set(null);
     this.dialogRef.disableClose = true;
@@ -204,13 +201,17 @@ export class ContactDialog {
 
 function messageFor(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
-    if (err.status === 404) return 'No encontramos esa cuenta. Revisá el número.';
+    if (err.status === 404) return 'No encontramos una cuenta con ese CBU, alias o número.';
     if (err.status === 409) {
       return err.error?.detail === 'This account is already in your recipients'
         ? 'Esa cuenta ya está en tu agenda.'
         : 'Ya tenés un destinatario con ese alias.';
     }
     if (err.status === 422) {
+      if (err.error?.code === 'INVALID_CBU') return 'El CBU no es válido: revisá los 22 dígitos.';
+      if (err.error?.code === 'OTHER_BANK') {
+        return 'Por ahora solo podés agendar cuentas de MindHub Brothers.';
+      }
       return err.error?.detail?.startsWith('Your own accounts')
         ? 'Es una cuenta tuya: ya aparece siempre al transferir.'
         : 'Tu agenda está llena. Borrá algún destinatario para agregar otro.';

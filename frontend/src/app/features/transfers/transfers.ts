@@ -39,7 +39,7 @@ import { Contact } from '../../core/models/contact.model';
 import { ContactDialog, ContactDialogData } from '../contacts/contact-dialog/contact-dialog';
 import { IdempotentOperation, isOutcomeUnknown } from '../../core/api/idempotency';
 import { TransferService } from '../../core/api/transfer.service';
-import { Account } from '../../core/models/account.model';
+import { Account, Recipient } from '../../core/models/account.model';
 import { secondFactorProblem } from '../../core/models/auth.model';
 import { TransferReceipt, TransferRequest } from '../../core/models/transfer.model';
 import { toLoadState } from '../../core/utils/load-state';
@@ -136,11 +136,16 @@ export class Transfers {
   /** Set when the API asked for a code we did not anticipate. */
   private readonly codeRequested = signal(false);
 
+  /** Checking who owns the typed destination (CBU, alias or number) before the confirmation step. */
+  protected readonly lookingUp = signal(false);
+  /** Last looked-up destination, valid only while the same text stays typed. */
+  private readonly lookedUp = signal<{ key: string; recipient: Recipient } | null>(null);
+
   protected readonly form = inject(NonNullableFormBuilder).group({
     source: ['', Validators.required],
     destination: ['third' as Destination],
     ownTarget: [''],
-    thirdTarget: ['', [Validators.maxLength(20)]],
+    thirdTarget: ['', [Validators.maxLength(24)]],
     amount: [null as number | null, [Validators.required, amountFormat]],
     description: ['', [Validators.maxLength(100)]],
   });
@@ -159,15 +164,29 @@ export class Transfers {
     this.accounts().filter((a) => a.number !== this.formValue().source),
   );
 
+  /** What is typed as the destination for someone else: account number, CBU or alias. */
+  private readonly typedTarget = computed(() => (this.formValue().thirdTarget ?? '').trim());
+
+  /** Owner of the typed destination, once looked up (null again as soon as it is edited). */
+  protected readonly recipient = computed(() => {
+    const found = this.lookedUp();
+    return this.formValue().destination === 'third' && found?.key === this.typedTarget()
+      ? found.recipient
+      : null;
+  });
+
+  /** The account number the transfer goes to: a CBU or alias is replaced by what it resolved to. */
   protected readonly targetNumber = computed(() => {
     const v = this.formValue();
-    return (v.destination === 'own' ? v.ownTarget : v.thirdTarget)?.trim().toUpperCase() ?? '';
+    if (v.destination === 'own') return v.ownTarget?.trim().toUpperCase() ?? '';
+    return this.recipient()?.accountNumber ?? this.typedTarget().toUpperCase();
   });
 
   /** Daily limit and 2FA apply only to other people's accounts. */
   protected readonly toThirdParty = computed(
     () =>
       this.formValue().destination === 'third' &&
+      !this.recipient()?.own &&
       !this.accounts().some((a) => a.number === this.targetNumber()),
   );
 
@@ -238,7 +257,7 @@ export class Transfers {
     const third = this.form.controls.thirdTarget;
     own.setValidators(destination === 'own' ? [Validators.required] : []);
     third.setValidators(
-      destination === 'third' ? [Validators.required, Validators.maxLength(20)] : [],
+      destination === 'third' ? [Validators.required, Validators.maxLength(24)] : [],
     );
     own.updateValueAndValidity();
     third.updateValueAndValidity();
@@ -261,6 +280,25 @@ export class Transfers {
       return;
     }
     this.error.set(null);
+    // Someone else's account that is not a saved recipient: show who receives it before confirming.
+    const typed = this.typedTarget();
+    const known =
+      this.matchedContact() || this.accounts().some((a) => a.number === this.targetNumber());
+    if (this.form.controls.destination.value === 'third' && !known && !this.recipient()) {
+      this.lookingUp.set(true);
+      this.accountService.lookup(typed).subscribe({
+        next: (recipient) => {
+          this.lookingUp.set(false);
+          this.lookedUp.set({ key: typed, recipient });
+          this.review(); // now with the owner known (limits and "same account" apply to it)
+        },
+        error: (err: unknown) => {
+          this.lookingUp.set(false);
+          this.error.set(lookupMessage(err));
+        },
+      });
+      return;
+    }
     this.code.reset();
     this.codeRequested.set(false);
     this.step.set('confirm');
@@ -346,6 +384,7 @@ export class Transfers {
   /** Back to an empty form with fresh balances (the source is preselected again by the effect). */
   protected newTransfer(): void {
     this.receipt.set(null);
+    this.lookedUp.set(null);
     this.error.set(null);
     this.confirmError.set(null);
     this.retryable.set(false);
@@ -369,14 +408,32 @@ function messageFor(err: unknown): string {
         : 'Ya usaste tu límite diario para transferir a terceros. Mañana se renueva.';
     }
     if (err.status === 422) {
+      if (err.error?.code) return lookupMessage(err);
       return err.error?.detail === 'Insufficient funds'
         ? 'No tenés saldo suficiente en la cuenta de origen.'
         : 'No podés transferir a la misma cuenta.';
     }
-    if (err.status === 404) return 'No encontramos la cuenta destino. Revisá el número.';
+    if (err.status === 404) return 'No encontramos la cuenta destino. Revisá los datos.';
     if (err.status === 400) return 'Revisá los datos de la transferencia.';
   }
   return 'No pudimos hacer la transferencia. Intentá de nuevo más tarde.';
+}
+
+/** Why the destination (CBU, alias or number) could not be used. */
+function lookupMessage(err: unknown): string {
+  if (err instanceof HttpErrorResponse) {
+    if (err.status === 404) return 'No encontramos una cuenta con ese CBU, alias o número.';
+    if (err.status === 422 && err.error?.code === 'INVALID_CBU') {
+      return 'El CBU no es válido: revisá los 22 dígitos.';
+    }
+    if (err.status === 422 && err.error?.code === 'OTHER_BANK') {
+      return 'Por ahora solo podés transferir a cuentas de MindHub Brothers.';
+    }
+    if (err.status === 429)
+      return 'Hiciste muchas consultas seguidas. Esperá un minuto y volvé a probar.';
+    if (err.status === 400) return 'Revisá el CBU, alias o número de cuenta.';
+  }
+  return 'No pudimos verificar la cuenta destino. Intentá de nuevo.';
 }
 
 function formatArs(value: number): string {
