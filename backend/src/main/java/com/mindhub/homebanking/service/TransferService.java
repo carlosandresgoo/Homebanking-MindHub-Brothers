@@ -15,6 +15,7 @@ import com.mindhub.homebanking.exception.ResourceNotFoundException;
 import com.mindhub.homebanking.exception.SecondFactorException;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.repository.ContactRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
 import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class TransferService {
 
     private final AccountRepository accountRepository;
     private final ClientRepository clientRepository;
+    private final ContactRepository contactRepository;
     private final TransactionRepository transactionRepository;
     private final TwoFactorService twoFactor;
     private final AuditService audit;
@@ -49,8 +51,9 @@ public class TransferService {
     public TransferService(AccountRepository accountRepository, ClientRepository clientRepository,
                            TransactionRepository transactionRepository, TwoFactorService twoFactor,
                            AuditService audit, NotificationService notifications, RecipientResolver recipients,
-                           BankingProperties properties, Clock clock) {
+                           BankingProperties properties, Clock clock, ContactRepository contactRepository) {
         this.accountRepository = accountRepository;
+        this.contactRepository = contactRepository;
         this.clientRepository = clientRepository;
         this.transactionRepository = transactionRepository;
         this.twoFactor = twoFactor;
@@ -122,14 +125,15 @@ public class TransferService {
                 client.isTwoFactorEnabled(), limits.secondFactorThreshold(), limits.dailyLimitWithSecondFactor());
     }
 
-    /** Daily limit, then (with 2FA enabled) a code for large amounts. */
+    /** Daily limit, then (with 2FA enabled) a code for large amounts, unless the recipient is trusted. */
     private void checkThirdPartyRules(Client client, TransferRequest request, Account target) {
         BigDecimal remaining = dailyLimit(client).subtract(usedToday(client)).max(BigDecimal.ZERO);
         if (request.amount().compareTo(remaining) > 0) {
             throw new BusinessRuleException("Daily transfer limit exceeded",
                     Map.of("code", "DAILY_LIMIT_EXCEEDED", "remaining", remaining));
         }
-        if (client.isTwoFactorEnabled() && request.amount().compareTo(limits.secondFactorThreshold()) >= 0) {
+        if (client.isTwoFactorEnabled() && request.amount().compareTo(limits.secondFactorThreshold()) >= 0
+                && !contactRepository.existsByClientAndAccountNumberAndTrustedAtIsNotNull(client, target.getNumber())) {
             try {
                 twoFactor.require(client, request.secondFactorCode());
             } catch (SecondFactorException e) {

@@ -11,6 +11,7 @@ import com.mindhub.homebanking.exception.ResourceNotFoundException;
 import com.mindhub.homebanking.exception.SecondFactorException;
 import com.mindhub.homebanking.mapper.ClientMapper;
 import com.mindhub.homebanking.repository.ClientRepository;
+import com.mindhub.homebanking.repository.ContactRepository;
 import com.mindhub.homebanking.security.LoginRateLimiter;
 import com.mindhub.homebanking.security.SecretCipher;
 import com.mindhub.homebanking.security.Totp;
@@ -31,6 +32,7 @@ import java.util.OptionalLong;
 public class TwoFactorService {
 
     private final ClientRepository clientRepository;
+    private final ContactRepository contactRepository;
     private final ClientMapper mapper;
     private final SecretCipher cipher;
     private final PasswordEncoder passwordEncoder;
@@ -42,8 +44,10 @@ public class TwoFactorService {
 
     public TwoFactorService(ClientRepository clientRepository, ClientMapper mapper, SecretCipher cipher,
                             PasswordEncoder passwordEncoder, LoginRateLimiter rateLimiter, AuditService audit,
-                            NotificationService notifications, Clock clock, SecurityProperties properties) {
+                            NotificationService notifications, Clock clock, SecurityProperties properties,
+                            ContactRepository contactRepository) {
         this.clientRepository = clientRepository;
+        this.contactRepository = contactRepository;
         this.mapper = mapper;
         this.cipher = cipher;
         this.passwordEncoder = passwordEncoder;
@@ -95,6 +99,7 @@ public class TwoFactorService {
         }
         check(client, code);
         client.disableTwoFactor();
+        contactRepository.untrustAll(client); // trust was confirmed with this factor
         audit.success(AuditAction.TWO_FACTOR_DISABLED, client.getEmail(), null);
         notifications.twoFactorDisabled(client, false);
         return mapper.toDto(client);
@@ -106,6 +111,7 @@ public class TwoFactorService {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
         client.disableTwoFactor();
+        contactRepository.untrustAll(client); // trust was confirmed with this factor
         audit.success(AuditAction.TWO_FACTOR_RESET, client.getEmail(), null);
         notifications.twoFactorDisabled(client, true);
         return mapper.toDto(client);

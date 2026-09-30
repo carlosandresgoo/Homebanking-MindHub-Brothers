@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Agregaste un destinatario de confianza</h1>
+    <table class="details" role="presentation">
+        <tr><td>Destinatario</td><td th:text="${alias}">Mamá</td></tr>
+        <tr><td>Titular</td><td th:text="${holder}">Lucía P.</td></tr>
+        <tr><td>Cuenta</td><td th:text="${account}">VIN-12345678</td></tr>
+        <tr><td>Fecha</td><td th:text="${when}">29/09/2026 21:40</td></tr>
+    </table>
+    <p>Desde ahora, las transferencias grandes a esta cuenta no te van a pedir el código de tu app. El límite diario
+        sigue igual.</p>
+    <div class="note warning"><strong>¿No fuiste vos?</strong> Quitale la confianza desde Destinatarios, cambiá tu
+        contraseña y comunicate con soporte.</div>
+    <p><a class="button" th:href="${contactsUrl}" href="#">Ver mis destinatarios</a></p>
+</main>
+</body>
+</html>

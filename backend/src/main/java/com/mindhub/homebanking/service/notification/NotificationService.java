@@ -2,6 +2,7 @@ package com.mindhub.homebanking.service.notification;
 
 import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.domain.Contact;
 import com.mindhub.homebanking.domain.FixedTerm;
 import com.mindhub.homebanking.domain.Notification;
 import com.mindhub.homebanking.domain.Transaction;
@@ -98,6 +99,17 @@ public class NotificationService {
                 "/profile");
         email(client, Email.ALWAYS, "Se desactivó la verificación en dos pasos", "two-factor-disabled",
                 Map.of("when", now(), "byAdmin", byAdmin, "profileUrl", link("/profile")));
+    }
+
+    /** Trusting lowers the protection of large transfers, so it is always e-mailed. */
+    public void contactTrusted(Client client, Contact contact) {
+        toInbox(client, Notification.Type.CONTACT_TRUSTED, contact.getAlias() + " es de confianza",
+                "Las transferencias grandes a " + contact.getHolderDisplay() + " (" + contact.getAccountNumber()
+                        + ") ya no te piden código. Podés quitarle la confianza desde Destinatarios.",
+                "/contacts");
+        email(client, Email.ALWAYS, "Agregaste un destinatario de confianza", "contact-trusted", Map.of(
+                "alias", contact.getAlias(), "holder", contact.getHolderDisplay(),
+                "account", contact.getAccountNumber(), "when", now(), "contactsUrl", link("/contacts")));
     }
 
     /** Only for transfers between different clients: an e-mail to each side, the bell for the recipient. */

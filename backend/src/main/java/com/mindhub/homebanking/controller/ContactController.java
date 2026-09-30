@@ -3,6 +3,7 @@ package com.mindhub.homebanking.controller;
 import com.mindhub.homebanking.dto.ContactDTO;
 import com.mindhub.homebanking.dto.CreateContactRequest;
 import com.mindhub.homebanking.dto.RenameContactRequest;
+import com.mindhub.homebanking.dto.TwoFactorCodeRequest;
 import com.mindhub.homebanking.service.ContactService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,18 @@ public class ContactController {
     public ContactDTO rename(@PathVariable Long id, @Valid @RequestBody RenameContactRequest request,
                              Authentication authentication) {
         return contactService.rename(authentication.getName(), id, request.alias());
+    }
+
+    /** 403 (secondFactor) for a wrong code; 422 TWO_FACTOR_REQUIRED without 2FA. */
+    @PostMapping("/{id}/trust")
+    public ContactDTO trust(@PathVariable Long id, @Valid @RequestBody TwoFactorCodeRequest request,
+                            Authentication authentication) {
+        return contactService.trust(authentication.getName(), id, request.code());
+    }
+
+    @DeleteMapping("/{id}/trust")
+    public ContactDTO untrust(@PathVariable Long id, Authentication authentication) {
+        return contactService.untrust(authentication.getName(), id);
     }
 
     @DeleteMapping("/{id}")

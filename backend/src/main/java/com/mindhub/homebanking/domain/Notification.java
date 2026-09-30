@@ -17,7 +17,8 @@ public class Notification {
         LOGIN,
         PASSWORD_CHANGED,
         TWO_FACTOR_ENABLED,
-        TWO_FACTOR_DISABLED
+        TWO_FACTOR_DISABLED,
+        CONTACT_TRUSTED
     }
 
     @Id

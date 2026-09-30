@@ -12,6 +12,7 @@ import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.ContactRepository;
 import com.mindhub.homebanking.security.LoginRateLimiter;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,13 +35,18 @@ public class ContactService {
     private final AccountRepository accountRepository;
     private final LoginRateLimiter rateLimiter;
     private final RecipientResolver recipients;
+    private final TwoFactorService twoFactor;
+    private final NotificationService notifications;
     private final AuditService audit;
     private final Clock clock;
 
     public ContactService(ContactRepository contactRepository, ClientRepository clientRepository,
                           AccountRepository accountRepository, LoginRateLimiter rateLimiter,
-                          RecipientResolver recipients, AuditService audit, Clock clock) {
+                          RecipientResolver recipients, TwoFactorService twoFactor,
+                          NotificationService notifications, AuditService audit, Clock clock) {
         this.recipients = recipients;
+        this.twoFactor = twoFactor;
+        this.notifications = notifications;
         this.contactRepository = contactRepository;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
@@ -101,6 +107,39 @@ public class ContactService {
         return toDto(contact);
     }
 
+    /**
+     * Trusted recipients skip the 2FA code of large transfers, so trusting one needs a current code:
+     * 422 {@code TWO_FACTOR_REQUIRED} without 2FA, 403 for a wrong code, 404 if not the caller's.
+     */
+    @Transactional
+    public ContactDTO trust(String email, Long id, String code) {
+        Client client = clientRepository.findByEmailForUpdate(email) // single-use codes need the row lock
+                .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
+        Contact contact = own(client, id);
+        if (!client.isTwoFactorEnabled()) {
+            throw new BusinessRuleException("Enable two-factor authentication to trust recipients",
+                    java.util.Map.of("code", "TWO_FACTOR_REQUIRED"));
+        }
+        if (!contact.isTrusted()) {
+            twoFactor.require(client, code);
+            contact.trust(LocalDateTime.now(clock));
+            audit.success(AuditAction.CONTACT_TRUSTED, contact.getAccountNumber(), null);
+            notifications.contactTrusted(client, contact);
+        }
+        return toDto(contact);
+    }
+
+    /** Removing trust only makes transfers safer: no code needed. */
+    @Transactional
+    public ContactDTO untrust(String email, Long id) {
+        Contact contact = own(client(email), id);
+        if (contact.isTrusted()) {
+            contact.untrust();
+            audit.success(AuditAction.CONTACT_UNTRUSTED, contact.getAccountNumber(), null);
+        }
+        return toDto(contact);
+    }
+
     @Transactional
     public void delete(String email, Long id) {
         Contact contact = own(client(email), id);
@@ -130,6 +169,6 @@ public class ContactService {
 
     private static ContactDTO toDto(Contact contact) {
         return new ContactDTO(contact.getId(), contact.getAlias(), contact.getAccountNumber(),
-                contact.getHolderDisplay(), contact.getCreatedAt());
+                contact.getHolderDisplay(), contact.getCreatedAt(), contact.isTrusted());
     }
 }

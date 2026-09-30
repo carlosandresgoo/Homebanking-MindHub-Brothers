@@ -29,6 +29,9 @@ public class Contact {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    /** When the owner confirmed it with a 2FA code; null = not trusted. */
+    private LocalDateTime trustedAt;
+
     protected Contact() {
     }
 
@@ -42,6 +45,18 @@ public class Contact {
 
     public void rename(String alias) {
         this.alias = alias;
+    }
+
+    public void trust(LocalDateTime now) {
+        this.trustedAt = now;
+    }
+
+    public void untrust() {
+        this.trustedAt = null;
+    }
+
+    public boolean isTrusted() {
+        return trustedAt != null;
     }
 
     public Long getId() {
