@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -27,6 +28,9 @@ class CardControllerTest extends IntegrationTest {
 
     @Autowired
     private CardRepository cardRepository;
+
+    @Autowired
+    private Clock clock;
 
     private MvcResult issue(String token, String type, String color) throws Exception {
         return mvc.perform(post("/api/clients/current/cards").header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -48,7 +52,7 @@ class CardControllerTest extends IntegrationTest {
         assertThat(body.get("cvv").asText()).matches("\\d{3}");
         assertThat(body.get("card").get("last4").asText()).isEqualTo(number.substring(12));
         assertThat(body.get("card").get("cardholder").asText()).isEqualTo("Melba Morel");
-        assertThat(body.get("card").get("thruDate").asText()).isEqualTo(LocalDate.now().plusYears(5).toString());
+        assertThat(body.get("card").get("thruDate").asText()).isEqualTo(LocalDate.now(clock).plusYears(5).toString()); // bank's date, not the machine's
 
         // Listing never exposes the PAN or the CVV again...
         String list = mvc.perform(get("/api/clients/current/cards").header(HttpHeaders.AUTHORIZATION, bearer(token)))

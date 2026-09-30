@@ -8,8 +8,6 @@ import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.FixedTerm;
 import com.mindhub.homebanking.domain.FixedTermPlan;
 import com.mindhub.homebanking.domain.TransactionCategory;
-import com.mindhub.homebanking.service.notification.EmailTemplateService;
-import com.mindhub.homebanking.service.notification.Mailer;
 import com.mindhub.homebanking.dto.CreateFixedTermRequest;
 import com.mindhub.homebanking.dto.FixedTermDTO;
 import com.mindhub.homebanking.dto.FixedTermPlanDTO;
@@ -53,8 +51,6 @@ public class FixedTermService {
     private final ClientRepository clientRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
-    private final EmailTemplateService emailTemplate;
-    private final Mailer mailer;
     private final AuditService audit;
     private final Clock clock;
     private final BigDecimal minAmount;
@@ -62,16 +58,13 @@ public class FixedTermService {
 
     public FixedTermService(FixedTermRepository fixedTermRepository, FixedTermPlanRepository planRepository,
                             ClientRepository clientRepository, AccountRepository accountRepository,
-                            TransactionRepository transactionRepository, EmailTemplateService emailTemplate,
-                            Mailer mailer, AuditService audit, Clock clock,
+                            TransactionRepository transactionRepository, AuditService audit, Clock clock,
                             BankingProperties properties, PlatformTransactionManager transactionManager) {
         this.fixedTermRepository = fixedTermRepository;
         this.planRepository = planRepository;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
-        this.emailTemplate = emailTemplate;
-        this.mailer = mailer;
         this.audit = audit;
         this.clock = clock;
         this.minAmount = properties.fixedTerms().minAmount();
@@ -113,12 +106,6 @@ public class FixedTermService {
         FixedTerm fixedTerm = constitute(client, account, request.amount(), plan, request.autoRenew(), null);
         audit.success(AuditAction.FIXED_TERM_CREATED, account.getNumber(),
                 "amount=" + request.amount().toPlainString() + " days=" + plan.getTermDays());
-
-        // Notificar por email
-        String body = emailTemplate.fixedTermCreated(client.getName(), request.amount(), plan.getTermDays(),
-                plan.getAnnualRate(), fixedTerm.getMaturityDate());
-        mailer.send(client.getEmail(), "Plazo fijo creado", body);
-
         return toDto(fixedTerm);
     }
 
@@ -173,11 +160,6 @@ public class FixedTermService {
         Client client = fixedTerm.getClient();
         audit.record(client.getEmail(), SYSTEM, AuditAction.FIXED_TERM_PAID, account.getNumber(),
                 AuditEvent.Outcome.SUCCESS, "id=" + fixedTerm.getId());
-
-        // Notificar por email
-        String body = emailTemplate.fixedTermMatured(client.getName(), fixedTerm.getPrincipal(),
-                fixedTerm.getInterest(), fixedTerm.getTotal());
-        mailer.send(client.getEmail(), "Tu plazo fijo venció y fue acreditado", body);
 
         if (fixedTerm.isAutoRenew() && account.isActive()) {
             planRepository.findByTermDays(fixedTerm.getTermDays()).ifPresent(plan -> {
