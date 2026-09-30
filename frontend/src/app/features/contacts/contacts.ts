@@ -17,6 +17,7 @@ import { Contact } from '../../core/models/contact.model';
 import { toLoadState } from '../../core/utils/load-state';
 import { ConfirmDialog, ConfirmDialogData } from '../../shared/confirm-dialog/confirm-dialog';
 import { ContactDialog, ContactDialogData } from './contact-dialog/contact-dialog';
+import { TrustDialog, TrustDialogData } from './trust-dialog/trust-dialog';
 
 /** Saved recipients: add, rename, delete and transfer to them. */
 @Component({
@@ -95,6 +96,31 @@ export class Contacts {
           else this.snackBar.open('No pudimos borrarlo. Intentá de nuevo.', 'OK');
         },
       });
+  }
+
+  protected trust(contact: Contact): void {
+    this.dialog
+      .open<TrustDialog, TrustDialogData, Contact>(TrustDialog, {
+        data: { contact },
+        maxWidth: '95vw',
+      })
+      .afterClosed()
+      .pipe(filter((saved): saved is Contact => !!saved))
+      .subscribe((saved) => {
+        this.snackBar.open(`${saved.alias} ahora es de confianza.`, 'OK');
+        this.reload$.next();
+      });
+  }
+
+  /** Makes transfers safer again, so it needs no code or confirmation. */
+  protected untrust(contact: Contact): void {
+    this.contactService.untrust(contact.id).subscribe({
+      next: () => {
+        this.snackBar.open(`${contact.alias} ya no es de confianza.`, 'OK');
+        this.reload$.next();
+      },
+      error: () => this.snackBar.open('No pudimos quitarle la confianza. Intentá de nuevo.', 'OK'),
+    });
   }
 
   private openDialog(data: ContactDialogData, message: (saved: Contact) => string): void {

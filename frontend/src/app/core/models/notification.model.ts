@@ -8,7 +8,8 @@ export type NotificationType =
   | 'LOGIN'
   | 'PASSWORD_CHANGED'
   | 'TWO_FACTOR_ENABLED'
-  | 'TWO_FACTOR_DISABLED';
+  | 'TWO_FACTOR_DISABLED'
+  | 'CONTACT_TRUSTED';
 
 /** Mirrors backend `NotificationDTO`: an entry of the bell. */
 export interface AppNotification {
@@ -40,4 +41,5 @@ export const NOTIFICATION_ICON: Record<NotificationType, string> = {
   PASSWORD_CHANGED: 'password',
   TWO_FACTOR_ENABLED: 'verified_user',
   TWO_FACTOR_DISABLED: 'gpp_maybe',
+  CONTACT_TRUSTED: 'verified',
 };

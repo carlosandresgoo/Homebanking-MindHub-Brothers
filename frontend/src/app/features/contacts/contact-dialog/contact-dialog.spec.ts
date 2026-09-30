@@ -13,6 +13,7 @@ const LUCIA: Contact = {
   accountNumber: 'VIN-27905812',
   holderDisplay: 'Lucía P.',
   createdAt: '2026-09-01T10:00:00',
+  trusted: false,
 };
 
 describe('ContactDialog', () => {

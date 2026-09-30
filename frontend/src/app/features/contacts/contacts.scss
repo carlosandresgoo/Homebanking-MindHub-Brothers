@@ -145,3 +145,22 @@ mat-icon[matPrefix] {
     color: var(--mat-sys-error);
   }
 }
+
+.trusted {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-small);
+  vertical-align: middle;
+
+  mat-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
+}

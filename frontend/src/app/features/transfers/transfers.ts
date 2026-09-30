@@ -213,6 +213,7 @@ export class Transfers {
     const anticipated =
       !!limits?.secondFactorEnabled &&
       this.toThirdParty() &&
+      !this.matchedContact()?.trusted &&
       amount >= limits.secondFactorThreshold;
     return anticipated || this.codeRequested();
   });

@@ -55,7 +55,12 @@
                 contact.alias.charAt(0).toUpperCase()
               }}</span>
               <div class="info">
-                <strong>{{ contact.alias }}</strong>
+                <strong>
+                  {{ contact.alias }}
+                  @if (contact.trusted) {
+                    <span class="trusted"><mat-icon>verified</mat-icon> De confianza</span>
+                  }
+                </strong>
                 <span>
                   {{ contact.holderDisplay }} ·
                   <span class="hb-tabular">{{ contact.accountNumber }}</span>
@@ -71,6 +76,29 @@
                   <mat-icon>send</mat-icon>
                   <span class="label">Transferir</span>
                 </a>
+                @if (contact.trusted) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="untrust"
+                    (click)="untrust(contact)"
+                    [attr.aria-label]="'Quitarle la confianza a ' + contact.alias"
+                    matTooltip="Quitar confianza"
+                  >
+                    <mat-icon>remove_moderator</mat-icon>
+                  </button>
+                } @else {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="trust"
+                    (click)="trust(contact)"
+                    [attr.aria-label]="'Marcar a ' + contact.alias + ' como de confianza'"
+                    matTooltip="Marcar de confianza"
+                  >
+                    <mat-icon>verified_user</mat-icon>
+                  </button>
+                }
                 <button
                   mat-icon-button
                   type="button"

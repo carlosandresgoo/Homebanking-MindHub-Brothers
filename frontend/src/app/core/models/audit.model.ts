@@ -16,10 +16,17 @@ export type AuditAction =
   | 'ACCOUNT_CLOSED'
   | 'ACCOUNT_ALIAS_CHANGED'
   | 'TRANSFER'
+  | 'CONTACT_ADDED'
+  | 'CONTACT_REMOVED'
+  | 'CONTACT_TRUSTED'
+  | 'CONTACT_UNTRUSTED'
   | 'CARD_ISSUED'
   | 'CARD_DEACTIVATED'
   | 'LOAN_APPROVED'
-  | 'LOAN_INSTALLMENT_PAID';
+  | 'LOAN_INSTALLMENT_PAID'
+  | 'FIXED_TERM_CREATED'
+  | 'FIXED_TERM_PAID'
+  | 'FIXED_TERM_RENEWED';
 
 export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   LOGIN: 'Ingreso',
@@ -39,10 +46,17 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   ACCOUNT_CLOSED: 'Cierre de cuenta',
   ACCOUNT_ALIAS_CHANGED: 'Cambio de alias',
   TRANSFER: 'Transferencia',
+  CONTACT_ADDED: 'Destinatario agregado',
+  CONTACT_REMOVED: 'Destinatario borrado',
+  CONTACT_TRUSTED: 'Destinatario de confianza',
+  CONTACT_UNTRUSTED: 'Confianza quitada',
   CARD_ISSUED: 'Emisión de tarjeta',
   CARD_DEACTIVATED: 'Baja de tarjeta',
   LOAN_APPROVED: 'Préstamo aprobado',
   LOAN_INSTALLMENT_PAID: 'Pago de cuota',
+  FIXED_TERM_CREATED: 'Plazo fijo constituido',
+  FIXED_TERM_PAID: 'Plazo fijo acreditado',
+  FIXED_TERM_RENEWED: 'Plazo fijo renovado',
 };
 
 /** Mirrors backend `AuditEventDTO`. */

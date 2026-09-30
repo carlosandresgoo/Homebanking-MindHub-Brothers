@@ -25,6 +25,15 @@ export class ContactService {
     return this.http.patch<Contact>(`${this.baseUrl}/${id}`, { alias });
   }
 
+  /** Needs a current 2FA code: 403 when wrong, 422 `TWO_FACTOR_REQUIRED` when 2FA is off. */
+  trust(id: number, code: string): Observable<Contact> {
+    return this.http.post<Contact>(`${this.baseUrl}/${id}/trust`, { code });
+  }
+
+  untrust(id: number): Observable<Contact> {
+    return this.http.delete<Contact>(`${this.baseUrl}/${id}/trust`);
+  }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

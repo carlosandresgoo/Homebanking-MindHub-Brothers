@@ -58,6 +58,7 @@ const LUCIA: Contact = {
   accountNumber: 'VIN999',
   holderDisplay: 'Lucía P.',
   createdAt: '2026-09-01T10:00:00',
+  trusted: false,
 };
 
 /** What the API answers when the destination is looked up (someone else's account). */
@@ -473,5 +474,23 @@ describe('Transfers', () => {
     httpTesting.expectOne('/api/transfers').flush({ ...RECEIPT, targetAccountNumber: 'VIN002' });
     await fixture.whenStable();
     expect(el.textContent).not.toContain('Guardar en mi agenda');
+  });
+
+  it('does not ask for the code up front for a trusted recipient', async () => {
+    const { fixture, el } = await render(
+      undefined,
+      { ...LIMITS, secondFactorEnabled: true, secondFactorThreshold: 1000 },
+      [{ ...LUCIA, trusted: true }],
+    );
+    typeInto(el, '#thirdTarget', 'VIN999');
+    typeInto(el, '#amount', '1000');
+    await click(fixture, 'Continuar');
+
+    expect(el.querySelector('[aria-label="Confirmación"]')).not.toBeNull();
+    expect(el.querySelector('#secondFactorCode')).toBeNull();
+    await click(fixture, 'Confirmar transferencia');
+    const req = httpTesting.expectOne('/api/transfers');
+    expect(req.request.body.secondFactorCode).toBeUndefined();
+    req.flush(RECEIPT);
   });
 });
