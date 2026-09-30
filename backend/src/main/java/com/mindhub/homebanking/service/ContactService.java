@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Saved recipients. Adding one confirms the account exists and shows a masked holder name, so it is
@@ -34,12 +33,14 @@ public class ContactService {
     private final ClientRepository clientRepository;
     private final AccountRepository accountRepository;
     private final LoginRateLimiter rateLimiter;
+    private final RecipientResolver recipients;
     private final AuditService audit;
     private final Clock clock;
 
     public ContactService(ContactRepository contactRepository, ClientRepository clientRepository,
-                          AccountRepository accountRepository, LoginRateLimiter rateLimiter, AuditService audit,
-                          Clock clock) {
+                          AccountRepository accountRepository, LoginRateLimiter rateLimiter,
+                          RecipientResolver recipients, AuditService audit, Clock clock) {
+        this.recipients = recipients;
         this.contactRepository = contactRepository;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
@@ -55,17 +56,18 @@ public class ContactService {
     }
 
     /**
-     * 404 for an unknown or closed account; 422 for one's own account or when the agenda is full;
+     * @param accountNumber account number, CBU or alias of the recipient
+     * 404 for an unknown or closed account; 422 for one's own account, the agenda full or a bad CBU;
      * 409 when the account or the alias is already saved.
      */
     @Transactional
     public ContactDTO add(String email, String accountNumber, String alias) {
         Client client = client(email);
         rateLimiter.consume("contact:" + client.getId());
-        String number = accountNumber.trim().toUpperCase(Locale.ROOT);
         String cleanAlias = normalizeAlias(alias);
 
-        Account account = accountRepository.findIdByNumber(number)
+        // Account number, CBU or alias: the contact always keeps the account number.
+        Account account = recipients.resolveId(accountNumber)
                 .flatMap(accountRepository::findWithClientById)
                 .filter(Account::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));

@@ -17,6 +17,14 @@ public class Account {
     @Column(nullable = false, unique = true, length = 20)
     private String number;
 
+    /** 22 digits, see {@link Cbu}. Never changes. */
+    @Column(nullable = false, unique = true, length = 22)
+    private String cbu;
+
+    /** Lower-case, see {@link AccountAlias}. The owner can change it. */
+    @Column(nullable = false, unique = true, length = 20)
+    private String alias;
+
     @Column(nullable = false)
     private LocalDateTime creationDate;
 
@@ -38,8 +46,10 @@ public class Account {
     protected Account() {
     }
 
-    public Account(String number, LocalDateTime creationDate, BigDecimal balance) {
+    public Account(String number, String cbu, String alias, LocalDateTime creationDate, BigDecimal balance) {
         this.number = number;
+        this.cbu = cbu;
+        this.alias = alias;
         this.creationDate = creationDate;
         this.balance = balance;
     }
@@ -75,6 +85,11 @@ public class Account {
         this.active = false;
     }
 
+    /** @param alias already normalized and checked for uniqueness by the caller */
+    public void changeAlias(String alias) {
+        this.alias = alias;
+    }
+
     private Transaction record(TransactionType type, TransactionCategory category, BigDecimal amount,
                                String description, LocalDateTime date) {
         Transaction transaction = new Transaction(type, category, amount, description, date, balance, this);
@@ -94,6 +109,14 @@ public class Account {
 
     public String getNumber() {
         return number;
+    }
+
+    public String getCbu() {
+        return cbu;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     public LocalDateTime getCreationDate() {

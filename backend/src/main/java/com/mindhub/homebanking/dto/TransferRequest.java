@@ -10,14 +10,15 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 /**
- * Input for {@code POST /api/transfers}. Account numbers are case-insensitive.
+ * Input for {@code POST /api/transfers}. The source is an own account number; the target can be an
+ * account number, a CBU or an alias (all case-insensitive).
  *
  * @param secondFactorCode authenticator code; required (403 otherwise) for large transfers to other
  *                         clients when the caller has 2FA enabled
  */
 public record TransferRequest(
         @NotBlank @Size(max = 20) String sourceAccountNumber,
-        @NotBlank @Size(max = 20) String targetAccountNumber,
+        @NotBlank @Size(max = 24) String targetAccountNumber,
         @NotNull @DecimalMin(value = "0.01", message = "must be at least 0.01")
         @Digits(integer = 15, fraction = 2, message = "must have at most 2 decimals") BigDecimal amount,
         @Size(max = 100) String description,

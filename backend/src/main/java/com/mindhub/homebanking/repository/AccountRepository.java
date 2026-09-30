@@ -15,6 +15,12 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     boolean existsByNumber(String number);
 
+    boolean existsByCbu(String cbu);
+
+    boolean existsByAliasIgnoreCase(String alias);
+
+    boolean existsByAliasIgnoreCaseAndIdNot(String alias, Long id);
+
     long countByClientAndActiveTrue(Client client);
 
     List<Account> findByClientEmailIgnoreCaseAndActiveTrueOrderByIdAsc(String email);
@@ -31,6 +37,12 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
      */
     @Query("select a.id from Account a where upper(a.number) = upper(:number)")
     Optional<Long> findIdByNumber(String number);
+
+    @Query("select a.id from Account a where a.cbu = :cbu")
+    Optional<Long> findIdByCbu(String cbu);
+
+    @Query("select a.id from Account a where lower(a.alias) = lower(:alias)")
+    Optional<Long> findIdByAlias(String alias);
 
     /** Row lock for balance updates; callers lock several accounts in ascending id order (no deadlocks). */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

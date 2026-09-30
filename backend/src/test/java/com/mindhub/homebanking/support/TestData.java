@@ -17,6 +17,7 @@ import com.mindhub.homebanking.repository.PasswordResetTokenRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
 import com.mindhub.homebanking.security.LoginRateLimiter;
+import com.mindhub.homebanking.service.AccountNumberGenerator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +51,7 @@ public class TestData {
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter loginRateLimiter;
     private final Clock clock;
+    private final AccountNumberGenerator accountNumbers;
 
     public TestData(ClientRepository clients, AccountRepository accounts, TransactionRepository transactions,
                     CardRepository cards, ClientLoanRepository clientLoans, RefreshTokenRepository refreshTokens,
@@ -57,7 +59,8 @@ public class TestData {
                     IdempotencyRecordRepository idempotencyRecords, ContactRepository contacts,
                     FixedTermRepository fixedTerms,
                     PasswordEncoder passwordEncoder,
-                    LoginRateLimiter loginRateLimiter, Clock clock) {
+                    LoginRateLimiter loginRateLimiter, Clock clock, AccountNumberGenerator accountNumbers) {
+        this.accountNumbers = accountNumbers;
         this.clock = clock;
         this.auditEvents = auditEvents;
         this.idempotencyRecords = idempotencyRecords;
@@ -100,10 +103,14 @@ public class TestData {
         return new Ids(melba.getId(), other.getId(), account.getId(), otherAccount.getId());
     }
 
-    /** Opens an account for {@code owner}; a positive {@code initial} is added as a deposit. */
+    /**
+     * Opens an account for {@code owner}; a positive {@code initial} is added as a deposit. Its alias is
+     * predictable: the number in lower case plus ".test" (VIN001 → vin001.test).
+     */
     @Transactional
     public Account account(Client owner, String number, BigDecimal initial) {
-        Account account = new Account(number, LocalDateTime.now(clock), BigDecimal.ZERO);
+        Account account = accountNumbers.newAccount(number, LocalDateTime.now(clock));
+        account.changeAlias(number.toLowerCase(java.util.Locale.ROOT) + ".test");
         owner.addAccount(account);
         accounts.save(account);
         if (initial.signum() > 0) {

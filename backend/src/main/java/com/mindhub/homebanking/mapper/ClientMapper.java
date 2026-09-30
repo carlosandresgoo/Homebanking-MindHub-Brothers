@@ -35,13 +35,16 @@ public class ClientMapper {
     }
 
     public AccountDTO toDto(Account account) {
-        return new AccountDTO(account.getId(), account.getNumber(), account.getCreationDate(), account.getBalance());
+        return new AccountDTO(account.getId(), account.getNumber(), account.getCbu(), account.getAlias(),
+                account.getCreationDate(), account.getBalance());
     }
 
     public AccountDetailDTO toDetailDto(Account account) {
         return new AccountDetailDTO(
                 account.getId(),
                 account.getNumber(),
+                account.getCbu(),
+                account.getAlias(),
                 account.getCreationDate(),
                 account.getBalance());
     }

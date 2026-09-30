@@ -42,19 +42,21 @@ public class TransferService {
     private final TwoFactorService twoFactor;
     private final AuditService audit;
     private final NotificationService notifications;
+    private final RecipientResolver recipients;
     private final BankingProperties.Transfers limits;
     private final Clock clock;
 
     public TransferService(AccountRepository accountRepository, ClientRepository clientRepository,
                            TransactionRepository transactionRepository, TwoFactorService twoFactor,
-                           AuditService audit, NotificationService notifications, BankingProperties properties,
-                           Clock clock) {
+                           AuditService audit, NotificationService notifications, RecipientResolver recipients,
+                           BankingProperties properties, Clock clock) {
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
         this.transactionRepository = transactionRepository;
         this.twoFactor = twoFactor;
         this.audit = audit;
         this.notifications = notifications;
+        this.recipients = recipients;
         this.limits = properties.transfers();
         this.clock = clock;
     }
@@ -62,14 +64,14 @@ public class TransferService {
     @Transactional
     public TransferReceiptDTO transfer(String email, TransferRequest request) {
         String sourceNumber = normalize(request.sourceAccountNumber());
-        String targetNumber = normalize(request.targetAccountNumber());
-        if (sourceNumber.equals(targetNumber)) {
-            throw new BusinessRuleException("You cannot transfer to the same account");
-        }
+        // Account number, CBU or alias; resolved before any lock (it may reject an invalid CBU).
+        Long targetId = recipients.resolveId(request.targetAccountNumber()).orElseThrow(TransferService::targetNotFound);
 
         Client client = clientRepository.findByEmailForUpdate(email).orElseThrow(TransferService::sourceNotFound);
         Long sourceId = accountRepository.findIdByNumber(sourceNumber).orElseThrow(TransferService::sourceNotFound);
-        Long targetId = accountRepository.findIdByNumber(targetNumber).orElseThrow(TransferService::targetNotFound);
+        if (sourceId.equals(targetId)) {
+            throw new BusinessRuleException("You cannot transfer to the same account");
+        }
 
         // Lock both rows in a global order, then read their current state.
         Account first = lock(Math.min(sourceId, targetId));

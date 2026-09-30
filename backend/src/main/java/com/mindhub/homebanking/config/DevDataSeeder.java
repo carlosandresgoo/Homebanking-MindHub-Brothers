@@ -16,6 +16,7 @@ import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.FixedTermPlanRepository;
 import com.mindhub.homebanking.repository.FixedTermRepository;
 import com.mindhub.homebanking.repository.LoanRepository;
+import com.mindhub.homebanking.service.AccountNumberGenerator;
 import com.mindhub.homebanking.service.CardNumberGenerator;
 import com.mindhub.homebanking.repository.TransactionRepository;
 import org.slf4j.Logger;
@@ -60,6 +61,7 @@ class DevDataSeeder implements ApplicationRunner {
     private final TransactionRepository transactionRepository;
     private final CardRepository cardRepository;
     private final CardNumberGenerator cardNumbers;
+    private final AccountNumberGenerator accountNumbers;
     private final LoanRepository loanRepository;
     private final ClientLoanRepository clientLoanRepository;
     private final PasswordEncoder passwordEncoder;
@@ -70,7 +72,8 @@ class DevDataSeeder implements ApplicationRunner {
 
     DevDataSeeder(ClientRepository clientRepository, AccountRepository accountRepository,
                   TransactionRepository transactionRepository, CardRepository cardRepository,
-                  CardNumberGenerator cardNumbers, LoanRepository loanRepository,
+                  CardNumberGenerator cardNumbers, AccountNumberGenerator accountNumbers,
+                  LoanRepository loanRepository,
                   ClientLoanRepository clientLoanRepository, PasswordEncoder passwordEncoder,
                   FixedTermRepository fixedTermRepository, FixedTermPlanRepository planRepository, Clock clock,
                   @Value("${DEV_SEED_PASSWORD:}") String configuredPassword) {
@@ -84,6 +87,7 @@ class DevDataSeeder implements ApplicationRunner {
         this.transactionRepository = transactionRepository;
         this.cardRepository = cardRepository;
         this.cardNumbers = cardNumbers;
+        this.accountNumbers = accountNumbers;
         this.passwordEncoder = passwordEncoder;
         this.configuredPassword = configuredPassword;
     }
@@ -99,8 +103,10 @@ class DevDataSeeder implements ApplicationRunner {
 
         Client melba = clientRepository.save(new Client("Melba", "Morel", CLIENT_EMAIL, hash, Role.CLIENT));
         LocalDateTime now = LocalDateTime.now(clock);
-        Account vin001 = new Account("VIN001", now.minusDays(30), BigDecimal.ZERO);
-        Account vin002 = new Account("VIN002", now.minusDays(29), BigDecimal.ZERO);
+        Account vin001 = accountNumbers.newAccount("VIN001", now.minusDays(30));
+        Account vin002 = accountNumbers.newAccount("VIN002", now.minusDays(29));
+        vin001.changeAlias("melba.ahorros");
+        vin002.changeAlias("melba.gastos");
         melba.addAccount(vin001);
         melba.addAccount(vin002);
         accountRepository.save(vin001);

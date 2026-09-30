@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -115,7 +114,7 @@ public class ClientService {
                 email,
                 passwordEncoder.encode(request.password()),
                 Role.CLIENT));
-        Account account = new Account(accountNumbers.next(), LocalDateTime.now(clock), BigDecimal.ZERO);
+        Account account = accountNumbers.newAccount(LocalDateTime.now(clock));
         client.addAccount(account);
         accountRepository.save(account);
         notifications.welcome(client);

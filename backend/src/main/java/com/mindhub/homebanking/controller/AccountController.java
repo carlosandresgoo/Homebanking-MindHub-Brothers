@@ -2,9 +2,14 @@ package com.mindhub.homebanking.controller;
 
 import com.mindhub.homebanking.dto.AccountDTO;
 import com.mindhub.homebanking.dto.AccountDetailDTO;
+import com.mindhub.homebanking.dto.RecipientDTO;
+import com.mindhub.homebanking.dto.UpdateAliasRequest;
 import com.mindhub.homebanking.service.AccountService;
 import com.mindhub.homebanking.service.IdempotencyService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,8 +17,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -53,6 +61,20 @@ public class AccountController {
             response.header(Idempotency.REPLAYED_HEADER, "true");
         }
         return response.body(result.body());
+    }
+
+    /** Recipient check before transferring: account number, CBU or alias → masked holder. */
+    @GetMapping("/api/accounts/lookup")
+    @PreAuthorize("hasRole('CLIENT')")
+    public RecipientDTO lookup(@RequestParam @NotBlank @Size(max = 24) String key, Authentication authentication) {
+        return accountService.lookup(authentication.getName(), key);
+    }
+
+    @PatchMapping("/api/accounts/{id}/alias")
+    @PreAuthorize("hasRole('CLIENT')")
+    public AccountDTO changeAlias(@PathVariable Long id, @Valid @RequestBody UpdateAliasRequest request,
+                                  Authentication authentication) {
+        return accountService.changeAlias(id, authentication.getName(), request.alias());
     }
 
     /** Owner or ADMIN; anyone else gets 404. */
