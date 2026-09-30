@@ -52,6 +52,9 @@ public class Client {
     @Column(nullable = false)
     private boolean totpEnabled;
 
+    @Embedded
+    private AlertPreferences alerts = new AlertPreferences();
+
     /** Time step of the last accepted code: a code can be used only once. */
     private Long totpLastStep;
 
@@ -131,6 +134,10 @@ public class Client {
     /** @param passwordHash already encoded (never the raw password) */
     public void changePassword(String passwordHash) {
         this.password = passwordHash;
+    }
+
+    public AlertPreferences getAlerts() {
+        return alerts;
     }
 
     public void addAccount(Account account) {

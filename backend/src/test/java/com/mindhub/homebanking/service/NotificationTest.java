@@ -36,6 +36,13 @@ class NotificationTest extends IntegrationTest {
                 .andReturn();
     }
 
+    /** Signs in and forgets the sign-in alert e-mail, so each test only sees the mails it causes. */
+    private String signIn(String email) throws Exception {
+        String token = accessToken(email);
+        mailer.clear();
+        return token;
+    }
+
     private Mail mailTo(String email) {
         return mailer.sent().stream().filter(m -> m.to().equals(email)).findFirst().orElseThrow();
     }
@@ -56,7 +63,7 @@ class NotificationTest extends IntegrationTest {
 
     @Test
     void transferToAnotherClientNotifiesBothSidesWithMaskedAccounts() throws Exception {
-        String melba = accessToken(TestData.CLIENT_EMAIL);
+        String melba = signIn(TestData.CLIENT_EMAIL);
         assertThat(transfer(melba, "1234.50", "Cena").getResponse().getStatus()).isEqualTo(201);
 
         assertThat(mailer.sent()).hasSize(2);
@@ -71,7 +78,7 @@ class NotificationTest extends IntegrationTest {
 
     @Test
     void theDescriptionCannotInjectHtmlIntoTheRecipientsEmail() throws Exception {
-        String melba = accessToken(TestData.CLIENT_EMAIL);
+        String melba = signIn(TestData.CLIENT_EMAIL);
         transfer(melba, "10", "<a href=\"https://evil.example\">Reclamá tu premio</a>");
 
         assertThat(mailTo(TestData.OTHER_CLIENT_EMAIL).body())
@@ -81,7 +88,7 @@ class NotificationTest extends IntegrationTest {
 
     @Test
     void rejectedOperationsSendNothing() throws Exception {
-        String melba = accessToken(TestData.CLIENT_EMAIL);
+        String melba = signIn(TestData.CLIENT_EMAIL);
         assertThat(transfer(melba, "99999", "Sin fondos").getResponse().getStatus()).isEqualTo(422);
 
         assertThat(mailer.sent()).isEmpty();
@@ -89,8 +96,8 @@ class NotificationTest extends IntegrationTest {
 
     @Test
     void anEmailOutageDoesNotUndoTheTransfer() throws Exception {
+        String melba = signIn(TestData.CLIENT_EMAIL);
         mailer.down(true);
-        String melba = accessToken(TestData.CLIENT_EMAIL);
 
         assertThat(transfer(melba, "1234.50", "Cena").getResponse().getStatus()).isEqualTo(201);
         mvc.perform(get("/api/accounts/" + ids.accountId()).header(HttpHeaders.AUTHORIZATION, bearer(melba)))
@@ -100,7 +107,7 @@ class NotificationTest extends IntegrationTest {
 
     @Test
     void fixedTermEmailsShowTheRateAsAPercentageAndThePayout() throws Exception {
-        String melba = accessToken(TestData.CLIENT_EMAIL);
+        String melba = signIn(TestData.CLIENT_EMAIL);
         mvc.perform(post("/api/clients/current/fixed-terms").header(HttpHeaders.AUTHORIZATION, bearer(melba))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of("accountNumber", "VIN001", "amount", "1000", "termDays", 30,
@@ -122,7 +129,7 @@ class NotificationTest extends IntegrationTest {
 
     @Test
     void passwordChangeIsReported() throws Exception {
-        String melba = accessToken(TestData.CLIENT_EMAIL);
+        String melba = signIn(TestData.CLIENT_EMAIL);
         mvc.perform(post("/api/auth/password").header(HttpHeaders.AUTHORIZATION, bearer(melba))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of("currentPassword", TestData.PASSWORD,

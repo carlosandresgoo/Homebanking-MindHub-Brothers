@@ -1,7 +1,11 @@
 package com.mindhub.homebanking.service.notification;
 
+import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.FixedTerm;
+import com.mindhub.homebanking.domain.Notification;
+import com.mindhub.homebanking.domain.Transaction;
+import com.mindhub.homebanking.repository.NotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,9 +27,15 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Transactional e-mails to clients. The body is rendered right away, inside the caller's transaction
- * (so lazy relations can still be read), but it is delivered only after that transaction commits: a
- * rolled-back operation never announces itself, and a delivery failure never undoes a committed one.
+ * Tells clients what happened, through two channels:
+ * <ul>
+ *   <li>the in-app inbox (the bell), saved in the caller's transaction, so it exists only if the
+ *       operation commits;</li>
+ *   <li>e-mail, rendered now but delivered after commit: a rolled-back operation never announces itself
+ *       and a delivery failure never undoes a committed one.</li>
+ * </ul>
+ * Security changes (password, 2FA) and the welcome are always e-mailed; movement notices and alerts
+ * only when the client keeps e-mail alerts on ({@link com.mindhub.homebanking.domain.AlertPreferences}).
  * Templates live in {@code resources/templates/mail} and share {@code layout.html}.
  */
 @Service
@@ -36,65 +46,85 @@ public class NotificationService {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy", ES_AR);
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", ES_AR);
 
+    private enum Email { ALWAYS, IF_WANTED }
+
     private final Mailer mailer;
     private final TemplateEngine templates;
+    private final NotificationRepository inbox;
     private final Clock clock;
     private final String frontendUrl;
 
-    public NotificationService(Mailer mailer, TemplateEngine templates, Clock clock,
+    public NotificationService(Mailer mailer, TemplateEngine templates, NotificationRepository inbox, Clock clock,
                                @Value("${app.frontend-url}") String frontendUrl) {
         this.mailer = mailer;
         this.templates = templates;
+        this.inbox = inbox;
         this.clock = clock;
         this.frontendUrl = frontendUrl;
     }
 
     public void welcome(Client client) {
-        send(client, "Te damos la bienvenida a MindHub Brothers", "welcome",
+        toInbox(client, Notification.Type.WELCOME, "Te damos la bienvenida",
+                "Ya podés operar. Te recomendamos activar la verificación en dos pasos desde tu perfil.", "/profile");
+        email(client, Email.ALWAYS, "Te damos la bienvenida a MindHub Brothers", "welcome",
                 Map.of("accountsUrl", link("/accounts"), "profileUrl", link("/profile")));
     }
 
     public void passwordReset(Client client, String token, Duration validity) {
-        send(client, "Restablecé tu contraseña de MindHub Brothers", "password-reset",
+        email(client, Email.ALWAYS, "Restablecé tu contraseña de MindHub Brothers", "password-reset",
                 Map.of("resetUrl", link("/reset-password?token=" + token), "minutes", validity.toMinutes()));
     }
 
     public void passwordChanged(Client client) {
-        send(client, "Cambiaste tu contraseña", "password-changed",
+        toInbox(client, Notification.Type.PASSWORD_CHANGED, "Cambiaste tu contraseña",
+                "Cerramos las sesiones abiertas en otros dispositivos. ¿No fuiste vos? Comunicate con soporte.",
+                "/profile");
+        email(client, Email.ALWAYS, "Cambiaste tu contraseña", "password-changed",
                 Map.of("when", now(), "profileUrl", link("/profile")));
     }
 
     public void twoFactorEnabled(Client client) {
-        send(client, "Activaste la verificación en dos pasos", "two-factor-enabled",
+        toInbox(client, Notification.Type.TWO_FACTOR_ENABLED, "Activaste la verificación en dos pasos",
+                "Vas a necesitar el código de tu app para ingresar y para transferencias grandes.", "/profile");
+        email(client, Email.ALWAYS, "Activaste la verificación en dos pasos", "two-factor-enabled",
                 Map.of("when", now(), "profileUrl", link("/profile")));
     }
 
     /** @param byAdmin true when support turned it off (lost phone), false when the client did */
     public void twoFactorDisabled(Client client, boolean byAdmin) {
-        send(client, "Se desactivó la verificación en dos pasos", "two-factor-disabled",
+        toInbox(client, Notification.Type.TWO_FACTOR_DISABLED, "Se desactivó la verificación en dos pasos",
+                byAdmin ? "Soporte la desactivó a tu pedido. Podés volver a activarla desde tu perfil."
+                        : "Desactivaste la verificación en dos pasos. Podés volver a activarla desde tu perfil.",
+                "/profile");
+        email(client, Email.ALWAYS, "Se desactivó la verificación en dos pasos", "two-factor-disabled",
                 Map.of("when", now(), "byAdmin", byAdmin, "profileUrl", link("/profile")));
     }
 
-    /** One e-mail to each side; call it only for transfers between different clients. */
-    public void transfer(Client sender, String sourceNumber, Client recipient, String targetNumber,
+    /** Only for transfers between different clients: an e-mail to each side, the bell for the recipient. */
+    public void transfer(Client sender, String sourceNumber, Client recipient, Account target,
                          BigDecimal amount, String note, LocalDateTime when) {
+        String cleanNote = note == null || note.isBlank() ? null : note.trim();
         Map<String, Object> common = new HashMap<>();
         common.put("amount", money(amount));
-        common.put("note", note == null || note.isBlank() ? null : note.trim());
+        common.put("note", cleanNote);
         common.put("when", when.format(DATE_TIME));
         common.put("accountsUrl", link("/accounts"));
 
         Map<String, Object> sent = new HashMap<>(common);
-        sent.put("account", mask(targetNumber));
-        send(sender, "Transferiste " + money(amount), "transfer-sent", sent);
+        sent.put("account", mask(target.getNumber()));
+        email(sender, Email.IF_WANTED, "Transferiste " + money(amount), "transfer-sent", sent);
 
+        toInbox(recipient, Notification.Type.TRANSFER_RECEIVED, "Recibiste " + money(amount),
+                "De la cuenta " + mask(sourceNumber) + (cleanNote == null ? "" : " · " + cleanNote),
+                "/accounts/" + target.getId());
         Map<String, Object> received = new HashMap<>(common);
         received.put("account", mask(sourceNumber));
-        send(recipient, "Recibiste una transferencia de " + money(amount), "transfer-received", received);
+        email(recipient, Email.IF_WANTED, "Recibiste una transferencia de " + money(amount), "transfer-received",
+                received);
     }
 
     public void fixedTermCreated(FixedTerm fixedTerm) {
-        send(fixedTerm.getClient(), "Constituiste un plazo fijo", "fixed-term-created", Map.of(
+        email(fixedTerm.getClient(), Email.IF_WANTED, "Constituiste un plazo fijo", "fixed-term-created", Map.of(
                 "principal", money(fixedTerm.getPrincipal()),
                 "rate", percent(fixedTerm.getAnnualRate()),
                 "days", fixedTerm.getTermDays(),
@@ -108,6 +138,10 @@ public class NotificationService {
 
     /** @param renewed the new fixed term when it was reinvested automatically, otherwise null */
     public void fixedTermPaid(FixedTerm paid, FixedTerm renewed) {
+        toInbox(paid.getClient(), Notification.Type.FIXED_TERM_PAID, "Venció tu plazo fijo",
+                "Se acreditaron " + money(paid.getTotal()) + " en la cuenta " + paid.getAccount().getNumber()
+                        + (renewed == null ? "." : " y se reinvirtieron hasta el " + date(renewed.getMaturityDate()) + "."),
+                "/investments");
         Map<String, Object> model = new HashMap<>();
         model.put("principal", money(paid.getPrincipal()));
         model.put("interest", money(paid.getInterest()));
@@ -115,11 +149,51 @@ public class NotificationService {
         model.put("account", paid.getAccount().getNumber());
         model.put("renewedMaturity", renewed == null ? null : date(renewed.getMaturityDate()));
         model.put("investmentsUrl", link("/investments"));
-        send(paid.getClient(), "Tu plazo fijo venció: se acreditaron " + money(paid.getTotal()),
+        email(paid.getClient(), Email.IF_WANTED, "Tu plazo fijo venció: se acreditaron " + money(paid.getTotal()),
                 "fixed-term-paid", model);
     }
 
-    private void send(Client client, String subject, String template, Map<String, Object> model) {
+    /** A debit left the account at {@code balanceAfter}, below the client's threshold. */
+    public void lowBalance(Client client, Account account, BigDecimal balanceAfter, BigDecimal threshold) {
+        String balance = money(balanceAfter);
+        toInbox(client, Notification.Type.LOW_BALANCE, "Saldo bajo en " + account.getNumber(),
+                "Te quedan " + balance + ", menos de los " + money(threshold) + " que elegiste como aviso.",
+                "/accounts/" + account.getId());
+        email(client, Email.IF_WANTED, "Saldo bajo: te quedan " + balance, "low-balance", Map.of(
+                "account", account.getNumber(), "balance", balance, "threshold", money(threshold),
+                "accountUrl", link("/accounts/" + account.getId()), "profileUrl", link("/profile")));
+    }
+
+    /** A debit of at least the client's threshold. */
+    public void largeMovement(Client client, Transaction debit, BigDecimal threshold) {
+        Account account = debit.getAccount();
+        String amount = money(debit.getAmount());
+        toInbox(client, Notification.Type.LARGE_MOVEMENT, "Débito de " + amount,
+                debit.getDescription() + " · cuenta " + account.getNumber(), "/movements/" + debit.getId());
+        email(client, Email.IF_WANTED, "Se debitaron " + amount + " de tu cuenta", "large-movement", Map.of(
+                "amount", amount, "description", debit.getDescription(), "account", account.getNumber(),
+                "when", debit.getDate().format(DATE_TIME), "threshold", money(threshold),
+                "receiptUrl", link("/movements/" + debit.getId()), "profileUrl", link("/profile")));
+    }
+
+    /** A successful sign-in, when the client keeps sign-in alerts on. */
+    public void login(Client client, String device, String ip) {
+        String when = now();
+        toInbox(client, Notification.Type.LOGIN, "Nuevo ingreso a tu cuenta",
+                "Desde " + device + " (IP " + ip + ") el " + when + ". ¿No fuiste vos? Cambiá tu contraseña.",
+                "/profile");
+        email(client, Email.IF_WANTED, "Ingresaste a MindHub Brothers", "login",
+                Map.of("device", device, "ip", ip, "when", when, "profileUrl", link("/profile")));
+    }
+
+    private void toInbox(Client client, Notification.Type type, String title, String message, String link) {
+        inbox.save(new Notification(client, type, title, message, link, LocalDateTime.now(clock)));
+    }
+
+    private void email(Client client, Email policy, String subject, String template, Map<String, Object> model) {
+        if (policy == Email.IF_WANTED && !client.getAlerts().isEmail()) {
+            return;
+        }
         Context context = new Context(ES_AR);
         context.setVariables(model);
         context.setVariable("name", client.getName());

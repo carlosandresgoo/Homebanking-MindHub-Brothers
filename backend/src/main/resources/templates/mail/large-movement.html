@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Se debitó un monto alto</h1>
+    <div class="amount debit" th:text="${amount}">$ 50.000,00</div>
+    <table class="details" role="presentation">
+        <tr><td>Concepto</td><td th:text="${description}">Transferencia a VIN999</td></tr>
+        <tr><td>Cuenta</td><td th:text="${account}">VIN-12345678</td></tr>
+        <tr><td>Fecha</td><td th:text="${when}">29/09/2026 21:40</td></tr>
+    </table>
+    <p>Te avisamos porque supera los <strong th:text="${threshold}">$ 20.000,00</strong> que elegiste.</p>
+    <p><a class="button" th:href="${receiptUrl}" href="#">Ver el comprobante</a></p>
+    <div class="note warning"><strong>¿No reconocés este movimiento?</strong> Cambiá tu contraseña y comunicate
+        con soporte cuanto antes.</div>
+    <p class="muted">Podés cambiar o desactivar este aviso desde <a th:href="${profileUrl}" href="#">tu perfil</a>.</p>
+</main>
+</body>
+</html>

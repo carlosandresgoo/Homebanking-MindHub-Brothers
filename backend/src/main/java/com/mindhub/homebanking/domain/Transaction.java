@@ -1,14 +1,18 @@
 package com.mindhub.homebanking.domain;
 
 import jakarta.persistence.*;
+import org.springframework.data.domain.AbstractAggregateRoot;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/** A movement on an account. Created only through {@link Account#credit} / {@link Account#debit}. */
+/**
+ * A movement on an account. Created only through {@link Account#credit} / {@link Account#debit}; saving it
+ * publishes {@link MovementRecorded} (alerts listen to it).
+ */
 @Entity
 @Table(name = "account_transaction")
-public class Transaction {
+public class Transaction extends AbstractAggregateRoot<Transaction> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,6 +58,7 @@ public class Transaction {
         this.date = date;
         this.balanceAfter = balanceAfter;
         this.account = account;
+        registerEvent(new MovementRecorded(this));
     }
 
     /** Records the other account of a transfer; returns this for chaining. */

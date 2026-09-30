@@ -11,6 +11,8 @@ import com.mindhub.homebanking.dto.TokenResponse;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.security.AccessTokenService;
 import com.mindhub.homebanking.security.RefreshTokenService;
+import com.mindhub.homebanking.service.notification.DeviceLabel;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +25,10 @@ public class AuthService {
     public record Session(TokenResponse token, String refreshToken) {
     }
 
+    /** Where a sign-in comes from, for the sign-in alert (the User-Agent is only turned into a label). */
+    public record Origin(String ip, String userAgent) {
+    }
+
     private final AuthenticationManager authenticationManager;
     private final ClientRepository clientRepository;
     private final ClientService clientService;
@@ -31,12 +37,14 @@ public class AuthService {
     private final LoginAttemptService loginAttempts;
     private final AuditService audit;
     private final TwoFactorService twoFactor;
+    private final NotificationService notifications;
 
     public AuthService(AuthenticationManager authenticationManager, ClientRepository clientRepository,
                        ClientService clientService, AccessTokenService accessTokenService,
                        RefreshTokenService refreshTokenService, LoginAttemptService loginAttempts,
-                       AuditService audit, TwoFactorService twoFactor) {
+                       AuditService audit, TwoFactorService twoFactor, NotificationService notifications) {
         this.twoFactor = twoFactor;
+        this.notifications = notifications;
         this.loginAttempts = loginAttempts;
         this.audit = audit;
         this.authenticationManager = authenticationManager;
@@ -60,6 +68,11 @@ public class AuthService {
      *                               code counts as a failed login for the lockout)
      */
     public Session login(String email, String password, String secondFactorCode) {
+        return login(email, password, secondFactorCode, null);
+    }
+
+    /** @param origin when known, the client gets a sign-in alert (if they keep it on) */
+    public Session login(String email, String password, String secondFactorCode, Origin origin) {
         try {
             loginAttempts.checkAllowed(email);
         } catch (AccountLockedException e) {
@@ -87,6 +100,9 @@ public class AuthService {
                 .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
         audit.record(client.getEmail(), client.getRole().name(), AuditAction.LOGIN, null,
                 AuditEvent.Outcome.SUCCESS, null);
+        if (origin != null && client.getAlerts().isLogin()) {
+            notifications.login(client, DeviceLabel.of(origin.userAgent()), origin.ip());
+        }
         return new Session(accessToken(client), refreshTokenService.issue(client));
     }
 

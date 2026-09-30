@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Saldo bajo</h1>
+    <p>A tu cuenta <strong th:text="${account}">VIN-12345678</strong> le quedan:</p>
+    <div class="amount debit" th:text="${balance}">$ 850,00</div>
+    <p>Es menos de los <strong th:text="${threshold}">$ 1.000,00</strong> que elegiste como aviso. Te avisamos
+        una vez cada vez que el saldo baja de ese monto.</p>
+    <p><a class="button" th:href="${accountUrl}" href="#">Ver la cuenta</a></p>
+    <p class="muted">Podés cambiar o desactivar este aviso desde <a th:href="${profileUrl}" href="#">tu perfil</a>.</p>
+</main>
+</body>
+</html>

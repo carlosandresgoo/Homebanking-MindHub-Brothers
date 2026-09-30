@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Nuevo ingreso a tu cuenta</h1>
+    <table class="details" role="presentation">
+        <tr><td>Dispositivo</td><td th:text="${device}">Chrome en Windows</td></tr>
+        <tr><td>Dirección IP</td><td th:text="${ip}">190.0.0.1</td></tr>
+        <tr><td>Fecha</td><td th:text="${when}">29/09/2026 21:40</td></tr>
+    </table>
+    <p>Si fuiste vos, no tenés que hacer nada.</p>
+    <div class="note warning"><strong>¿No fuiste vos?</strong> Cambiá tu contraseña ya mismo, activá la
+        verificación en dos pasos y comunicate con soporte.</div>
+    <p><a class="button" th:href="${profileUrl}" href="#">Revisar mi seguridad</a></p>
+    <p class="muted">Podés desactivar estos avisos desde tu perfil.</p>
+</main>
+</body>
+</html>

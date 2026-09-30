@@ -104,7 +104,7 @@ public class TransferService {
         audit.success(AuditAction.TRANSFER, source.getNumber() + " -> " + target.getNumber(),
                 "amount=" + request.amount().toPlainString());
         if (!target.getClient().getId().equals(client.getId())) {
-            notifications.transfer(client, source.getNumber(), target.getClient(), target.getNumber(),
+            notifications.transfer(client, source.getNumber(), target.getClient(), target,
                     request.amount(), request.description(), now);
         }
 

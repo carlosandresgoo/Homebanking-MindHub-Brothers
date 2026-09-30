@@ -54,7 +54,8 @@ public class AuthController {
         // Remote address honours X-Forwarded-For only via server.forward-headers-strategy (trusted proxy).
         loginRateLimiter.consume(http.getRemoteAddr());
         AuthService.Session session = authService.login(request.email(), request.password(),
-                request.secondFactorCode());
+                request.secondFactorCode(),
+                new AuthService.Origin(http.getRemoteAddr(), http.getHeader(HttpHeaders.USER_AGENT)));
         return withRefreshCookie(session);
     }
 
