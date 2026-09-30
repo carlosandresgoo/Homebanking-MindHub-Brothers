@@ -13,6 +13,7 @@ import com.mindhub.homebanking.mapper.ClientMapper;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,14 +35,16 @@ public class ClientService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AuditService audit;
+    private final NotificationService notifications;
     private final Clock clock;
 
     public ClientService(ClientRepository clientRepository, AccountRepository accountRepository,
                          AccountNumberGenerator accountNumbers, ClientMapper clientMapper,
                          PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository,
-                         AuditService audit, Clock clock) {
+                         AuditService audit, NotificationService notifications, Clock clock) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.audit = audit;
+        this.notifications = notifications;
         this.clientRepository = clientRepository;
         this.accountRepository = accountRepository;
         this.accountNumbers = accountNumbers;
@@ -115,6 +118,7 @@ public class ClientService {
         Account account = new Account(accountNumbers.next(), LocalDateTime.now(clock), BigDecimal.ZERO);
         client.addAccount(account);
         accountRepository.save(account);
+        notifications.welcome(client);
         return client;
     }
 }

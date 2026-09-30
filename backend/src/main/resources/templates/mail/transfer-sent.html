@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Transferiste</h1>
+    <div class="amount debit" th:text="${amount}">$ 1.234,50</div>
+    <table class="details" role="presentation">
+        <tr><td>Cuenta destino</td><td th:text="${account}">···5678</td></tr>
+        <tr th:if="${note}"><td>Concepto</td><td th:text="${note}">Cena</td></tr>
+        <tr><td>Fecha</td><td th:text="${when}">29/09/2026 21:40</td></tr>
+    </table>
+    <p>Tenés el comprobante en el detalle de movimientos de tu cuenta.</p>
+    <p><a class="button" th:href="${accountsUrl}" href="#">Ver mis cuentas</a></p>
+    <div class="note warning"><strong>¿No reconocés esta transferencia?</strong> Cambiá tu contraseña y comunicate con soporte.</div>
+</main>
+</body>
+</html>

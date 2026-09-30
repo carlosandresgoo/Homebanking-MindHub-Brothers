@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Te damos la bienvenida</h1>
+    <p>Ya sos cliente y tenés una cuenta en pesos lista para usar. Desde el home banking podés:</p>
+    <ul>
+        <li>Transferir a tus cuentas y a las de otras personas.</li>
+        <li>Pedir tarjetas de débito y de crédito.</li>
+        <li>Invertir en plazo fijo y pedir préstamos.</li>
+    </ul>
+    <div class="note">Te recomendamos activar la <strong>verificación en dos pasos</strong> desde tu perfil:
+        protege tu cuenta y te permite transferir montos más altos.</div>
+    <p><a class="button" th:href="${accountsUrl}" href="#">Ir a mis cuentas</a></p>
+    <p class="muted">¿No creaste esta cuenta? Escribinos a soporte para darla de baja.</p>
+</main>
+</body>
+</html>

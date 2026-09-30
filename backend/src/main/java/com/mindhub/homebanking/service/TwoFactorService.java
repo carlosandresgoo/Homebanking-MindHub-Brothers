@@ -14,6 +14,7 @@ import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.security.LoginRateLimiter;
 import com.mindhub.homebanking.security.SecretCipher;
 import com.mindhub.homebanking.security.Totp;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,18 +36,20 @@ public class TwoFactorService {
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter rateLimiter;
     private final AuditService audit;
+    private final NotificationService notifications;
     private final Clock clock;
     private final String issuer;
 
     public TwoFactorService(ClientRepository clientRepository, ClientMapper mapper, SecretCipher cipher,
                             PasswordEncoder passwordEncoder, LoginRateLimiter rateLimiter, AuditService audit,
-                            Clock clock, SecurityProperties properties) {
+                            NotificationService notifications, Clock clock, SecurityProperties properties) {
         this.clientRepository = clientRepository;
         this.mapper = mapper;
         this.cipher = cipher;
         this.passwordEncoder = passwordEncoder;
         this.rateLimiter = rateLimiter;
         this.audit = audit;
+        this.notifications = notifications;
         this.clock = clock;
         this.issuer = properties.twoFactor().issuer();
     }
@@ -75,6 +78,7 @@ public class TwoFactorService {
         }
         client.enableTwoFactor(check(client, code));
         audit.success(AuditAction.TWO_FACTOR_ENABLED, client.getEmail(), null);
+        notifications.twoFactorEnabled(client);
         return mapper.toDto(client);
     }
 
@@ -92,6 +96,7 @@ public class TwoFactorService {
         check(client, code);
         client.disableTwoFactor();
         audit.success(AuditAction.TWO_FACTOR_DISABLED, client.getEmail(), null);
+        notifications.twoFactorDisabled(client, false);
         return mapper.toDto(client);
     }
 
@@ -102,6 +107,7 @@ public class TwoFactorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
         client.disableTwoFactor();
         audit.success(AuditAction.TWO_FACTOR_RESET, client.getEmail(), null);
+        notifications.twoFactorDisabled(client, true);
         return mapper.toDto(client);
     }
 

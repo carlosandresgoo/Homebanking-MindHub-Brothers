@@ -16,6 +16,7 @@ import com.mindhub.homebanking.exception.SecondFactorException;
 import com.mindhub.homebanking.repository.AccountRepository;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,17 +41,20 @@ public class TransferService {
     private final TransactionRepository transactionRepository;
     private final TwoFactorService twoFactor;
     private final AuditService audit;
+    private final NotificationService notifications;
     private final BankingProperties.Transfers limits;
     private final Clock clock;
 
     public TransferService(AccountRepository accountRepository, ClientRepository clientRepository,
                            TransactionRepository transactionRepository, TwoFactorService twoFactor,
-                           AuditService audit, BankingProperties properties, Clock clock) {
+                           AuditService audit, NotificationService notifications, BankingProperties properties,
+                           Clock clock) {
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
         this.transactionRepository = transactionRepository;
         this.twoFactor = twoFactor;
         this.audit = audit;
+        this.notifications = notifications;
         this.limits = properties.transfers();
         this.clock = clock;
     }
@@ -97,6 +101,10 @@ public class TransferService {
         transactionRepository.save(credit);
         audit.success(AuditAction.TRANSFER, source.getNumber() + " -> " + target.getNumber(),
                 "amount=" + request.amount().toPlainString());
+        if (!target.getClient().getId().equals(client.getId())) {
+            notifications.transfer(client, source.getNumber(), target.getClient(), target.getNumber(),
+                    request.amount(), request.description(), now);
+        }
 
         return new TransferReceiptDTO(debit.getId(), source.getId(), source.getNumber(), target.getNumber(),
                 request.amount(), debit.getDescription(), now, source.getBalance());

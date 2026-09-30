@@ -1,8 +1,9 @@
 package com.mindhub.homebanking.service.notification;
 
 /**
- * Outgoing e-mail. The dev implementation writes messages to the log; production needs a real
- * implementation (e.g. spring-boot-starter-mail with SMTP settings from the environment).
+ * Outgoing e-mail (HTML body). Exactly one implementation is active: {@link SmtpMailer} when MAIL_HOST
+ * is set, otherwise {@link LoggingMailer} (dev/test) or {@link UnconfiguredMailer} (prod). Services do
+ * not call it directly: they go through {@link NotificationService}.
  */
 public interface Mailer {
 

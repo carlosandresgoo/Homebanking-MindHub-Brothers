@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Se desactivó la verificación en dos pasos</h1>
+    <p th:if="${byAdmin}">A tu pedido, el equipo de soporte desactivó la verificación en dos pasos de tu cuenta el
+        <strong th:text="${when}">29/09/2026 21:40</strong>. Podés volver a activarla desde tu perfil con tu nuevo celular.</p>
+    <p th:unless="${byAdmin}">Desactivaste la verificación en dos pasos el <strong th:text="${when}">29/09/2026 21:40</strong>.
+        Desde ahora solo tu contraseña protege el ingreso, y tu límite diario de transferencias vuelve al básico.</p>
+    <div class="note warning"><strong>¿No lo pediste vos?</strong> Cambiá tu contraseña y comunicate con soporte cuanto antes.</div>
+    <p><a class="button" th:href="${profileUrl}" href="#">Volver a activarla</a></p>
+</main>
+</body>
+</html>

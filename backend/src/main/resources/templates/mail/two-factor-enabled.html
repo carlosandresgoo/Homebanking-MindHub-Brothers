@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Activaste la verificación en dos pasos</h1>
+    <p>Desde el <strong th:text="${when}">29/09/2026 21:40</strong>, además de tu contraseña vas a necesitar el
+        código de tu app de autenticación para ingresar y para las transferencias de montos altos.</p>
+    <div class="note">Si cambiás o perdés el celular, pedile a soporte que la desactive para volver a configurarla.</div>
+    <div class="note warning"><strong>¿No fuiste vos?</strong> Cambiá tu contraseña y comunicate con soporte.</div>
+    <p><a class="button" th:href="${profileUrl}" href="#">Ir a mi perfil</a></p>
+</main>
+</body>
+</html>

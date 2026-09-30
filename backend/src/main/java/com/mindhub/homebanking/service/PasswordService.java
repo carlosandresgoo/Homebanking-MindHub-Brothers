@@ -10,8 +10,7 @@ import com.mindhub.homebanking.exception.ResourceNotFoundException;
 import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.PasswordResetTokenRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
-import com.mindhub.homebanking.service.notification.Mailer;
-import org.springframework.beans.factory.annotation.Value;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,24 +38,21 @@ public class PasswordService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final Mailer mailer;
+    private final NotificationService notifications;
     private final AuditService audit;
     private final Clock clock;
-    private final String frontendUrl;
     private final SecureRandom random = new SecureRandom();
 
     public PasswordService(ClientRepository clientRepository, PasswordResetTokenRepository resetTokenRepository,
                            RefreshTokenRepository refreshTokenRepository, PasswordEncoder passwordEncoder,
-                           Mailer mailer, AuditService audit, Clock clock,
-                           @Value("${app.frontend-url}") String frontendUrl) {
+                           NotificationService notifications, AuditService audit, Clock clock) {
         this.audit = audit;
         this.clientRepository = clientRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
-        this.mailer = mailer;
+        this.notifications = notifications;
         this.clock = clock;
-        this.frontendUrl = frontendUrl;
     }
 
     /** @return the client, so the caller can start a fresh session */
@@ -73,6 +69,7 @@ public class PasswordService {
         client.changePassword(passwordEncoder.encode(newPassword));
         refreshTokenRepository.revokeAllByClient(client);
         audit.success(AuditAction.PASSWORD_CHANGED, client.getEmail(), null);
+        notifications.passwordChanged(client);
         return client;
     }
 
@@ -90,15 +87,7 @@ public class PasswordService {
             random.nextBytes(bytes);
             String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
             resetTokenRepository.save(new PasswordResetToken(hash(token), client, now.plus(RESET_TOKEN_TTL)));
-            mailer.send(client.getEmail(), "Restablecé tu contraseña de MindHub Brothers", """
-                    Hola %s,
-
-                    Recibimos un pedido para restablecer tu contraseña. Usá este enlace (vence en %d minutos):
-
-                    %s/reset-password?token=%s
-
-                    Si no fuiste vos, ignorá este mensaje: tu contraseña no cambia.
-                    """.formatted(client.getName(), RESET_TOKEN_TTL.toMinutes(), frontendUrl, token));
+            notifications.passwordReset(client, token, RESET_TOKEN_TTL);
         });
     }
 

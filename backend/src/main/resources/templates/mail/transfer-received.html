@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>Recibiste una transferencia</h1>
+    <div class="amount credit" th:text="${amount}">$ 1.234,50</div>
+    <table class="details" role="presentation">
+        <tr><td>Cuenta origen</td><td th:text="${account}">···0001</td></tr>
+        <tr th:if="${note}"><td>Concepto</td><td th:text="${note}">Cena</td></tr>
+        <tr><td>Fecha</td><td th:text="${when}">29/09/2026 21:40</td></tr>
+    </table>
+    <p>El dinero ya está disponible en tu cuenta.</p>
+    <p><a class="button" th:href="${accountsUrl}" href="#">Ver mis cuentas</a></p>
+</main>
+</body>
+</html>

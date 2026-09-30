@@ -18,6 +18,7 @@ import com.mindhub.homebanking.repository.ClientRepository;
 import com.mindhub.homebanking.repository.FixedTermPlanRepository;
 import com.mindhub.homebanking.repository.FixedTermRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
+import com.mindhub.homebanking.service.notification.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -52,13 +53,15 @@ public class FixedTermService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final AuditService audit;
+    private final NotificationService notifications;
     private final Clock clock;
     private final BigDecimal minAmount;
     private final TransactionTemplate newTransaction;
 
     public FixedTermService(FixedTermRepository fixedTermRepository, FixedTermPlanRepository planRepository,
                             ClientRepository clientRepository, AccountRepository accountRepository,
-                            TransactionRepository transactionRepository, AuditService audit, Clock clock,
+                            TransactionRepository transactionRepository, AuditService audit,
+                            NotificationService notifications, Clock clock,
                             BankingProperties properties, PlatformTransactionManager transactionManager) {
         this.fixedTermRepository = fixedTermRepository;
         this.planRepository = planRepository;
@@ -66,6 +69,7 @@ public class FixedTermService {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.audit = audit;
+        this.notifications = notifications;
         this.clock = clock;
         this.minAmount = properties.fixedTerms().minAmount();
         this.newTransaction = new TransactionTemplate(transactionManager);
@@ -106,6 +110,7 @@ public class FixedTermService {
         FixedTerm fixedTerm = constitute(client, account, request.amount(), plan, request.autoRenew(), null);
         audit.success(AuditAction.FIXED_TERM_CREATED, account.getNumber(),
                 "amount=" + request.amount().toPlainString() + " days=" + plan.getTermDays());
+        notifications.fixedTermCreated(fixedTerm);
         return toDto(fixedTerm);
     }
 
@@ -161,13 +166,16 @@ public class FixedTermService {
         audit.record(client.getEmail(), SYSTEM, AuditAction.FIXED_TERM_PAID, account.getNumber(),
                 AuditEvent.Outcome.SUCCESS, "id=" + fixedTerm.getId());
 
+        FixedTerm renewed = null;
         if (fixedTerm.isAutoRenew() && account.isActive()) {
-            planRepository.findByTermDays(fixedTerm.getTermDays()).ifPresent(plan -> {
-                FixedTerm renewed = constitute(client, account, fixedTerm.getTotal(), plan, true, fixedTerm.getId());
+            renewed = planRepository.findByTermDays(fixedTerm.getTermDays()).map(plan -> {
+                FixedTerm next = constitute(client, account, fixedTerm.getTotal(), plan, true, fixedTerm.getId());
                 audit.record(client.getEmail(), SYSTEM, AuditAction.FIXED_TERM_RENEWED, account.getNumber(),
-                        AuditEvent.Outcome.SUCCESS, "id=" + fixedTerm.getId() + " -> " + renewed.getId());
-            });
+                        AuditEvent.Outcome.SUCCESS, "id=" + fixedTerm.getId() + " -> " + next.getId());
+                return next;
+            }).orElse(null);
         }
+        notifications.fixedTermPaid(fixedTerm, renewed);
         return true;
     }
 

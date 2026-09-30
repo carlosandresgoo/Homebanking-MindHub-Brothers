@@ -1,46 +1,46 @@
 package com.mindhub.homebanking.service.notification;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.nio.charset.StandardCharsets;
 
-/** Production: sends real e-mails via SMTP (configured via spring.mail.* properties). */
+/**
+ * Real delivery through the SMTP server in {@code spring.mail.*} (MAIL_HOST and friends). Active in any
+ * profile as soon as MAIL_HOST is set; otherwise {@link LoggingMailer} (dev/test) or
+ * {@link UnconfiguredMailer} (prod) take its place.
+ */
 @Component
-@ConditionalOnProperty(name = "spring.mail.host")
+@ConditionalOnExpression("!'${spring.mail.host:}'.isBlank()")
 class SmtpMailer implements Mailer {
 
-	private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);
+    private final JavaMailSender sender;
+    private final String from;
 
-	private final JavaMailSender mailSender;
-	private final String from;
+    SmtpMailer(JavaMailSender sender, @Value("${app.mail.from}") String from) {
+        this.sender = sender;
+        this.from = from;
+    }
 
-	SmtpMailer(JavaMailSender mailSender) {
-		this.mailSender = mailSender;
-		this.from = "noreply@mindhubbrothers.com";
-	}
-
-	@Override
-	public void send(String to, String subject, String body) {
-		try {
-			MimeMessage message = mailSender.createMimeMessage();
-			MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
-			helper.setFrom(from);
-			helper.setTo(to);
-			helper.setSubject(subject);
-			helper.setText(body, true);  // true = HTML
-			mailSender.send(message);
-			log.debug("Email sent to {} with subject '{}'", to, subject);
-		} catch (MessagingException e) {
-			log.error("Failed to send email to {}", to, e);
-			// En producción, podrías reintentar con una cola (RabbitMQ, Kafka, etc.)
-			throw new RuntimeException("Email delivery failed", e);
-		}
-	}
+    /** @throws org.springframework.mail.MailException when the server rejects or cannot be reached */
+    @Override
+    public void send(String to, String subject, String body) {
+        MimeMessage message = sender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+        } catch (MessagingException e) {
+            throw new MailPreparationException("Could not build the e-mail", e);
+        }
+        sender.send(message);
+    }
 }
