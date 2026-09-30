@@ -18,7 +18,9 @@ public class Notification {
         PASSWORD_CHANGED,
         TWO_FACTOR_ENABLED,
         TWO_FACTOR_DISABLED,
-        CONTACT_TRUSTED
+        CONTACT_TRUSTED,
+        SCHEDULED_TRANSFER_DONE,
+        SCHEDULED_TRANSFER_FAILED
     }
 
     @Id

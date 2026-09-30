@@ -16,6 +16,7 @@ import com.mindhub.homebanking.repository.IdempotencyRecordRepository;
 import com.mindhub.homebanking.repository.NotificationRepository;
 import com.mindhub.homebanking.repository.PasswordResetTokenRepository;
 import com.mindhub.homebanking.repository.RefreshTokenRepository;
+import com.mindhub.homebanking.repository.ScheduledTransferRepository;
 import com.mindhub.homebanking.repository.TransactionRepository;
 import com.mindhub.homebanking.security.LoginRateLimiter;
 import com.mindhub.homebanking.service.AccountNumberGenerator;
@@ -53,6 +54,7 @@ public class TestData {
     private final LoginRateLimiter loginRateLimiter;
     private final Clock clock;
     private final NotificationRepository notifications;
+    private final ScheduledTransferRepository scheduledTransfers;
     private final AccountNumberGenerator accountNumbers;
 
     public TestData(ClientRepository clients, AccountRepository accounts, TransactionRepository transactions,
@@ -62,7 +64,8 @@ public class TestData {
                     FixedTermRepository fixedTerms,
                     PasswordEncoder passwordEncoder,
                     LoginRateLimiter loginRateLimiter, Clock clock, AccountNumberGenerator accountNumbers,
-                    NotificationRepository notifications) {
+                    NotificationRepository notifications, ScheduledTransferRepository scheduledTransfers) {
+        this.scheduledTransfers = scheduledTransfers;
         this.notifications = notifications;
         this.accountNumbers = accountNumbers;
         this.clock = clock;
@@ -89,6 +92,7 @@ public class TestData {
         auditEvents.deleteAllInBatch();
         notifications.deleteAllInBatch();
         idempotencyRecords.deleteAllInBatch();
+        scheduledTransfers.deleteAllInBatch();
         contacts.deleteAllInBatch();
         fixedTerms.deleteAllInBatch();
         cards.deleteAllInBatch();

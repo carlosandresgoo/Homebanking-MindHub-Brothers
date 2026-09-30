@@ -2,6 +2,7 @@ package com.mindhub.homebanking.config;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -17,7 +18,15 @@ import java.time.ZoneId;
 @Validated
 @ConfigurationProperties(prefix = "app.banking")
 public record BankingProperties(@NotNull ZoneId zone, @Valid @NotNull Transfers transfers,
-                                @Valid @NotNull FixedTerms fixedTerms) {
+                                @Valid @NotNull FixedTerms fixedTerms,
+                                @Valid @NotNull ScheduledTransfers scheduledTransfers) {
+
+    /**
+     * @param cron    when due scheduled transfers run (bank's time zone); also at start-up
+     * @param maxOpen active or paused scheduled transfers per client
+     */
+    public record ScheduledTransfers(@NotNull String cron, @Min(1) int maxOpen) {
+    }
 
     /**
      * @param minAmount  smallest principal accepted

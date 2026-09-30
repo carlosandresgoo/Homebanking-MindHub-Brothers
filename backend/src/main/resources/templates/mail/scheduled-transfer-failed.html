@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: email(~{::main})}">
+<body>
+<main>
+    <h1>No se pudo hacer tu transferencia programada</h1>
+    <table class="details" role="presentation">
+        <tr><td>Importe</td><td th:text="${amount}">$ 50.000,00</td></tr>
+        <tr><td>Destinatario</td><td th:text="${holder}">Lucía P.</td></tr>
+        <tr><td>Cuenta</td><td th:text="${account}">VIN-12345678</td></tr>
+    </table>
+    <div class="note warning"><strong>Motivo:</strong> <span th:text="${reason}">No había saldo suficiente</span>.</div>
+    <p th:if="${nextRun}">No la volvemos a intentar hoy. La próxima está programada para el
+        <strong th:text="${nextRun}">01/11/2026</strong>. Si hace falta, podés transferir ahora a mano.</p>
+    <p th:unless="${nextRun}">Era la última de esta programación. Si hace falta, podés transferir ahora a mano.</p>
+    <p><a class="button" th:href="${scheduledUrl}" href="#">Ver mis transferencias programadas</a></p>
+</main>
+</body>
+</html>

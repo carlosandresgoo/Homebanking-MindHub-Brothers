@@ -93,6 +93,10 @@ app:
       min-amount: 1000
       # Every day at 00:05 (bank time zone).
       payout-cron: "0 5 0 * * *"
+    scheduled-transfers:
+      # Every day at 06:00 (bank time zone), after the fixed-term payouts.
+      cron: "0 0 6 * * *"
+      max-open: 20
 
 ---
 spring:

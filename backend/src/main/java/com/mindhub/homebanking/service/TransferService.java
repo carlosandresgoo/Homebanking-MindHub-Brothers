@@ -5,6 +5,7 @@ import com.mindhub.homebanking.domain.Account;
 import com.mindhub.homebanking.domain.AuditAction;
 import com.mindhub.homebanking.domain.AuditEvent;
 import com.mindhub.homebanking.domain.Client;
+import com.mindhub.homebanking.domain.ScheduledTransfer;
 import com.mindhub.homebanking.domain.Transaction;
 import com.mindhub.homebanking.domain.TransactionCategory;
 import com.mindhub.homebanking.dto.TransferLimitsDTO;
@@ -37,6 +38,8 @@ import java.util.Map;
 @Service
 public class TransferService {
 
+    private static final String SYSTEM = "SYSTEM";
+
     private final AccountRepository accountRepository;
     private final ClientRepository clientRepository;
     private final ContactRepository contactRepository;
@@ -66,11 +69,39 @@ public class TransferService {
 
     @Transactional
     public TransferReceiptDTO transfer(String email, TransferRequest request) {
-        String sourceNumber = normalize(request.sourceAccountNumber());
         // Account number, CBU or alias; resolved before any lock (it may reject an invalid CBU).
         Long targetId = recipients.resolveId(request.targetAccountNumber()).orElseThrow(TransferService::targetNotFound);
-
         Client client = clientRepository.findByEmailForUpdate(email).orElseThrow(TransferService::sourceNotFound);
+        return move(client, request.sourceAccountNumber(), targetId, request.amount(), request.description(),
+                request.secondFactorCode(), null);
+    }
+
+    /**
+     * One occurrence of a scheduled transfer: the same rules as {@link #transfer}, except the second
+     * factor, which the client gave when scheduling it (see {@link #authorizeInAdvance}).
+     */
+    @Transactional
+    public TransferReceiptDTO executeScheduled(ScheduledTransfer scheduled) {
+        Client client = clientRepository.findByEmailForUpdate(scheduled.getClient().getEmail())
+                .orElseThrow(TransferService::sourceNotFound);
+        Long targetId = accountRepository.findIdByNumber(scheduled.getTargetAccountNumber())
+                .orElseThrow(TransferService::targetNotFound);
+        return move(client, scheduled.getSource().getNumber(), targetId, scheduled.getAmount(),
+                scheduled.getDescription(), null, scheduled);
+    }
+
+    /**
+     * Scheduling a transfer to someone else authorizes every future occurrence, so it asks now for the
+     * code a transfer of that amount would need. The caller holds the client's row lock.
+     */
+    public void authorizeInAdvance(Client client, Account target, BigDecimal amount, String secondFactorCode) {
+        requireSecondFactor(client, target, amount, secondFactorCode);
+    }
+
+    /** @param scheduled the scheduled transfer being run, or null for one the client is making now */
+    private TransferReceiptDTO move(Client client, String sourceNumberInput, Long targetId, BigDecimal amount,
+                                    String description, String secondFactorCode, ScheduledTransfer scheduled) {
+        String sourceNumber = normalize(sourceNumberInput);
         Long sourceId = accountRepository.findIdByNumber(sourceNumber).orElseThrow(TransferService::sourceNotFound);
         if (sourceId.equals(targetId)) {
             throw new BusinessRuleException("You cannot transfer to the same account");
@@ -88,31 +119,39 @@ public class TransferService {
         if (!target.isActive()) {
             throw targetNotFound();
         }
-        if (!source.hasFunds(request.amount())) {
+        if (!source.hasFunds(amount)) {
             throw new BusinessRuleException("Insufficient funds");
         }
-        if (!target.getClient().getId().equals(client.getId())) {
-            checkThirdPartyRules(client, request, target);
+        boolean toOthers = !target.getClient().getId().equals(client.getId());
+        if (toOthers) {
+            checkDailyLimit(client, amount);
+            if (scheduled == null) {
+                requireSecondFactor(client, target, amount, secondFactorCode);
+            }
         }
 
         LocalDateTime now = LocalDateTime.now(clock);
-        String note = request.description() == null || request.description().isBlank()
-                ? "" : " · " + request.description().trim();
-        Transaction debit = source.debit(request.amount(), TransactionCategory.TRANSFER_OUT,
-                "Transferencia a " + target.getNumber() + note, now).withCounterparty(target.getNumber());
-        Transaction credit = target.credit(request.amount(), TransactionCategory.TRANSFER_IN,
+        String note = description == null || description.isBlank() ? "" : " · " + description.trim();
+        String kind = scheduled == null ? "Transferencia" : "Transferencia programada";
+        Transaction debit = source.debit(amount, TransactionCategory.TRANSFER_OUT,
+                kind + " a " + target.getNumber() + note, now).withCounterparty(target.getNumber());
+        Transaction credit = target.credit(amount, TransactionCategory.TRANSFER_IN,
                 "Transferencia de " + source.getNumber() + note, now).withCounterparty(source.getNumber());
         transactionRepository.save(debit);
         transactionRepository.save(credit);
-        audit.success(AuditAction.TRANSFER, source.getNumber() + " -> " + target.getNumber(),
-                "amount=" + request.amount().toPlainString());
-        if (!target.getClient().getId().equals(client.getId())) {
-            notifications.transfer(client, source.getNumber(), target.getClient(), target,
-                    request.amount(), request.description(), now);
+        String route = source.getNumber() + " -> " + target.getNumber();
+        if (scheduled == null) {
+            audit.success(AuditAction.TRANSFER, route, "amount=" + amount.toPlainString());
+        } else { // run by the job: no signed-in user, the client is the actor
+            audit.record(client.getEmail(), SYSTEM, AuditAction.TRANSFER, route, AuditEvent.Outcome.SUCCESS,
+                    "amount=" + amount.toPlainString() + " scheduled=" + scheduled.getId());
+        }
+        if (toOthers) {
+            notifications.transfer(client, source.getNumber(), target.getClient(), target, amount, description, now);
         }
 
         return new TransferReceiptDTO(debit.getId(), source.getId(), source.getNumber(), target.getNumber(),
-                request.amount(), debit.getDescription(), now, source.getBalance());
+                amount, debit.getDescription(), now, source.getBalance());
     }
 
     @Transactional(readOnly = true)
@@ -125,17 +164,20 @@ public class TransferService {
                 client.isTwoFactorEnabled(), limits.secondFactorThreshold(), limits.dailyLimitWithSecondFactor());
     }
 
-    /** Daily limit, then (with 2FA enabled) a code for large amounts, unless the recipient is trusted. */
-    private void checkThirdPartyRules(Client client, TransferRequest request, Account target) {
+    private void checkDailyLimit(Client client, BigDecimal amount) {
         BigDecimal remaining = dailyLimit(client).subtract(usedToday(client)).max(BigDecimal.ZERO);
-        if (request.amount().compareTo(remaining) > 0) {
+        if (amount.compareTo(remaining) > 0) {
             throw new BusinessRuleException("Daily transfer limit exceeded",
                     Map.of("code", "DAILY_LIMIT_EXCEEDED", "remaining", remaining));
         }
-        if (client.isTwoFactorEnabled() && request.amount().compareTo(limits.secondFactorThreshold()) >= 0
+    }
+
+    /** With 2FA enabled, a code for large amounts to others, unless the recipient is trusted. */
+    private void requireSecondFactor(Client client, Account target, BigDecimal amount, String code) {
+        if (client.isTwoFactorEnabled() && amount.compareTo(limits.secondFactorThreshold()) >= 0
                 && !contactRepository.existsByClientAndAccountNumberAndTrustedAtIsNotNull(client, target.getNumber())) {
             try {
-                twoFactor.require(client, request.secondFactorCode());
+                twoFactor.require(client, code);
             } catch (SecondFactorException e) {
                 if (e.getReason() == SecondFactorException.Reason.INVALID) {
                     audit.record(client.getEmail(), client.getRole().name(), AuditAction.TRANSFER,

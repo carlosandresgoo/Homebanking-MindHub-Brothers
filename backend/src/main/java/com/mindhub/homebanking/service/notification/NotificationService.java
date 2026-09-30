@@ -5,6 +5,7 @@ import com.mindhub.homebanking.domain.Client;
 import com.mindhub.homebanking.domain.Contact;
 import com.mindhub.homebanking.domain.FixedTerm;
 import com.mindhub.homebanking.domain.Notification;
+import com.mindhub.homebanking.domain.ScheduledTransfer;
 import com.mindhub.homebanking.domain.Transaction;
 import com.mindhub.homebanking.repository.NotificationRepository;
 import org.slf4j.Logger;
@@ -110,6 +111,35 @@ public class NotificationService {
         email(client, Email.ALWAYS, "Agregaste un destinatario de confianza", "contact-trusted", Map.of(
                 "alias", contact.getAlias(), "holder", contact.getHolderDisplay(),
                 "account", contact.getAccountNumber(), "when", now(), "contactsUrl", link("/contacts")));
+    }
+
+    /** The transfer itself already notified both sides; this only leaves a note in the sender's bell. */
+    public void scheduledTransferDone(ScheduledTransfer scheduled) {
+        toInbox(scheduled.getClient(), Notification.Type.SCHEDULED_TRANSFER_DONE,
+                "Se hizo tu transferencia programada",
+                money(scheduled.getAmount()) + " a " + scheduled.getTargetHolder() + " (" + scheduled.getTargetAccountNumber()
+                        + ")" + nextRunNote(scheduled), "/transfers/scheduled");
+    }
+
+    /** Always e-mailed: the money did not move and the client may need to act. */
+    public void scheduledTransferFailed(ScheduledTransfer scheduled) {
+        toInbox(scheduled.getClient(), Notification.Type.SCHEDULED_TRANSFER_FAILED,
+                "No se pudo hacer tu transferencia programada",
+                money(scheduled.getAmount()) + " a " + scheduled.getTargetHolder() + ": " + scheduled.getLastError()
+                        + "." + nextRunNote(scheduled), "/transfers/scheduled");
+        Map<String, Object> model = new HashMap<>();
+        model.put("amount", money(scheduled.getAmount()));
+        model.put("holder", scheduled.getTargetHolder());
+        model.put("account", scheduled.getTargetAccountNumber());
+        model.put("reason", scheduled.getLastError());
+        model.put("nextRun", scheduled.getNextRun() == null ? null : date(scheduled.getNextRun()));
+        model.put("scheduledUrl", link("/transfers/scheduled"));
+        email(scheduled.getClient(), Email.ALWAYS, "No se pudo hacer tu transferencia programada",
+                "scheduled-transfer-failed", model);
+    }
+
+    private static String nextRunNote(ScheduledTransfer scheduled) {
+        return scheduled.getNextRun() == null ? "" : " Próxima: " + date(scheduled.getNextRun()) + ".";
     }
 
     /** Only for transfers between different clients: an e-mail to each side, the bell for the recipient. */
