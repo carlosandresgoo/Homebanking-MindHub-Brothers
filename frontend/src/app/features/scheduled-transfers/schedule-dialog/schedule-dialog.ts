@@ -31,22 +31,11 @@ import {
   Frequency,
   ScheduledTransfer,
 } from '../../../core/models/scheduled-transfer.model';
+import { bankDate } from '../../../core/utils/bank-date';
 
 export interface ScheduleDialogData {
   /** The client's open accounts (sources, and own destinations). */
   accounts: Account[];
-}
-
-/** Local date as `yyyy-MM-dd`. */
-export function isoDate(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function tomorrow(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  return isoDate(date);
 }
 
 /** Positive amount with at most two decimals. */
@@ -346,7 +335,8 @@ export class ScheduleDialog {
 
   protected readonly frequencies: Frequency[] = ['ONCE', 'WEEKLY', 'MONTHLY'];
   protected readonly frequencyLabel = FREQUENCY_LABEL;
-  protected readonly minDate = tomorrow();
+  /** The bank's tomorrow (the API rejects anything earlier). */
+  protected readonly minDate = bankDate(1);
 
   protected readonly step = signal<'form' | 'confirm'>('form');
   protected readonly busy = signal(false);

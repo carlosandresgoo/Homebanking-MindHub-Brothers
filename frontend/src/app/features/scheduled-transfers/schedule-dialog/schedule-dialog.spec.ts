@@ -5,7 +5,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Account, Recipient } from '../../../core/models/account.model';
 import { ScheduledTransfer } from '../../../core/models/scheduled-transfer.model';
 import { provideTestDefaults, typeInto } from '../../../testing/providers';
-import { ScheduleDialog, ScheduleDialogData, isoDate } from './schedule-dialog';
+import { bankDate } from '../../../core/utils/bank-date';
+import { ScheduleDialog, ScheduleDialogData } from './schedule-dialog';
 
 const URL = '/api/clients/current/scheduled-transfers';
 const ACCOUNTS: Account[] = [
@@ -34,12 +35,6 @@ const LUCIA: Recipient = {
   bank: 'MindHub Brothers',
   own: false,
 };
-
-function tomorrow(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  return isoDate(date);
-}
 
 describe('ScheduleDialog', () => {
   let httpTesting: HttpTestingController;
@@ -93,7 +88,7 @@ describe('ScheduleDialog', () => {
       amount: 25000,
       description: 'Alquiler',
       frequency: 'MONTHLY',
-      startDate: tomorrow(),
+      startDate: bankDate(1),
       maxRuns: 12,
     });
     expect(req.request.headers.get('Idempotency-Key')).toBeTruthy();
