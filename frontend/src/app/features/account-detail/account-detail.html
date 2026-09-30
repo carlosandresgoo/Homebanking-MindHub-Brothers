@@ -118,16 +118,30 @@
           mat-stroked-button
           type="button"
           class="export"
-          (click)="exportCsv(account)"
+          [matMenuTriggerFor]="downloads"
           [disabled]="exporting() || invalidRange()"
         >
           @if (exporting()) {
-            <mat-spinner diameter="18" aria-label="Exportando" />
+            <mat-spinner diameter="18" aria-label="Generando el archivo" />
           } @else {
             <mat-icon>download</mat-icon>
           }
-          Exportar CSV
+          Descargar
         </button>
+        <mat-menu #downloads="matMenu" xPosition="before">
+          <button mat-menu-item class="export-pdf" (click)="download(account, 'pdf')">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>Resumen de cuenta (PDF)</span>
+          </button>
+          <button mat-menu-item class="export-xlsx" (click)="download(account, 'xlsx')">
+            <mat-icon>table_view</mat-icon>
+            <span>Movimientos en Excel</span>
+          </button>
+          <button mat-menu-item class="export-csv" (click)="download(account, 'csv')">
+            <mat-icon>description</mat-icon>
+            <span>Movimientos en CSV</span>
+          </button>
+        </mat-menu>
       </div>
     </form>
 

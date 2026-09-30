@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -26,7 +27,7 @@ import {
 } from 'rxjs';
 
 import { AccountService } from '../../core/api/account.service';
-import { MovementService } from '../../core/api/movement.service';
+import { ExportFormat, MovementService } from '../../core/api/movement.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { SpanishPaginatorIntl } from '../../core/i18n/paginator-intl';
 import {
@@ -59,6 +60,7 @@ type DetailState =
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatMenuModule,
     MatPaginatorModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
@@ -178,16 +180,36 @@ export class AccountDetailPage {
     this.filters.reset();
   }
 
-  protected exportCsv(account: AccountDetail): void {
+  /** CSV or Excel with the current filters, or the PDF statement of the filtered dates (or this month). */
+  protected download(account: AccountDetail, kind: ExportFormat | 'pdf'): void {
+    const query = this.movementQuery();
+    const request =
+      kind === 'pdf'
+        ? this.movementService.statement(account.id, query.from, query.to)
+        : this.movementService.exportMovements(account.id, query, kind);
     this.exporting.set(true);
-    this.movementService.exportCsv(account.id, this.movementQuery()).subscribe({
+    request.subscribe({
       next: (response) => {
         this.exporting.set(false);
-        saveDownload(response, `movimientos-${account.number}.csv`);
+        saveDownload(
+          response,
+          kind === 'pdf'
+            ? `resumen-${account.number}.pdf`
+            : `movimientos-${account.number}.${kind}`,
+        );
       },
-      error: () => {
+      error: (err: unknown) => {
         this.exporting.set(false);
-        this.snackBar.open('No pudimos exportar los movimientos. Intentá de nuevo.', 'OK');
+        const code =
+          err instanceof HttpErrorResponse ? (err.error?.code as string | undefined) : undefined;
+        this.snackBar.open(
+          code === 'RANGE_TOO_LONG'
+            ? 'El resumen abarca hasta un año. Elegí un período más corto con los filtros de fecha.'
+            : code === 'TOO_MANY_MOVEMENTS'
+              ? 'Hay demasiados movimientos en ese período. Elegí uno más corto.'
+              : 'No pudimos generar el archivo. Intentá de nuevo.',
+          'OK',
+        );
       },
     });
   }

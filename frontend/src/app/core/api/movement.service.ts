@@ -6,6 +6,8 @@ import { environment } from '../../../environments/environment';
 import { MovementQuery, MovementReceipt, Transaction } from '../models/account.model';
 import { Page } from '../models/page.model';
 
+export type ExportFormat = 'csv' | 'xlsx';
+
 /** An account's movements (owner or ADMIN; 404 otherwise). */
 @Injectable({ providedIn: 'root' })
 export class MovementService {
@@ -25,10 +27,29 @@ export class MovementService {
     });
   }
 
-  /** The same filters as a CSV file (the response carries its file name). */
-  exportCsv(accountId: number, query: MovementQuery): Observable<HttpResponse<Blob>> {
+  /** The same filters as a CSV or Excel file (the response carries its file name). */
+  exportMovements(
+    accountId: number,
+    query: MovementQuery,
+    format: ExportFormat = 'csv',
+  ): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.api}/accounts/${accountId}/transactions/export`, {
-      params: toParams(query),
+      params: toParams(query).set('format', format),
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
+  /**
+   * PDF statement for `from`..`to` (`yyyy-MM-dd`; the API defaults to this month so far).
+   * 422 with `code` RANGE_TOO_LONG (over a year) or TOO_MANY_MOVEMENTS.
+   */
+  statement(accountId: number, from?: string, to?: string): Observable<HttpResponse<Blob>> {
+    let params = new HttpParams();
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    return this.http.get(`${this.api}/accounts/${accountId}/statement`, {
+      params,
       responseType: 'blob',
       observe: 'response',
     });

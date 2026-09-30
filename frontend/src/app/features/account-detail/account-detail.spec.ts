@@ -1,7 +1,9 @@
 import { HttpRequest } from '@angular/common/http';
 import { HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatDialog } from '@angular/material/dialog';
+import { MatMenuHarness } from '@angular/material/menu/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -155,15 +157,23 @@ describe('AccountDetailPage', () => {
     expect(el.querySelector('.range-error')?.textContent).toContain('no puede ser posterior');
   });
 
+  /** Opens the "Descargar" menu and picks an option (rendered in an overlay). */
+  async function pick(fixture: ComponentFixture<AccountDetailPage>, option: string) {
+    const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
+    await menu.open();
+    await menu.clickItem({ text: new RegExp(option) });
+  }
+
   it('exports the filtered movements as a CSV download', async () => {
-    const { fixture, el } = await render(ACCOUNT);
+    const { fixture } = await render(ACCOUNT);
     const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:csv');
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => undefined);
 
-    el.querySelector<HTMLButtonElement>('button.export')!.click();
+    await pick(fixture, 'CSV');
     const req = httpTesting.expectOne((r) => r.url === '/api/accounts/7/transactions/export');
+    expect(req.request.params.get('format')).toBe('csv');
     req.flush(new Blob(['Fecha;...']), {
       headers: { 'Content-Disposition': 'attachment; filename="movimientos-VIN001-20260929.csv"' },
     });
@@ -173,6 +183,41 @@ describe('AccountDetailPage', () => {
     const link = click.mock.contexts[0] as HTMLAnchorElement;
     expect(link.download).toBe('movimientos-VIN001-20260929.csv');
     createUrl.mockRestore();
+    click.mockRestore();
+  });
+
+  it('downloads Excel and the PDF statement of the filtered dates', async () => {
+    const { fixture, el } = await render(ACCOUNT);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+
+    await pick(fixture, 'Excel');
+    const xlsx = httpTesting.expectOne((r) => r.url === '/api/accounts/7/transactions/export');
+    expect(xlsx.request.params.get('format')).toBe('xlsx');
+    xlsx.flush(new Blob(['PK']));
+    await fixture.whenStable();
+    expect((click.mock.contexts[0] as HTMLAnchorElement).download).toBe('movimientos-VIN001.xlsx');
+
+    typeInto(el, '#from', '2026-09-01');
+    typeInto(el, '#to', '2026-09-15');
+    (await nextMovementsRequest(fixture)).flush(page(MOVEMENTS));
+    await fixture.whenStable();
+
+    await pick(fixture, 'PDF');
+    const pdf = httpTesting.expectOne((r) => r.url === '/api/accounts/7/statement');
+    expect(pdf.request.params.get('from')).toBe('2026-09-01');
+    expect(pdf.request.params.get('to')).toBe('2026-09-15');
+    pdf.flush(new Blob(['%PDF']), {
+      headers: {
+        'Content-Disposition': 'attachment; filename="resumen-VIN001-20260901-20260915.pdf"',
+      },
+    });
+    await fixture.whenStable();
+    expect((click.mock.contexts[1] as HTMLAnchorElement).download).toBe(
+      'resumen-VIN001-20260901-20260915.pdf',
+    );
     click.mockRestore();
   });
 
