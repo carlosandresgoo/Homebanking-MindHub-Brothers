@@ -10,12 +10,12 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 ## Decisiones tomadas
 | Tema | Decisión |
 |---|---|
-| Despliegue del front | **Separado**: Angular servido por nginx (Docker). El backend queda como API pura y el CORS se configura por perfil. |
+| Despliegue del front | **Separado**: Angular 21 servido por nginx (Docker). El backend es una API pura y CORS se configura por perfil. |
 | Plataforma | **Spring Boot 3.5.x + Java 21 + Gradle 8.14.x** (salto de versión mayor autorizado) |
-| Autenticación | **JWT propio**: login con email y contraseña, access token de 15 min y refresh token rotado en cookie HttpOnly |
-| Librería de UI | Se mantiene **Bootstrap** (instalado por npm, sin CDN) |
-| Alta de usuarios | Registro público en `/register` (rate limit) + alta por ADMIN desde `/manager` |
-| Usuarios semilla (dev) | Contraseña desde `DEV_SEED_PASSWORD` o generada e impresa una vez |
+| Autenticación | **JWT propio**: email/contraseña + 2FA opcional (TOTP); access token HS256 de 15 min; refresh token rotado en cookie HttpOnly |
+| Librería de UI | **Angular Material 3** (tokens `--mat-sys-*`, modo oscuro automático, tipografía Inter) |
+| Alta de usuarios | Registro público en `/register` (rate limit por IP) + alta por ADMIN desde `/manager` (testing) |
+| Usuarios semilla (dev) | Contraseña desde `DEV_SEED_PASSWORD` o generada e impresa en log (una sola vez al arrancar) |
 
 ## Estado (29/09/2026)
 
@@ -32,12 +32,23 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 ### Funcionalidad portada desde `task11` (y fallos corregidos)
 | Módulo | Qué incluye | Fallo de `task11` corregido |
 |---|---|---|
-| Registro + cuentas | Registro público (con rate limit), cuenta inicial, abrir (máx. 3) y cerrar cuentas, movimientos | Cualquier cliente podía ver y cerrar cuentas ajenas |
-| Tarjetas | Pedir crédito/débito GOLD/SILVER/TITANIUM, desactivar | PAN y CVV guardados y devueltos siempre; desactivar tarjetas ajenas; `Math.random()` |
-| Transferencias | Propias y a terceros, atómicas, con bloqueo de filas | 500 con cuenta inexistente; doble gasto concurrente; `double` |
-| Préstamos | Catálogo (Flyway), solicitar, pagar por cuotas | Cualquier cliente podía pagar/alterar préstamos ajenos |
+| Registro + cuentas | Registro público (rate limit por IP), cuenta inicial, abrir/cerrar cuentas (máx. 3 activas), movimientos con filtros/paginación/CSV/comprobante | Cualquier cliente podía ver y cerrar cuentas ajenas |
+| Tarjetas | Pedir crédito/débito, colores (Gold/Silver/Titanium), una activa por tipo+color, desactivar | PAN/CVV guardados; desactivar tarjetas ajenas; `Math.random()` para números |
+| Transferencias | Propias, a terceros, contactos (agenda), límite diario + 2FA, atómicas con bloqueo de filas | 500 con cuenta inexistente; doble gasto concurrente; `double` en saldos |
+| Préstamos | Catálogo en Flyway, solicitar (máx. 1 activo por tipo), pagar por cuotas fijas | Cualquier cliente podía pagar/alterar préstamos ajenos |
+| 2FA (TOTP) | Setup con QR, enable/disable, reset por ADMIN, requerido para grandes transferencias | No existía en `task11` |
+| Contactos | Agenda de destinatarios (crear, renombrar, eliminar, máx. 50) | No existía en `task11` |
+| Plazo fijo | Depósitos a término (catálogo en Flyway: 30, 60, 90, 180, 365 días), simulación de intereses, renovación automática, cron diario de payout | No existía en `task11` |
+| Auditoría | Registro de acciones por usuario, con filtros y paginación (solo ADMIN) | No existía en `task11` |
+| Resumen financiero | Ingresos vs egresos por mes, gasto por categoría, saldo diario (dashboard) | No existía en `task11` |
 
-Decisiones: registro **público** (cambia la decisión anterior de "solo ADMIN"); el CVV no se guarda (se muestra una sola vez al emitir); los préstamos se pagan por cuotas fijas (la última ajusta el redondeo).
+Decisiones: 
+- Registro **público** (no solo ADMIN).
+- CVV no se persiste (se muestra una sola vez al emitir la tarjeta).
+- Préstamos: cuotas fijas, la última ajusta redondeo.
+- 2FA: TOTP en authenticator app, secreto cifrado con AES, required para transferencias > `second-factor-threshold`.
+- Plazo fijo: payout a las 00:05 banco timezone, con reinversión automática si está habilitada, dentro de la misma `TransactionTemplate` para evitar doble pago.
+- Idempotencia: `Idempotency-Key` header en plazo fijo (POST) para evitar debitar dos veces si se reintenta la solicitud.
 
 ### Problemas del análisis → resolución
 | # | Problema | Resuelto en |
@@ -51,11 +62,12 @@ Decisiones: registro **público** (cambia la decisión anterior de "solo ADMIN")
 | 16–20 | Bugs y calidad del front Vue | Desaparecen con la migración |
 
 ### Pendientes
-- **OWASP dependency-check** configurado pero sin ejecutar: la NVD rechaza la descarga sin `NVD_API_KEY`.
-- **Docker** (`docker compose up`) sin verificar: Docker no está instalado en la máquina de desarrollo.
-- Rate limit en memoria: con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
-- Nombres y apellidos solo aceptan letras sin tildes (regla heredada); con la UI en español convendría admitir tildes, ñ, espacios y guiones.
-- Si se agregan pagos con tarjeta hará falta un tratamiento del CVV acorde (hoy no se guarda).
+- **OWASP dependency-check** configurado pero sin ejecutar: la NVD rechaza la descarga sin `NVD_API_KEY`. Para ejecutar: `$env:NVD_API_KEY='...'; .\gradlew.bat :backend:dependencyCheckAnalyze`.
+- **Docker** (`docker compose up --build`): no verificado en esta máquina (Docker no está instalado). Requiere `.env` con `DB_PASSWORD`, `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`.
+- **Rate limit en memoria:** con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
+- **Validación de nombres:** solo aceptan letras sin tildes (regla heredada). Con la UI en español se podría admitir `ñ`, tildes, espacios y guiones.
+- **Credencial filtrada:** las ramas `origin/task10` y `origin/task11` contienen `spring.datasource.password=homebankingapp`. Hay que rotar esa contraseña donde se use.
+- **Pagos con tarjeta:** si se implementan, se necesita un tratamiento del CVV acorde (hoy no se persiste, solo se muestra al emitir).
 
 ---
 

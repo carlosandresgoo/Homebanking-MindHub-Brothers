@@ -28,14 +28,19 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 ## Estructura
 - Raíz: `settings.gradle` (`include 'backend'`), `gradlew*`, `gradle/libs.versions.toml`, `docker-compose.yml`, `.env.example`
 - `backend/src/main/java/com/mindhub/homebanking/`
-  - `controller/` (Auth, Client, Account, Transfer, Card, Loan, Contact, TwoFactor, Audit), `service/`, `repository/`, `domain/`, `dto/` (records), `mapper/`
-  - `security/` (`SecurityConfig`, `JwtConfig`, `AccessTokenService`, `RefreshTokenService`, `LoginRateLimiter`)
-  - `exception/` (`GlobalExceptionHandler` → ProblemDetail), `config/` (`SecurityProperties`, `DevDataSeeder`)
+  - `controller/` (Auth, Client, Account, Transfer, Card, Loan, Contact, FixedTerm, Movement, Summary, TwoFactor, Audit)
+  - `service/` (Account, Auth, Card, Transfer, Loan, FixedTerm, Contact, Movement, Summary, TwoFactor, Password, Audit, Idempotency, generators)
+  - `security/` (`SecurityConfig`, `JwtConfig`, `AccessTokenService`, `RefreshTokenService`, `LoginRateLimiter`, `Totp`, `SecretCipher`)
+  - `domain/` (Client, Account, Transaction, Card, Loan, ClientLoan, Contact, FixedTerm, FixedTermPlan, RefreshToken, AuditEvent, PasswordResetToken, IdempotencyRecord)
+  - `repository/` (Spring Data JPA + queries personalizadas)
+  - `dto/` (records de request/response), `mapper/` (ClientMapper)
+  - `exception/` (`GlobalExceptionHandler` → ProblemDetail, `BusinessRuleException`, `ConflictException`, `ResourceNotFoundException`, `SecondFactorException`, `AccountLockedException`, `TooManyRequestsException`)
+  - `config/` (`SecurityProperties`, `BankingProperties`, `DevDataSeeder`, `ClockConfig`)
 - `backend/src/main/resources/application.yml` (perfiles `dev`/`prod`), `db/migration/` (Flyway)
 - `backend/src/test/.../support/IntegrationTest` + `TestData`: base de los tests MockMvc (perfil `test`)
-- `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards], `interceptors`, `utils`, `i18n`)
-- `frontend/src/app/features/{home,login,register,password,profile,accounts,account-detail,transfers,contacts,cards,loans,manager,audit}`
-- `frontend/src/app/layout/shell` (toolbar + menú de usuario del área privada), `shared/` (`brand`, `bank-card`, `confirm-dialog`, `initials`), `testing/` (providers y fixtures)
+- `frontend/src/app/core/` (`models`, `api`, `auth` [servicio + guards + interceptor funcional], `interceptors`, `utils`, `i18n`)
+- `frontend/src/app/features/` (home, login, register, forgot-password, reset-password, accounts, account-detail, transfers, contacts, cards, investments [plazo fijo], loans, profile [2FA], audit, manager, receipt [comprobante])
+- `frontend/src/app/layout/shell` (toolbar + menú de usuario), `shared/` (`brand`, `bank-card`, `confirm-dialog`, `charts` [line/bar/donut], `initials`), `testing/` (providers y fixtures)
 
 ## Stack
 - Java 21, Spring Boot 3.5.16, Gradle 8.14.5, Spring Security 6 + oauth2-resource-server (JWT HS256), Flyway, Bucket4j
