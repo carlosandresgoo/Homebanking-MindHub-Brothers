@@ -16,6 +16,9 @@ export type AuditAction =
   | 'ACCOUNT_CLOSED'
   | 'ACCOUNT_ALIAS_CHANGED'
   | 'TRANSFER'
+  | 'SCHEDULED_TRANSFER_CREATED'
+  | 'SCHEDULED_TRANSFER_CANCELLED'
+  | 'SCHEDULED_TRANSFER_FAILED'
   | 'CONTACT_ADDED'
   | 'CONTACT_REMOVED'
   | 'CONTACT_TRUSTED'
@@ -46,6 +49,9 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   ACCOUNT_CLOSED: 'Cierre de cuenta',
   ACCOUNT_ALIAS_CHANGED: 'Cambio de alias',
   TRANSFER: 'Transferencia',
+  SCHEDULED_TRANSFER_CREATED: 'Transferencia programada',
+  SCHEDULED_TRANSFER_CANCELLED: 'Programación cancelada',
+  SCHEDULED_TRANSFER_FAILED: 'Programada fallida',
   CONTACT_ADDED: 'Destinatario agregado',
   CONTACT_REMOVED: 'Destinatario borrado',
   CONTACT_TRUSTED: 'Destinatario de confianza',

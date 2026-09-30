@@ -10,6 +10,10 @@
       <h1>Transferir</h1>
       <p>Enviá dinero a tus cuentas o a la de otra persona.</p>
     </div>
+    <a mat-stroked-button routerLink="/transfers/scheduled" class="scheduled-link">
+      <mat-icon>event_repeat</mat-icon>
+      Programadas
+    </a>
   </header>
 
   @if (s.status === 'error') {

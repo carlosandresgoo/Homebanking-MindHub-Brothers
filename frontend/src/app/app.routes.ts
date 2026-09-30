@@ -65,6 +65,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/transfers/transfers').then((m) => m.Transfers),
       },
       {
+        path: 'transfers/scheduled',
+        title: 'Transferencias programadas | MindHub Brothers',
+        canActivate: [roleGuard('CLIENT')],
+        loadComponent: () =>
+          import('./features/scheduled-transfers/scheduled-transfers').then(
+            (m) => m.ScheduledTransfers,
+          ),
+      },
+      {
         path: 'contacts',
         title: 'Destinatarios | MindHub Brothers',
         canActivate: [roleGuard('CLIENT')],
