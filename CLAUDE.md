@@ -29,7 +29,7 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - Raíz: `settings.gradle` (`include 'backend'`), `gradlew*`, `gradle/libs.versions.toml`, `docker-compose.yml`, `.env.example`
 - `backend/src/main/java/com/mindhub/homebanking/`
   - `controller/` (Auth, Client, Account, Transfer, Card, Loan, Contact, FixedTerm, Movement, Summary, TwoFactor, Audit)
-  - `service/` (Account, Auth, Card, Transfer, Loan, FixedTerm, Contact, Movement, Summary, TwoFactor, Password, Audit, Idempotency, generators)
+  - `service/` (Account, Auth, Card, Transfer, Loan, FixedTerm, Contact, Movement, Summary, TwoFactor, Password, Audit, Idempotency, generators), `service/notification/` (`NotificationService`, mailers)
   - `security/` (`SecurityConfig`, `JwtConfig`, `AccessTokenService`, `RefreshTokenService`, `LoginRateLimiter`, `Totp`, `SecretCipher`)
   - `domain/` (Client, Account, Transaction, Card, Loan, ClientLoan, Contact, FixedTerm, FixedTermPlan, RefreshToken, AuditEvent, PasswordResetToken, IdempotencyRecord)
   - `repository/` (Spring Data JPA + queries personalizadas)
@@ -58,6 +58,7 @@ En Windows usar `.\gradlew.bat`. Requiere JDK 21 (`JAVA_HOME=C:\Program Files\Ja
 - Dinero siempre `BigDecimal` (2 decimales); los saldos solo cambian con `Account.credit/debit` (generan el movimiento)
 - Operaciones que mueven dinero: `@Transactional` + `findByIdForUpdate` (bloqueo de filas en orden ascendente de id)
 - Nunca guardar ni loguear PAN completo ni CVV (solo `last4` + hash)
+- E-mails solo vía `NotificationService` (plantillas en `templates/mail/`, voseo, formato es-AR); se entregan tras el commit y nunca deben romper la operación
 - Cambios de esquema solo con una nueva migración Flyway `V{n}__*.sql` (`ddl-auto=validate`); datos de referencia también por Flyway
 - Tests de seguridad con MockMvc extendiendo `IntegrationTest` (401/403/400 para cada endpoint nuevo)
 - Versiones en `gradle/libs.versions.toml`, nunca en `build.gradle`; regenerar `gradle.lockfile`

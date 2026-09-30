@@ -14,7 +14,7 @@ Base: rama `master` / `Migration` (commit `f29ca6c`, "task2").
 | Plataforma | **Spring Boot 3.5.x + Java 21 + Gradle 8.14.x** (salto de versión mayor autorizado) |
 | Autenticación | **JWT propio**: email/contraseña + 2FA opcional (TOTP); access token HS256 de 15 min; refresh token rotado en cookie HttpOnly |
 | Librería de UI | **Angular Material 3** (tokens `--mat-sys-*`, modo oscuro automático, tipografía Inter) |
-| Alta de usuarios | Registro público en `/register` (rate limit por IP) + alta por ADMIN desde `/manager` (testing) |
+| Alta de usuarios | Registro público en `/register` (rate limit por IP) + alta por ADMIN desde `/manager` |
 | Usuarios semilla (dev) | Contraseña desde `DEV_SEED_PASSWORD` o generada e impresa en log (una sola vez al arrancar) |
 
 ## Estado (29/09/2026)
@@ -48,7 +48,8 @@ Decisiones:
 - Préstamos: cuotas fijas, la última ajusta redondeo.
 - 2FA: TOTP en authenticator app, secreto cifrado con AES, required para transferencias > `second-factor-threshold`.
 - Plazo fijo: payout a las 00:05 banco timezone, con reinversión automática si está habilitada, dentro de la misma `TransactionTemplate` para evitar doble pago.
-- Idempotencia: `Idempotency-Key` header en plazo fijo (POST) para evitar debitar dos veces si se reintenta la solicitud.
+- Idempotencia: `Idempotency-Key` opcional en transferencias, cuentas, plazos fijos y préstamos, para no repetir la operación si se reintenta la solicitud.
+- E-mails transaccionales: se arman dentro de la transacción y se entregan después del commit; un fallo del SMTP nunca revierte la operación.
 
 ### Problemas del análisis → resolución
 | # | Problema | Resuelto en |
@@ -67,6 +68,7 @@ Decisiones:
 - **Rate limit en memoria:** con varias instancias del backend habría que moverlo a Redis (bucket4j-redis).
 - **Validación de nombres:** solo aceptan letras sin tildes (regla heredada). Con la UI en español se podría admitir `ñ`, tildes, espacios y guiones.
 - **Credencial filtrada:** las ramas `origin/task10` y `origin/task11` contienen `spring.datasource.password=homebankingapp`. Hay que rotar esa contraseña donde se use.
+- **E-mails:** hoy se envían después del commit pero en el mismo hilo de la petición (timeouts de 5 s). Si el volumen crece, pasar a una cola u *outbox* con reintentos; tampoco hay aún recordatorios de cuotas de préstamos.
 - **Pagos con tarjeta:** si se implementan, se necesita un tratamiento del CVV acorde (hoy no se persiste, solo se muestra al emitir).
 
 ---

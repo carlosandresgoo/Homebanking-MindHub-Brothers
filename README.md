@@ -59,17 +59,18 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | POST | `/api/auth/login` | pública (máx. 5 intentos/min por IP); 2FA opcional en el request |
 | POST | `/api/auth/register` | pública (máx. 5/min por IP); crea CLIENT, cuenta inicial e inicia sesión (201) |
 | POST | `/api/auth/refresh` | cookie `refresh_token` (rotación automática) |
-| POST | `/api/auth/logout` | autenticado (invalida refresh token) |
+| POST | `/api/auth/logout` | cookie `refresh_token` (lo revoca) |
 | POST | `/api/auth/password/forgot` | pública (máx. 5/min por IP); envía link de reset (siempre 202) |
-| POST | `/api/auth/password/reset` | pública; reestablece contraseña (links válidos 24 horas) |
+| POST | `/api/auth/password/reset` | pública (máx. 5/min por IP); el enlace vence a los 30 minutos y sirve una vez; cierra todas las sesiones |
 | POST | `/api/auth/password` | autenticado; cambiar contraseña (requiere actual, cierra otras sesiones) |
 
 ### Clientes y perfiles
 | Método | Ruta | Acceso |
 |---|---|---|
 | GET | `/api/clients/current` | autenticado; datos del usuario logged-in |
-| GET | `/api/clients`, POST | ADMIN; listar todos y crear cliente (testing) |
+| GET / POST | `/api/clients` | ADMIN (listar y dar de alta clientes desde `/manager`) |
 | GET | `/api/clients/{id}` | ADMIN |
+| PATCH | `/api/clients/{id}/status` | ADMIN (bloquear o desbloquear un cliente; bloquear cierra sus sesiones) |
 
 ### Cuentas
 | Método | Ruta | Acceso |
@@ -89,7 +90,7 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | Método | Ruta | Acceso | Notas |
 |---|---|---|---|
 | GET | `/api/transfers/limits` | CLIENT | Límite diario, usado hoy, disponible, 2FA requerido, umbrales |
-| POST | `/api/transfers` | CLIENT | Origen propio; atómica con bloqueo de filas; límite diario + 2FA; sin Idempotency-Key |
+| POST | `/api/transfers` | CLIENT | Origen propio; atómica con bloqueo de filas; límite diario + 2FA; admite `Idempotency-Key` |
 
 ### Contactos (destinatarios)
 | Método | Ruta | Acceso | Notas |
@@ -109,7 +110,7 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 ### Préstamos
 | Método | Ruta | Acceso | Notas |
 |---|---|---|---|
-| GET | `/api/loans` | autenticado | Catálogo (Personal, Auto, Home, etc.) |
+| GET | `/api/loans` | autenticado | Catálogo: Hipotecario, Personal y Automotor (montos máximos y cuotas en Flyway) |
 | POST | `/api/loans` | CLIENT | 201; un préstamo activo por tipo; montos dentro del rango |
 | GET | `/api/clients/current/loans` | CLIENT | Préstamos vigentes y pagados |
 | POST | `/api/clients/current/loans/{id}/payments` | dueño | Paga la próxima cuota |
@@ -125,7 +126,7 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 ### Resumen financiero
 | Método | Ruta | Acceso | Notas |
 |---|---|---|---|
-| GET | `/api/clients/current/summary` | CLIENT | Ingresos vs egresos por mes, gasto por categoría, saldo diario; `?months=1-36` (default 6) |
+| GET | `/api/clients/current/summary` | CLIENT | Ingresos vs egresos por mes, gasto por categoría, saldo diario; `?months=1-12` (default 6) |
 
 ### 2FA (TOTP)
 | Método | Ruta | Acceso | Notas |
@@ -152,10 +153,11 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 - Recursos de otro cliente: **404** (indistinguible de "no existe").
 - Reglas de negocio incumplidas (saldo insuficiente, montos/cuotas fuera de rango): **422** con `code` y parámetros de error.
 - Duplicados (email, alias): **409**.
-- Too many requests (rate limit, 2FA, concurrencia): **429**.
+- Demasiados intentos (login, registro, recuperación de contraseña, códigos 2FA): **429**.
 - Errores: `application/problem+json` (`status`, `type`, `title`, `detail`, `instance`); sin stack traces.
 - **Autenticación:** Access token JWT HS256 (15 min) en `Authorization: Bearer`; Refresh token rotado (7 días) en cookie `HttpOnly; Secure; SameSite=Strict`.
-- **Idempotencia:** `Idempotency-Key` header (UUID) en POST que crean recursos (`/fixed-terms`); header `Idempotent-Replayed` si se reintenta.
+- **Idempotencia:** header opcional `Idempotency-Key` (8–100 caracteres `A-Za-z0-9_-`) en los POST que mueven dinero o crean recursos (transferencias, cuentas, plazos fijos, préstamos): un reintento devuelve la respuesta original con `Idempotent-Replayed: true`.
+- **E-mails:** bienvenida, recuperación y cambio de contraseña, 2FA activada o desactivada, transferencias entre clientes (a quien envía y a quien recibe) y plazos fijos (alta y vencimiento). Se envían **después del commit**: si el SMTP falla, la operación no se revierte (solo queda un aviso en el log).
 
 ## Variables de entorno
 | Variable | Perfil | Obligatoria | Descripción |
@@ -164,7 +166,11 @@ Contraseña: `DEV_SEED_PASSWORD`, o la generada que se imprime una vez en el log
 | `JWT_SECRET` | prod | **sí** | Clave HMAC en Base64, ≥ 256 bits. En `dev` se genera aleatoria y persiste en `./data/dev-jwt.key` |
 | `TOTP_ENCRYPTION_KEY` | prod | **sí** | Clave AES en Base64 (256 bits) que cifra los secretos 2FA. Distinta de `JWT_SECRET`. En `dev` se genera en `./data/dev-totp.key` |
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | prod | **sí** | Conexión a PostgreSQL |
-| `FRONTEND_URL` | ambos | no | URL pública del frontend, usada en enlaces de email (reset, verificación). Default: `http://localhost:4200` |
+| `FRONTEND_URL` | ambos | no | URL pública del frontend, usada en los enlaces de los e-mails. Default: `http://localhost:4200` |
+| `MAIL_HOST` | ambos | no | Servidor SMTP. **Sin él no se envían e-mails**: en `dev` se imprimen en el log y en `prod` se descartan con un aviso |
+| `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | ambos | con `MAIL_HOST` | Puerto (defecto 587, STARTTLS) y credenciales SMTP |
+| `MAIL_FROM` | ambos | no | Remitente. Default: `MindHub Brothers <no-reply@mindhub.local>` |
+| `MAIL_SMTP_AUTH`, `MAIL_STARTTLS_REQUIRED` | ambos | no | `true` por defecto; en `false` para un SMTP local de pruebas como Mailpit (`MAIL_HOST=localhost`, `MAIL_PORT=1025`) |
 | `CORS_ALLOWED_ORIGINS` | ambos | no | Orígenes permitidos, separados por comas (vacío = same-origin, ideal con nginx proxy) |
 | `DEV_SEED_PASSWORD` | dev | no | Contraseña de los usuarios de prueba. Si falta se genera una aleatoria e imprime en log |
 | `NVD_API_KEY` | build | para OWASP | Clave de la NVD para `./gradlew :backend:dependencyCheckAnalyze` |
@@ -194,6 +200,7 @@ backend/
     service/      AccountService, CardService, TransferService, LoanService, FixedTermService, ContactService,
                   MovementService, SummaryService, TwoFactorService, AuthService, PasswordService, AuditService,
                   FixedTermMaturityJob (cron diario), IdempotencyService, AccountNumberGenerator, CardNumberGenerator
+      notification/  NotificationService (e-mails tras el commit), SmtpMailer / LoggingMailer / UnconfiguredMailer
     security/     SecurityConfig, JwtConfig, LoginRateLimiter, RefreshTokenCleanup, Totp, SecretCipher,
                   ClientUserDetailsService, KeyMaterial, AccessTokenService, RefreshTokenService
     domain/       Client, Account, Transaction, Card, Loan, ClientLoan, Contact, FixedTerm, FixedTermPlan,
@@ -203,7 +210,8 @@ backend/
     exception/    GlobalExceptionHandler (ProblemDetail), BusinessRuleException, ConflictException, ResourceNotFoundException,
                   SecondFactorException, AccountLockedException, TooManyRequestsException
     config/       SecurityProperties, BankingProperties, DevDataSeeder, ClockConfig
-  src/main/resources/  application.yml (perfiles dev/prod), db/migration/ Flyway (V1–V11)
+  src/main/resources/  application.yml (perfiles dev/prod), db/migration/ Flyway (V1–V11),
+                       templates/mail/ (plantillas Thymeleaf de los e-mails, con layout.html común)
   Dockerfile, build.gradle, gradle.lockfile, dependency-check-suppressions.xml
 frontend/
   src/app/core/
